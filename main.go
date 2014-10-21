@@ -2,10 +2,13 @@ package main
 
 import (
 	"github.com/hfurubotten/autograder/web"
+	"log"
 )
 
 func main() {
 
-	server := web.NewWebServer(8082)
+	log.Println("Server starting")
+
+	server := web.NewWebServer(80)
 	server.Start()
 }

@@ -8,6 +8,7 @@ import (
 	//"html/template"
 	"io"
 	"os"
+	"github.com/hfurubotten/autograder/oauth"
 )
 
 type Webserver struct {
@@ -20,12 +21,20 @@ func NewWebServer(port int) Webserver {
 
 func (ws Webserver) Start() {
 
+	// OAuth process
+	http.Handle("/login", http.RedirectHandler(oauth.RedirectURL + "?client_id=" + oauth.Clientid + "&scope=" + oauth.Scope, 307))
+	http.HandleFunc("/oauth", oauth.Handler)
+
+	// static files
 	http.Handle("/js/*", http.StripPrefix("/js/", http.FileServer(http.Dir("web/js/"))))
 	http.Handle("/css/*", http.StripPrefix("/css/", http.FileServer(http.Dir("web/css/"))))
 	http.Handle("/img/", http.StripPrefix("/img/", http.FileServer(http.Dir("web/img/"))))
 
+	// catch all not matched wth other patterns
 	http.HandleFunc("/", catchallhandler)
 
+	// start the server
+	log.Println("Starts listening")
 	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(ws.Port), nil))
 }
 
