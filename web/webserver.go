@@ -1,14 +1,16 @@
 package web
 
 import (
-	//"fmt"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 	//"html/template"
 	"io"
 	"os"
-	"github.com/hfurubotten/autograder/oauth"
+
+	"github.com/hfurubotten/autograder/auth"
+	"github.com/hfurubotten/autograder/web/sessions"
 )
 
 type Webserver struct {
@@ -22,8 +24,11 @@ func NewWebServer(port int) Webserver {
 func (ws Webserver) Start() {
 
 	// OAuth process
-	http.Handle("/login", http.RedirectHandler(oauth.RedirectURL + "?client_id=" + oauth.Clientid + "&scope=" + oauth.Scope, 307))
-	http.HandleFunc("/oauth", oauth.Handler)
+	http.Handle("/login", http.RedirectHandler(auth.RedirectURL + "?client_id=" + auth.Clientid + "&scope=" + auth.Scope, 307))
+	http.HandleFunc("/oauth", auth.Handler)
+
+	// Page handlers
+	http.HandleFunc("/session", sessionshandler)
 
 	// static files
 	http.Handle("/js/*", http.StripPrefix("/js/", http.FileServer(http.Dir("web/js/"))))
@@ -57,4 +62,10 @@ func catchallhandler(w http.ResponseWriter, r *http.Request){
 	} else {
 		http.Error(w, "This is not the page you are looking for!\n", 404)
 	}
+}
+
+func sessionshandler(w http.ResponseWriter, r *http.Request) {
+	val, err := sessions.GetSessions(r, sessions.AUTHSESSION, "user")
+	fmt.Fprintln(w, val)
+	fmt.Fprintln(w, err)
 }
