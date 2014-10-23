@@ -11,8 +11,8 @@ import (
 	"github.com/hfurubotten/autograder/web/sessions"
 )
 
-// sets up the github as the oauth provider. To get the variables and functions loaded into the standard that is used, use the init method. This will set this as soon as the package is loaded the first time. Replace or comment out the init method to use another oath provider. 
-func init(){
+// sets up the github as the oauth provider. To get the variables and functions loaded into the standard that is used, use the init method. This will set this as soon as the package is loaded the first time. Replace or comment out the init method to use another oath provider.
+func init() {
 	Clientid = "2e2c5b20f954de037b8f"
 	clientsecret = "f69a12873ea33f365523b3b5adb040e443df48ae"
 	Scope = "user"
@@ -21,7 +21,7 @@ func init(){
 	Handler = github_oauthhandler
 }
 
-func github_oauthhandler(w http.ResponseWriter, r *http.Request){
+func github_oauthhandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		getvalues := r.URL.Query()
 
@@ -35,7 +35,7 @@ func github_oauthhandler(w http.ResponseWriter, r *http.Request){
 			// Do something to redirect or tell user of error
 			return
 		}
-    	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 		client := &http.Client{}
 		resp, err := client.Do(req)
@@ -60,10 +60,10 @@ func github_oauthhandler(w http.ResponseWriter, r *http.Request){
 		}
 
 		member := git.NewMember(q.Get("access_token"))
-		member.LoadRemoteData()
+		member.LoadData()
 
 		log.Println("Logged in:", member.Username)
-
+		// Rewrite this to countain a boolean for logged in and a access token only. No need to involve git at this stage. 
 		sessions.SetSessionsAndRedirect(w, r, sessions.AUTHSESSION, "user", member, "http://tussi.hf-data.no/session")
 	} else {
 		redirect := http.RedirectHandler("/", 400)
