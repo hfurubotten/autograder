@@ -7,6 +7,8 @@ import (
 
 func main() {
 
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+
 	log.Println("Server starting")
 
 	server := web.NewWebServer(80)
