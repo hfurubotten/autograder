@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/hfurubotten/autograder/git"
+	"github.com/hfurubotten/autograder/web/pages"
 	"github.com/hfurubotten/autograder/web/sessions"
 )
 
@@ -15,7 +15,7 @@ import (
 func init() {
 	Clientid = "2e2c5b20f954de037b8f"
 	clientsecret = "f69a12873ea33f365523b3b5adb040e443df48ae"
-	Scope = "user"
+	Scope = "user,admin:org,repo,admin:repo_hook"
 	RedirectURL = "https://github.com/login/oauth/authorize"
 
 	Handler = github_oauthhandler
@@ -26,12 +26,19 @@ func github_oauthhandler(w http.ResponseWriter, r *http.Request) {
 		getvalues := r.URL.Query()
 
 		code := getvalues.Get("code")
+		errstr := getvalues.Get("error")
+
+		if len(errstr) > 0 {
+			log.Println("OAuth error: " + errstr)
+			// redirect to home page
+			return 
+		}
 
 		postdata := []byte("client_id=" + Clientid + "&client_secret=" + clientsecret + "&code=" + code)
 		requrl := "https://github.com/login/oauth/access_token"
 		req, err := http.NewRequest("POST", requrl, bytes.NewBuffer(postdata))
 		if err != nil {
-			log.Println(err)
+			log.Println("Echange error with github: ", err)
 			// Do something to redirect or tell user of error
 			return
 		}
@@ -40,33 +47,41 @@ func github_oauthhandler(w http.ResponseWriter, r *http.Request) {
 		client := &http.Client{}
 		resp, err := client.Do(req)
 		if err != nil {
-			log.Println(err)
+			log.Println("Echange error with github: ", err)
 			// Do something to redirect or tell user of error
 			return
 		}
 
 		data, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			log.Println(err)
+			log.Println("Read error: ", err)
 			// Do something to redirect or tell user of error
 			return
 		}
 
 		q, err := url.ParseQuery(string(data))
 		if err != nil {
-			log.Println(err)
+			log.Println("Data error from github: ", err)
 			// Do something to redirect or tell user of error
 			return
 		}
 
-		member := git.NewMember(q.Get("access_token"))
-		member.LoadData()
+		access_token := q.Get("access_token")
+		errstr = q.Get("error")
+		approved := false
 
-		log.Println("Logged in:", member.Username)
-		// Rewrite this to countain a boolean for logged in and a access token only. No need to involve git at this stage. 
-		sessions.SetSessionsAndRedirect(w, r, sessions.AUTHSESSION, "user", member, "http://tussi.hf-data.no/session")
+		if len(errstr) > 0 {
+			log.Println("Access token error: " + errstr)
+			// redirect to home page
+			return 
+		} else {
+			approved = true
+		}
+
+		sessions.SetSessions(w, r, sessions.AUTHSESSION, sessions.APPROVEDSESSIONKEY, approved)
+		sessions.SetSessionsAndRedirect(w, r, sessions.AUTHSESSION, sessions.ACCESSTOKENSESSIONKEY, access_token, pages.HOMEPAGE)
 	} else {
-		redirect := http.RedirectHandler("/", 400)
+		redirect := http.RedirectHandler(pages.FRONTPAGE, 400)
 		redirect.ServeHTTP(w, r)
 	}
 }
