@@ -7,11 +7,14 @@ import(
 	"github.com/gorilla/sessions"
 )
 
-const (
-	AUTHSESSION = "auth_credentials"
-)
-
 var store = sessions.NewCookieStore([]byte("something-very-secret"))
+
+func init() {
+	store.Options = &sessions.Options{
+		Path: "sessions/",
+		MaxAge: 86400,
+	}
+}
 
 func SetSessionsAndRedirect(w http.ResponseWriter, r *http.Request, sessionsname string, key interface{}, value interface{}, redirecturl string) (err error) {
 	session, _ := store.Get(r, sessionsname)
@@ -25,7 +28,7 @@ func SetSessionsAndRedirect(w http.ResponseWriter, r *http.Request, sessionsname
 	return
 }
 
-func SetSessions(w http.ResponseWriter, r *http.Request, sessionsname string, key interface{}, value interface{}, redirecturl string) (err error) {
+func SetSessions(w http.ResponseWriter, r *http.Request, sessionsname string, key interface{}, value interface{}) (err error) {
 	session, _ := store.Get(r, sessionsname)
 
 	session.Values[key] = value
