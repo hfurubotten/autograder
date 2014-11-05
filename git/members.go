@@ -25,6 +25,11 @@ type Member struct {
 	Name         string
 	StudentID    int
 	IsTeacher    bool
+	IsAdmin      bool
+
+	Teaching         []string
+	Courses          []string
+	AssistantCourses []string
 
 	accessToken token
 }
@@ -56,58 +61,71 @@ func NewMember(oauthtoken string) (m Member) {
 	return
 }
 
+func NewMemberFromUsername(username string) (m Member) {
+	m = Member{}
+	m.Username = username
+
+	err := m.loadData()
+	if err != nil {
+		log.Println(err)
+	}
+
+	return
+}
+
 func (m *Member) loadDataFromGithub() (err error) {
-		err = m.connectToGithub()
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
-		user, _, err := m.githubclient.Users.Get("")
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
-		if user.Login != nil {
-			m.Username = *user.Login
-		}
-
-		if user.Name != nil {
-			m.Name = *user.Name
-		}
-
+	err = m.connectToGithub()
+	if err != nil {
 		return
+	}
+
+	user, _, err := m.githubclient.Users.Get("")
+	if err != nil {
+		return
+	}
+
+	if user.Login != nil {
+		m.Username = *user.Login
+	}
+
+	if user.Name != nil {
+		m.Name = *user.Name
+	}
+
+	return
 }
 
 func (m *Member) loadData() (err error) {
 	if userstore.Has(m.Username) {
 		var tmp Member
 
-    	err = userstore.ReadGob(m.Username, &tmp, false)
-    	if err != nil {
-    		log.Println(err)
-    		return
-    	}
-    	m.Copy(tmp)
+		err = userstore.ReadGob(m.Username, &tmp, false)
+		if err != nil {
+			return
+		}
+		m.Copy(tmp)
 
-    	if !m.accessToken.HasTokenInStore() {
-    		m.accessToken.SetUsernameToTokenInStore(m.Username)
-    	}
+		if !m.accessToken.HasTokenInStore() {
+			m.accessToken.SetUsernameToTokenInStore(m.Username)
+		}
 	}
 
 	return
 }
 
 func (m Member) StickToSystem() (err error) {
-    return userstore.WriteGob(m.Username, m)
+	return userstore.WriteGob(m.Username, m)
 }
 
-func (m *Member) Copy(tmp Member){
-	m.Username     = tmp.Username
-	m.Name         = tmp.Name
-	m.StudentID    = tmp.StudentID
-	m.IsTeacher    = tmp.IsTeacher
+func (m *Member) Copy(tmp Member) {
+	m.Username = tmp.Username
+	m.Name = tmp.Name
+	m.StudentID = tmp.StudentID
+	m.IsTeacher = tmp.IsTeacher
+	m.IsAdmin = tmp.IsAdmin
+	m.Teaching = tmp.Teaching
+	m.Courses = tmp.Courses
+	m.AssistantCourses = tmp.AssistantCourses
 }
 
 func (m Member) IsComplete() bool {
@@ -148,5 +166,41 @@ func (m *Member) ListOrgs() (ls []string, err error) {
 		ls[i] = *org.Login
 	}
 
-	return 
+	return
+}
+
+func (m *Member) AddOrganization(org Organization) (err error) {
+	if m.Courses == nil {
+		m.Courses = make([]string, 0)
+	}
+
+	m.Courses = append(m.Courses, org.Name)
+
+	err = org.AddMembership(*m)
+
+	return
+}
+
+func (m *Member) AddTeachingOrganization(org Organization) (err error) {
+	if m.Courses == nil {
+		m.Teaching = make([]string, 0)
+	}
+
+	m.IsTeacher = true
+	m.Teaching = append(m.Courses, org.Name)
+
+	return
+}
+
+func ListAllMembers() (out []Member) {
+	out = make([]Member, 0)
+	keys := userstore.Keys()
+	var m Member
+
+	for key := range keys {
+		m = NewMemberFromUsername(key)
+		out = append(out, m)
+	}
+
+	return
 }

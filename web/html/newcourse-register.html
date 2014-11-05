@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+	<head>
+    	<meta charset="utf-8">
+    	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+    	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+		<title>UIS Autograder</title>
+
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+	</head>
+	<body>
+		<div class="navbar navbar-absolute-top navbar-inverse" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+                  <span class="sr-only">Toggle navigation</span>
+                  <span class="icon-bar"></span>
+                  <span class="icon-bar"></span>
+                  <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="#">UIS Autograder</a>
+            </div>
+            <div class="collapse navbar-collapse">
+              <ul class="nav navbar-nav">
+                  <li class="active"><a href="/home">Home</a></li>
+                  <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Courses <span class="caret"></span></a>
+                    <ul class="dropdown-menu" role="menu">
+                      <li>Select a course:</li>
+                      <li><a href="#">Course 1</a></li>
+                      <li><a href="#">Course 2</a></li>
+                      <li class="divider"></li>
+                      <li><a href="/course/register">New course</a></li>
+                    </ul>
+                  </li>
+                  <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Teacher panel <span class="caret"></span></a>
+                    <ul class="dropdown-menu" role="menu">
+                      <li><p class="navbar-text">Select a course:</p></li>
+                      <li><a href="#">Course 1</a></li>
+                      <li><a href="#">Course 2</a></li>
+                      <li class="divider"></li>
+                      <li><a href="/course/new">New course</a></li>
+                    </ul>
+                  </li>
+                  <li><a href="/admin">Admin panel</a></li>
+                  <li><a href="/help">Help</a></li>
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                  <li><a href="/profile"><span class="glyphicon glyphicon-user"></span> {{with .Member}}{{.Name}}{{end}}</a></li>
+                  <li><a href="/logout">Sign out</a></li>
+                </ul>
+            </div><!-- /.nav-collapse -->
+          </div><!-- /.container -->
+      </div><!-- /.navbar -->
+
+    <div id="newcoursepart3" class="container">
+			<div class="row">
+        <div class="col-md-12">
+          <h1>Create a new course</h1>
+          <p>Fill out requirered information about the course and we will create it for you. </p>
+          <p>Fields marked with * is required.</p>
+
+          <!-- input form -->
+          <form class="form-horizontal" role="form" action="/course/create" method="POST">
+            <div class="form-group">
+              <label for="org" class="col-sm-3 control-label">Organization *</label>
+              <div class="col-sm-9">
+                <input type="text" class="form-control" id="org" placeholder="Organization" value="{{.Org}}" disabled>
+                <input type="hidden" id="hiddenorg" name="org" value="{{.Org}}">
+              </div>
+            </div>
+            <div class="form-group">
+              <div class="col-sm-offset-3 col-sm-9">
+                <div class="checkbox">
+                  <label>
+                    <input type="checkbox" id="private" name="private"> Private repositories
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="indv" class="col-sm-3 control-label">Number of individual assignments *</label>
+              <div class="col-sm-9">
+                <input type="number" class="form-control" id="indv" name="indv" placeholder="Individual Assignments">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="groups" class="col-sm-3 control-label">Number of group assignments *</label>
+              <div class="col-sm-9">
+                <input type="number" class="form-control" id="groups" name="groups" placeholder="Group Assignments">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="template" class="col-sm-3 control-label">Select template for repositories</label>
+              <div class="col-sm-9">
+                <select class="form-control" name="template">
+                <option value="">Empty template</option>
+                {{range .Orgs}}
+                  <option value="{{.}}">{{.}}</option>
+                {{end}}
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="desc" class="col-sm-3 control-label">Course description</label>
+              <div class="col-sm-9">
+                <textarea class="form-control" rows="3" name="desc" id="desc"></textarea>
+              </div>
+            </div>
+            <div class="form-group">
+              <div class="col-sm-offset-3 col-sm-9">
+                <button type="submit" class="btn btn-default">Create course</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+		</div>
+
+
+	</body>
+</html>

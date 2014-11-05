@@ -1,0 +1,20 @@
+{{define "title"}} UIS Autograder {{end}}
+{{define "body"}}
+    <div class="container">
+			<div class="row">
+        <div class="col-md-12">
+          <h1>Sign up for a new course</h1>
+          <p>The courses that are available is listed below. Select your course by </p>
+          <p>Fields marked with * is required.</p>
+          {{range .Orgs}}
+            <div class="panel panel-default">
+              <div class="panel-heading">{{.Name}} <button type="button" class="pull-right btn btn btn-default"><a href="/course/register/{{.Name}}">Sign up</a></button></div>
+              <div class="panel-body">
+                {{.Description}}
+              </div>
+            </div>   
+          {{end}}
+        </div>
+      </div>
+		</div>
+{{end}}
