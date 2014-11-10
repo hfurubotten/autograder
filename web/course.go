@@ -176,6 +176,17 @@ func saveorghandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		repo := git.RepositoryOptions{
+			Name:     git.TEST_REPO_NAME,
+			Private:  org.Private,
+			AutoInit: true,
+		}
+		err = org.CreateRepo(repo)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
 		for i := 0; i < org.IndividualAssignments; i++ {
 			path := "lab" + strconv.Itoa(i+1) + "/README.md"
 			commitmessage := "Adding readme file for lab assignment " + strconv.Itoa(i+1)
@@ -183,12 +194,26 @@ func saveorghandler(w http.ResponseWriter, r *http.Request) {
 			err = org.CreateFile(git.STANDARD_REPO_NAME, path, content, commitmessage)
 			if err != nil {
 				log.Println(err)
-				return
+			}
+			err = org.CreateFile(git.TEST_REPO_NAME, path, content, commitmessage)
+			content = "# Lab assignment " + strconv.Itoa(i+1) + " test"
+			if err != nil {
+				log.Println(err)
 			}
 		}
 
 		if org.GroupAssignments > 0 {
 			repo.Name = git.GROUPS_REPO_NAME
+			err = org.CreateRepo(repo)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			repo := git.RepositoryOptions{
+				Name:     git.GROUPTEST_REPO_NAME,
+				Private:  org.Private,
+				AutoInit: true,
+			}
 			err = org.CreateRepo(repo)
 			if err != nil {
 				log.Println(err)
@@ -203,6 +228,11 @@ func saveorghandler(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					log.Println(err)
 				}
+				content := "# Group assignment " + strconv.Itoa(i+1) + " tests"
+				err = org.CreateFile(git.GROUPSTEST_REPO_NAME, path, content, commitmessage)
+				if err != nil {
+					log.Println(err)
+				}
 			}
 		}
 
@@ -214,7 +244,6 @@ func saveorghandler(w http.ResponseWriter, r *http.Request) {
 		org.StudentTeamID, err = org.CreateTeam(team)
 		if err != nil {
 			log.Println(err)
-			return
 		}
 
 	} else {
