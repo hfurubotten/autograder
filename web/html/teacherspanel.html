@@ -1,0 +1,123 @@
+{{define "title"}}UIS Autograder{{end}}
+{{define "body"}}
+  <div class="container">
+  	<div class="row">
+      <div class="col-md-12">
+        {{with .Org}}
+        <h1>{{.Name}}</h1>
+        <p>Something...</p>
+
+        <!-- input form -->
+          <form class="form-horizontal" role="form" action="/course/create" method="POST">
+            <div class="form-group">
+              <label for="org" class="col-sm-3 control-label">Organization *</label>
+              <div class="col-sm-9">
+                <input type="text" class="form-control" id="org" placeholder="Organization" value="{{.Name}}" disabled>
+                <input type="hidden" id="hiddenorg" name="org" value="{{.Name}}">
+              </div>
+            </div>
+            <div class="form-group">
+              <div class="col-sm-offset-3 col-sm-9">
+                <div class="checkbox">
+                  <label>
+                    <input type="checkbox" id="private" name="private"> Private repositories
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="indv" class="col-sm-3 control-label">Number of individual assignments *</label>
+              <div class="col-sm-9">
+                <input type="number" class="form-control" id="indv" name="indv" placeholder="Individual Assignments" value="{{.IndividualAssignments}}">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="groups" class="col-sm-3 control-label">Number of group assignments *</label>
+              <div class="col-sm-9">
+                <input type="number" class="form-control" id="groups" name="groups" placeholder="Group Assignments" value="{{.GroupAssignments}}">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="desc" class="col-sm-3 control-label">Course description</label>
+              <div class="col-sm-9">
+                <textarea class="form-control" rows="3" name="desc" id="desc">{{.Description}}</textarea>
+              </div>
+            </div>
+            <div class="form-group">
+              <div class="col-sm-offset-3 col-sm-9">
+                <button type="submit" class="btn btn-default">Update course info</button>
+              </div>
+            </div>
+            {{if gt .IndividualAssignments 0 }}
+            <h3>Individual assignment folder names</h3>
+            <p>If you change the names of the folders containing the different individual assignments, this has to be marked for the automatic system to recognize this. It needs to know which folder to use. The standard folder name is "lab#", where the # is replaced by the number in the sequence of assignments it is. Example of this is "lab1" for the first assignment. Fill in the folder name below and hit the update button to submit the changes. </p>
+            
+            {{range $i, $element := .IndividualLabFolders}}
+              <div class="form-group">
+              <label for="org" class="col-sm-3 control-label">Lab assignment {{$i}}</label>
+              <div class="col-sm-9">
+                <input type="text" class="form-control" id="org" placeholder="{{$element}}">
+              </div>
+            </div>
+            {{end}}
+
+            <div class="form-group">
+              <div class="col-sm-offset-3 col-sm-9">
+                <button type="submit" class="btn btn-default">Update folder info</button>
+              </div>
+            </div>
+            {{end}}
+          </form>
+        {{end}}
+
+        <h3>Pending students</h3>
+        <p>Pending students are a list of students that needs approval to get </p>
+
+        <div class="alert alert-danger alert-dismissible" role="alert" id="pendinguseralert" style="display: none">
+          <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+          <span class="inputtext"></span>
+        </div>
+
+          <table class="table table-striped">
+          <caption>Members</caption>
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th>Name</th>
+              <th>Student ID</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {{range $index, $element := .PendingUser}}
+            <tr id="{{$index}}">
+              {{with $element}}
+              <td>{{.Username}}</td>
+              <td>{{.Name}}</td>
+              <td>{{.StudentID}}</td>
+              <td><button type="button" onclick="approveuser('{{.Username}}')" class="btn btn-default">Approve</button></td>
+              {{end}}
+            </tr>
+            {{end}}
+          </tbody>
+        </table>
+
+        <script type="text/javascript">
+          // TODO: expand this!
+          function approveuser(username) {
+            $.post("/course/approvemember/{{.Org.Name}}", {"user": username}, function(base){
+              var data = jQuery.parseJSON(base);
+              if (!data.Error) {
+                $("tr#" + username).slideUp(500);
+              } else {
+                $("#pendinguseralert > span.inputtext").text(data.ErrorMsg);
+                $("div#pendinguseralert").show();
+              }
+            });
+          }
+        </script>
+
+      </div>
+    </div>
+	</div>
+{{end}}

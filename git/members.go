@@ -27,9 +27,9 @@ type Member struct {
 	IsTeacher    bool
 	IsAdmin      bool
 
-	Teaching         []string
-	Courses          []string
-	AssistantCourses []string
+	Teaching         map[string]interface{}
+	Courses          map[string]interface{}
+	AssistantCourses map[string]interface{}
 
 	accessToken token
 }
@@ -171,25 +171,43 @@ func (m *Member) ListOrgs() (ls []string, err error) {
 
 func (m *Member) AddOrganization(org Organization) (err error) {
 	if m.Courses == nil {
-		m.Courses = make([]string, 0)
+		m.Courses = make(map[string]interface{})
 	}
 
-	m.Courses = append(m.Courses, org.Name)
-
-	err = org.AddMembership(*m)
+	if _, ok := m.Courses[org.Name]; !ok {
+		m.Courses[org.Name] = nil
+	}
 
 	return
 }
 
 func (m *Member) AddTeachingOrganization(org Organization) (err error) {
-	if m.Courses == nil {
-		m.Teaching = make([]string, 0)
+	if m.Teaching == nil {
+		m.Teaching = make(map[string]interface{})
 	}
 
 	m.IsTeacher = true
-	m.Teaching = append(m.Courses, org.Name)
+	if _, ok := m.Teaching[org.Name]; !ok {
+		m.Teaching[org.Name] = nil
+	}
 
 	return
+}
+
+func (m *Member) AddAssistingOrganization(org Organization) (err error) {
+	if m.AssistantCourses == nil {
+		m.AssistantCourses = make(map[string]interface{})
+	}
+
+	if _, ok := m.AssistantCourses[org.Name]; !ok {
+		m.AssistantCourses[org.Name] = nil
+	}
+
+	return
+}
+
+func (m Member) GetToken() (token string) {
+	return m.accessToken.GetToken()
 }
 
 func ListAllMembers() (out []Member) {

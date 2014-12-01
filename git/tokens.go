@@ -26,7 +26,6 @@ func (m *token) HasTokenInStore() bool {
 }
 
 func (m *token) GetUsernameFromTokenInStore() (user string, err error) {
-	//var user string
 	hash := sha256.Sum256([]byte(m.accessToken))
 	err = tokenstore.ReadGob(fmt.Sprintf("%x", hash), &user, false)
 	return user, err

@@ -1,16 +1,15 @@
 package web
 
 import (
+	"encoding/json"
 	"html/template"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
 
-	"github.com/hfurubotten/autograder/auth"
 	"github.com/hfurubotten/autograder/git"
 	"github.com/hfurubotten/autograder/web/pages"
-	"github.com/hfurubotten/autograder/web/sessions"
 )
 
 type courseview struct {
@@ -20,25 +19,14 @@ type courseview struct {
 }
 
 func newcoursehandler(w http.ResponseWriter, r *http.Request) {
-	if !auth.IsApprovedUser(r) {
-		pages.RedirectTo(w, r, pages.FRONTPAGE, 307)
-		return
-	}
-
-	value, err := sessions.GetSessions(r, sessions.AUTHSESSION, sessions.ACCESSTOKENSESSIONKEY)
+	// Checks if the user is signed in and a teacher.
+	member, err := checkTeacherApproval(w, r, true)
 	if err != nil {
-		log.Println("Error getting access token from sessions: ", err)
-		pages.RedirectTo(w, r, pages.FRONTPAGE, 307)
+		log.Println(err)
 		return
 	}
 
 	view := courseview{}
-
-	member := git.NewMember(value.(string))
-	if !member.IsComplete() {
-		pages.RedirectTo(w, r, pages.REGISTER_REDIRECT, 307)
-		return
-	}
 
 	view.Member = &member
 
@@ -71,15 +59,10 @@ func newcoursehandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func selectorghandler(w http.ResponseWriter, r *http.Request) {
-	if !auth.IsApprovedUser(r) {
-		pages.RedirectTo(w, r, pages.FRONTPAGE, 307)
-		return
-	}
-
-	token, err := sessions.GetSessions(r, sessions.AUTHSESSION, sessions.ACCESSTOKENSESSIONKEY)
+	// Checks if the user is signed in and a teacher.
+	member, err := checkTeacherApproval(w, r, true)
 	if err != nil {
-		log.Println("Error getting access token from sessions: ", err)
-		pages.RedirectTo(w, r, pages.FRONTPAGE, 307)
+		log.Println(err)
 		return
 	}
 
@@ -89,12 +72,6 @@ func selectorghandler(w http.ResponseWriter, r *http.Request) {
 		view.Org = path[4]
 	} else {
 		pages.RedirectTo(w, r, "/course/new", 307)
-		return
-	}
-
-	member := git.NewMember(token.(string))
-	if !member.IsComplete() {
-		pages.RedirectTo(w, r, pages.REGISTER_REDIRECT, 307)
 		return
 	}
 
@@ -121,32 +98,15 @@ func selectorghandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func saveorghandler(w http.ResponseWriter, r *http.Request) {
-	if !auth.IsApprovedUser(r) {
-		pages.RedirectTo(w, r, pages.FRONTPAGE, 307)
-		return
-	}
-
-	if r.FormValue("org") == "" || r.FormValue("indv") == "" || r.FormValue("groups") == "" {
-		log.Println("Missing POST elements request for new course creation. ")
-		pages.RedirectTo(w, r, "/course/new/org", 307)
-		return
-	}
-
-	token, err := sessions.GetSessions(r, sessions.AUTHSESSION, sessions.ACCESSTOKENSESSIONKEY)
+	// Checks if the user is signed in and a teacher.
+	member, err := checkTeacherApproval(w, r, true)
 	if err != nil {
-		log.Println("Error getting access token from sessions: ", err)
-		pages.RedirectTo(w, r, pages.FRONTPAGE, 307)
-		return
-	}
-
-	member := git.NewMember(token.(string))
-	if !member.IsComplete() {
-		pages.RedirectTo(w, r, pages.REGISTER_REDIRECT, 307)
+		log.Println(err)
 		return
 	}
 
 	org := git.NewOrganization(r.FormValue("org"))
-	org.AdminToken = token.(string)
+	org.AdminToken = member.GetToken()
 	org.Private = r.FormValue("private") == "on"
 	org.Description = r.FormValue("desc")
 	groups, err := strconv.Atoi(r.FormValue("groups"))
@@ -166,6 +126,17 @@ func saveorghandler(w http.ResponseWriter, r *http.Request) {
 
 	if r.FormValue("template") == "" {
 		repo := git.RepositoryOptions{
+			Name:     git.COURSE_INFO_NAME,
+			Private:  false,
+			AutoInit: true,
+		}
+		err = org.CreateRepo(repo)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		repo = git.RepositoryOptions{
 			Name:     git.STANDARD_REPO_NAME,
 			Private:  org.Private,
 			AutoInit: true,
@@ -176,7 +147,7 @@ func saveorghandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		repo := git.RepositoryOptions{
+		repo = git.RepositoryOptions{
 			Name:     git.TEST_REPO_NAME,
 			Private:  org.Private,
 			AutoInit: true,
@@ -209,7 +180,7 @@ func saveorghandler(w http.ResponseWriter, r *http.Request) {
 				log.Println(err)
 				return
 			}
-			repo := git.RepositoryOptions{
+			repo = git.RepositoryOptions{
 				Name:     git.GROUPTEST_REPO_NAME,
 				Private:  org.Private,
 				AutoInit: true,
@@ -228,18 +199,24 @@ func saveorghandler(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					log.Println(err)
 				}
-				content := "# Group assignment " + strconv.Itoa(i+1) + " tests"
-				err = org.CreateFile(git.GROUPSTEST_REPO_NAME, path, content, commitmessage)
+				content = "# Group assignment " + strconv.Itoa(i+1) + " tests"
+				err = org.CreateFile(git.GROUPTEST_REPO_NAME, path, content, commitmessage)
 				if err != nil {
 					log.Println(err)
 				}
 			}
 		}
 
+		repos := make([]string, 0)
+		repos = append(repos, git.STANDARD_REPO_NAME, git.COURSE_INFO_NAME)
+		if org.GroupAssignments > 0 {
+			repos = append(repos, git.GROUPS_REPO_NAME)
+		}
+
 		team := git.TeamOptions{
 			Name:       "students",
 			Permission: git.PERMISSION_PULL,
-			RepoNames:  []string{git.STANDARD_REPO_NAME, git.GROUPS_REPO_NAME},
+			RepoNames:  repos,
 		}
 		org.StudentTeamID, err = org.CreateTeam(team)
 		if err != nil {
@@ -273,24 +250,14 @@ func saveorghandler(w http.ResponseWriter, r *http.Request) {
 type newmemberview struct {
 	Member *git.Member
 	Orgs   []git.Organization
+	Org    string
 }
 
 func newcoursememberhandler(w http.ResponseWriter, r *http.Request) {
-	if !auth.IsApprovedUser(r) {
-		pages.RedirectTo(w, r, pages.FRONTPAGE, 307)
-		return
-	}
-
-	token, err := sessions.GetSessions(r, sessions.AUTHSESSION, sessions.ACCESSTOKENSESSIONKEY)
+	// Checks if the user is signed in and a teacher.
+	member, err := checkTeacherApproval(w, r, true)
 	if err != nil {
-		log.Println("Error getting access token from sessions: ", err)
-		pages.RedirectTo(w, r, pages.FRONTPAGE, 307)
-		return
-	}
-
-	member := git.NewMember(token.(string))
-	if !member.IsComplete() {
-		pages.RedirectTo(w, r, pages.REGISTER_REDIRECT, 307)
+		log.Println(err)
 		return
 	}
 
@@ -313,38 +280,281 @@ func newcoursememberhandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func registercoursememberhandler(w http.ResponseWriter, r *http.Request) {
-	if !auth.IsApprovedUser(r) {
-		pages.RedirectTo(w, r, pages.FRONTPAGE, 307)
-		return
-	}
-
-	token, err := sessions.GetSessions(r, sessions.AUTHSESSION, sessions.ACCESSTOKENSESSIONKEY)
+	// Checks if the user is signed in and a teacher.
+	member, err := checkTeacherApproval(w, r, true)
 	if err != nil {
-		log.Println("Error getting access token from sessions: ", err)
-		pages.RedirectTo(w, r, pages.FRONTPAGE, 307)
+		log.Println(err)
 		return
 	}
 
-	member := git.NewMember(token.(string))
-	if !member.IsComplete() {
-		pages.RedirectTo(w, r, pages.REGISTER_REDIRECT, 307)
+	// Gets the org and check if valid
+	orgname := ""
+	if path := strings.Split(r.URL.Path, "/"); len(path) == 4 {
+		if !git.HasOrganization(path[3]) {
+			pages.RedirectTo(w, r, "/course/register", 307)
+			return
+		}
+
+		orgname = path[3]
+	} else {
+		pages.RedirectTo(w, r, "/course/register", 307)
 		return
+	}
+
+	org := git.NewOrganization(orgname)
+
+	err = org.AddMembership(member)
+	if err != nil {
+		log.Println(err)
+	}
+
+	err = org.StickToSystem()
+	if err != nil {
+		log.Println(err)
 	}
 
 	view := newmemberview{}
 	view.Member = &member
-	view.Orgs = git.ListRegisteredOrganizations()
+	view.Org = orgname
 
-	page := "web/html/course-registermember.html"
-	t, err := template.ParseFiles(page)
+	page := "web/html/course-registeredmemberinfo.html"
+	t, err := template.ParseFiles(page, "web/html/template.html")
 	if err != nil {
 		log.Println("Error parsing register html: ", err)
 		return
 	}
 
-	err = t.Execute(w, view)
+	err = t.ExecuteTemplate(w, "template", view)
 	if err != nil {
 		log.Println("Error execute register html: ", err)
 		return
 	}
+}
+
+type teacherspanelview struct {
+	Member      git.Member
+	Org         git.Organization
+	PendingUser map[string]interface{}
+}
+
+func teacherspanelhandler(w http.ResponseWriter, r *http.Request) {
+	// Checks if the user is signed in and a teacher.
+	member, err := checkTeacherApproval(w, r, true)
+	if err != nil {
+		log.Println(err)
+		pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
+		return
+	}
+
+	// Gets the org and check if valid
+	orgname := ""
+	if path := strings.Split(r.URL.Path, "/"); len(path) == 4 {
+		if !git.HasOrganization(path[3]) {
+			pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
+			return
+		}
+
+		orgname = path[3]
+	} else {
+		pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
+		return
+	}
+
+	org := git.NewOrganization(orgname)
+
+	users := org.PendingUser
+
+	repos, err := org.ListRepos()
+	if err != nil {
+		log.Println("Couldn't get all the repos in the organization. ")
+		pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
+		return
+	}
+
+	var status string
+	for username, _ := range users {
+		// TODO: check status up against Github
+		users[username] = git.NewMemberFromUsername(username)
+		status, err = org.GetMembership(users[username].(git.Member))
+
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+
+		if status == "active" {
+			if _, ok := repos[username+"-"+git.STANDARD_REPO_NAME]; !ok && org.IndividualAssignments > 0 {
+				continue
+			} else {
+				delete(users, username)
+			}
+			// TODO: what about group assignments?
+		} else if status == "pending" {
+			delete(users, username)
+		} else {
+			delete(users, username)
+			log.Println("Got a unexpected status back from Github regarding Membership")
+		}
+	}
+
+	view := teacherspanelview{
+		Member:      member,
+		PendingUser: users,
+		Org:         org,
+	}
+
+	page := "web/html/teacherspanel.html"
+	t, err := template.ParseFiles(page, "web/html/template.html")
+	if err != nil {
+		log.Println("Error parsing register html: ", err)
+		return
+	}
+
+	err = t.ExecuteTemplate(w, "template", view)
+	if err != nil {
+		log.Println("Error execute register html: ", err)
+		return
+	}
+}
+
+type approvemembershipview struct {
+	Error    bool
+	ErrorMsg string
+	Approved bool
+	User     string
+}
+
+func approvecoursemembershiphandler(w http.ResponseWriter, r *http.Request) {
+	enc := json.NewEncoder(w)
+	view := approvemembershipview{}
+
+	// Checks if the user is signed in and a teacher.
+	/*member*/ _, err := checkTeacherApproval(w, r, false)
+	if err != nil {
+		log.Println(err)
+
+		view.Error = true
+		view.ErrorMsg = "You are not singed in or not a teacher."
+
+		enc.Encode(view)
+		return
+	}
+
+	// Gets the org and check if valid
+	orgname := ""
+	if path := strings.Split(r.URL.Path, "/"); len(path) == 4 {
+		if !git.HasOrganization(path[3]) {
+			pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
+			return
+		}
+
+		orgname = path[3]
+	} else {
+		pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
+		return
+	}
+
+	username := r.FormValue("user")
+	if username == "" {
+		view.Error = true
+		view.ErrorMsg = "Username was not set in the request."
+
+		enc.Encode(view)
+		return
+	}
+
+	org := git.NewOrganization(orgname)
+
+	teams, err := org.ListTeams()
+	if err != nil {
+		log.Println(err)
+
+		view.Error = true
+		view.ErrorMsg = "Error communicating with Github. Can't get list teams."
+
+		enc.Encode(view)
+		return
+	}
+
+	if org.IndividualAssignments > 0 {
+		repo := git.RepositoryOptions{
+			Name:     username + "-" + git.STANDARD_REPO_NAME,
+			Private:  org.Private,
+			AutoInit: true,
+		}
+		err = org.CreateRepo(repo)
+		if err != nil {
+			log.Println(err)
+
+			view.Error = true
+			view.ErrorMsg = "Error communicating with Github. Couldn't create repository."
+
+			enc.Encode(view)
+			return
+		}
+
+		if t, ok := teams[username]; !ok {
+			newteam := git.TeamOptions{
+				Name:       username,
+				Permission: git.PERMISSION_PUSH,
+				RepoNames:  []string{username + "-" + git.STANDARD_REPO_NAME},
+			}
+
+			teamID, err := org.CreateTeam(newteam)
+			if err != nil {
+				log.Println(err)
+
+				view.Error = true
+				view.ErrorMsg = "Error communicating with Github. Can't create team."
+
+				enc.Encode(view)
+				return
+			}
+
+			err = org.AddMemberToTeam(teamID, username)
+			if err != nil {
+				log.Println(err)
+
+				view.Error = true
+				view.ErrorMsg = "Error communicating with Github. Can't add member to team."
+
+				enc.Encode(view)
+				return
+			}
+		} else {
+			err = org.LinkRepoToTeam(t.ID, username+"-"+git.STANDARD_REPO_NAME)
+			if err != nil {
+				log.Println(err)
+
+				view.Error = true
+				view.ErrorMsg = "Error communicating with Github. Can't link repo to team."
+
+				enc.Encode(view)
+				return
+			}
+
+			err = org.AddMemberToTeam(t.ID, username)
+			if err != nil {
+				log.Println(err)
+
+				view.Error = true
+				view.ErrorMsg = "Error communicating with Github. Can't add member to team."
+
+				enc.Encode(view)
+				return
+			}
+		}
+	}
+
+	delete(org.PendingUser, username)
+	org.StickToSystem()
+
+	view.Error = false
+	view.Approved = true
+	view.User = username
+	enc.Encode(view)
+}
+
+func maincoursepagehandler(w http.ResponseWriter, r *http.Request) {
+
 }

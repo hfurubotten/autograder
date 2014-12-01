@@ -1,8 +1,8 @@
 package sessions
 
-import(
-	"net/http"
+import (
 	"errors"
+	"net/http"
 
 	"github.com/gorilla/sessions"
 )
@@ -11,7 +11,6 @@ var store = sessions.NewCookieStore([]byte("something-very-secret"))
 
 func init() {
 	store.Options = &sessions.Options{
-		Path: "sessions/",
 		MaxAge: 86400,
 	}
 }
@@ -34,7 +33,7 @@ func SetSessions(w http.ResponseWriter, r *http.Request, sessionsname string, ke
 	session.Values[key] = value
 	err = session.Save(r, w)
 
-	return 
+	return
 }
 
 func GetSessions(r *http.Request, sessionsname string, key interface{}) (interface{}, error) {

@@ -9,7 +9,6 @@ import (
 
 	"github.com/hfurubotten/autograder/auth"
 	"github.com/hfurubotten/autograder/git"
-	"github.com/hfurubotten/autograder/web/pages"
 	"github.com/hfurubotten/autograder/web/sessions"
 )
 
@@ -19,25 +18,12 @@ type adminview struct {
 }
 
 func adminhandler(w http.ResponseWriter, r *http.Request) {
-	if !auth.IsApprovedUser(r) {
-		pages.RedirectTo(w, r, pages.FRONTPAGE, 307)
-		return
-	}
-
-	value, err := sessions.GetSessions(r, sessions.AUTHSESSION, sessions.ACCESSTOKENSESSIONKEY)
+	member, err := checkAdminApproval(w, r, true)
 	if err != nil {
-		log.Println("Error getting access token from sessions: ", err)
-		pages.RedirectTo(w, r, pages.FRONTPAGE, 307)
+		log.Println(err)
 		return
 	}
 
-	member := git.NewMember(value.(string))
-
-	if !member.IsAdmin {
-		log.Println("Unautorized request of admin page.")
-		pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
-		return
-	}
 	view := adminview{}
 	view.Member = &member
 	view.Members = git.ListAllMembers()
@@ -215,11 +201,11 @@ func setteacherhandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	msg := struct {
-		User  string
-		Admin bool
+		User    string
+		Teacher bool
 	}{
-		User:  m.Username,
-		Admin: m.IsAdmin,
+		User:    m.Username,
+		Teacher: m.IsTeacher,
 	}
 	err = enc.Encode(msg)
 	return

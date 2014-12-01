@@ -24,7 +24,7 @@
                   <span class="icon-bar"></span>
                   <span class="icon-bar"></span>
                 </button>
-                <a class="navbar-brand" href="#">UIS Autograder</a>
+                <a class="navbar-brand" href="/home">UIS Autograder</a>
             </div>
             <div class="collapse navbar-collapse">
               <ul class="nav navbar-nav">
@@ -33,8 +33,8 @@
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">Courses <span class="caret"></span></a>
                     <ul class="dropdown-menu" role="menu">
                       <li><p class="navbar-text">Select a course:</p></li>
-                      {{range .Courses}}
-                      <li><a href="#">{{.}}</a></li>
+                      {{range $index, $element := .Courses}}
+                      <li><a href="/course/{{$index}}">{{$index}}</a></li>
                       {{end}}
                       <li class="divider"></li>
                       <li><a href="/course/register">New course</a></li>
@@ -45,15 +45,17 @@
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">Teacher panel <span class="caret"></span></a>
                     <ul class="dropdown-menu" role="menu">
                       <li><p class="navbar-text">Select a course:</p></li>
-                      {{range .Teaching}}
-                      <li><a href="#">{{.}}</a></li>
+                      {{range $index, $element := .Teaching}}
+                      <li><a href="/course/teacher/{{$index}}">{{$index}}</a></li>
                       {{end}}
                       <li class="divider"></li>
                       <li><a href="/course/new">New course</a></li>
                     </ul>
                   </li>
                   {{end}}
+                  {{if .IsAdmin}}
                   <li><a href="/admin">Admin panel</a></li>
+                  {{end}}
                   <li><a href="/help">Help</a></li>
                 </ul>
                 <ul class="nav navbar-nav navbar-right">

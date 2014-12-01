@@ -70,7 +70,7 @@
 			$("tr#" + username + " > td > button.teacher").text("pending")
 			$.post("/admin/teacher", {"user": username, "teacher": false}, function(base){
 				var data = jQuery.parseJSON(base);
-				if (data.Admin){
+				if (data.Teacher){
 					$("tr#" + data.User + " > td > button.teacher").text("Yes")
 				} else {
 					$("tr#" + data.User + " > td > button.teacher").text("No")
@@ -82,7 +82,7 @@
 			$("tr#" + username + " > td > button.teacher").text("pending")
 			$.post("/admin/teacher", {"user": username, "teacher": true}, function(base){
 				var data = jQuery.parseJSON(base);
-				if (data.Admin){
+				if (data.Teacher){
 					$("tr#" + data.User + " > td > button.teacher").text("Yes")
 				} else {
 					$("tr#" + data.User + " > td > button.teacher").text("No")
