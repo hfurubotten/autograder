@@ -7,14 +7,15 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/hfurubotten/autograder/global"
 	"github.com/hfurubotten/autograder/web/pages"
 	"github.com/hfurubotten/autograder/web/sessions"
 )
 
 // sets up the github as the oauth provider. To get the variables and functions loaded into the standard that is used, use the init method. This will set this as soon as the package is loaded the first time. Replace or comment out the init method to use another oath provider.
 func init() {
-	Clientid = "2e2c5b20f954de037b8f"
-	clientsecret = "f69a12873ea33f365523b3b5adb040e443df48ae"
+	Clientid = global.OAuth_ClientID         //"2e2c5b20f954de037b8f"
+	clientsecret = global.OAuth_ClientSecret //"f69a12873ea33f365523b3b5adb040e443df48ae"
 	Scope = "user,admin:org,repo,admin:repo_hook"
 	RedirectURL = "https://github.com/login/oauth/authorize"
 
@@ -31,7 +32,7 @@ func github_oauthhandler(w http.ResponseWriter, r *http.Request) {
 		if len(errstr) > 0 {
 			log.Println("OAuth error: " + errstr)
 			// redirect to home page
-			return 
+			return
 		}
 
 		postdata := []byte("client_id=" + Clientid + "&client_secret=" + clientsecret + "&code=" + code)
@@ -73,7 +74,7 @@ func github_oauthhandler(w http.ResponseWriter, r *http.Request) {
 		if len(errstr) > 0 {
 			log.Println("Access token error: " + errstr)
 			// redirect to home page
-			return 
+			return
 		} else {
 			approved = true
 		}

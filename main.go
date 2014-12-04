@@ -10,9 +10,11 @@ import (
 )
 
 var (
-	admin    = flag.String("admin", "", "Sets up a admin user up agains the system. The value has to be a valid Github username.")
-	hostname = flag.String("hostname", "", "Give the hostname for the autogradersystem.")
-	help     = flag.Bool("help", false, "List the startup options for the autograder.")
+	admin         = flag.String("admin", "", "Sets up a admin user up agains the system. The value has to be a valid Github username.")
+	hostname      = flag.String("hostname", "", "Give the hostname for the autogradersystem.")
+	client_ID     = flag.String("clientid", "", "The application ID used in the OAuth process against Github. This can be generated at your settings page at Github.")
+	client_secret = flag.String("secret", "", "The secret application code used in the OAuth process against Github. This can be generated at your settings page at Github.")
+	help          = flag.Bool("help", false, "List the startup options for the autograder.")
 )
 
 var optionstore = diskv.New(diskv.Options{
@@ -44,6 +46,32 @@ func main() {
 		}
 
 		global.Hostname = hname
+	}
+
+	if *client_ID != "" && *client_secret != "" {
+		optionstore.WriteGob("OAuthID", *client_ID)
+		optionstore.WriteGob("OAuthSecret", *client_secret)
+		global.OAuth_ClientID = *client_ID
+		global.OAuth_ClientSecret = *client_secret
+	} else {
+		if !optionstore.Has("OAuthID") && !optionstore.Has("OAuthSecret") {
+			log.Fatal("Missing OAuth details, set this the first time you start the system. See help pages on how to do this.")
+		}
+
+		var id string
+		var secret string
+		err = optionstore.ReadGob("OAuthID", &id, false)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		err = optionstore.ReadGob("OAuthSecret", &secret, false)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		global.OAuth_ClientID = id
+		global.OAuth_ClientSecret = secret
 	}
 
 	if *admin != "" {
