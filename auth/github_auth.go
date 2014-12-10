@@ -14,8 +14,8 @@ import (
 
 // sets up the github as the oauth provider. To get the variables and functions loaded into the standard that is used, use the init method. This will set this as soon as the package is loaded the first time. Replace or comment out the init method to use another oath provider.
 func init() {
-	Clientid = global.OAuth_ClientID         //"2e2c5b20f954de037b8f"
-	clientsecret = global.OAuth_ClientSecret //"f69a12873ea33f365523b3b5adb040e443df48ae"
+	Clientid = "2e2c5b20f954de037b8f"
+	clientsecret = "f69a12873ea33f365523b3b5adb040e443df48ae"
 	Scope = "user,admin:org,repo,admin:repo_hook"
 	RedirectURL = "https://github.com/login/oauth/authorize"
 
@@ -24,6 +24,10 @@ func init() {
 
 func github_oauthhandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
+		if global.OAuth_ClientID != "" && global.OAuth_ClientSecret != "" {
+			Clientid = global.OAuth_ClientID
+			clientsecret = global.OAuth_ClientSecret
+		}
 		getvalues := r.URL.Query()
 
 		code := getvalues.Get("code")
