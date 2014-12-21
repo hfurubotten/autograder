@@ -11,7 +11,7 @@ import (
 
 var (
 	admin         = flag.String("admin", "", "Sets up a admin user up agains the system. The value has to be a valid Github username.")
-	hostname      = flag.String("hostname", "", "Give the hostname for the autogradersystem.")
+	hostname      = flag.String("domain", "", "Give the domain name for the autogradersystem.")
 	client_ID     = flag.String("clientid", "", "The application ID used in the OAuth process against Github. This can be generated at your settings page at Github.")
 	client_secret = flag.String("secret", "", "The secret application code used in the OAuth process against Github. This can be generated at your settings page at Github.")
 	help          = flag.Bool("help", false, "List the startup options for the autograder.")
@@ -36,7 +36,7 @@ func main() {
 		global.Hostname = *hostname
 	} else {
 		if !optionstore.Has("hostname") {
-			log.Fatal("Missing hostname, set this the first time you start the system.")
+			log.Fatal("Missing domain name, set this the first time you start the system.")
 		}
 
 		var hname string
@@ -55,7 +55,31 @@ func main() {
 		global.OAuth_ClientSecret = *client_secret
 	} else {
 		if !optionstore.Has("OAuthID") && !optionstore.Has("OAuthSecret") {
-			log.Fatal("Missing OAuth details, set this the first time you start the system. See help pages on how to do this.")
+			log.Println("Missing OAuth details, set this the first time you start the system.")
+			log.Println("To register a new application at GitHub, go to this address to generate OAuth tokens: https://github.com/settings/applications/new")
+			log.Println("If you already have OAuth codes, you can find then on this address: https://github.com/settings/applications")
+			log.Println("The Homepave URL is the domain name you are using to serve the system.")
+			log.Fatal("The Authorization callback URL is your domainname with the path /oauth. (http://example.com/oauth")
+
+			// stop := make(chan int)
+
+			// go web.FakeServer(80, stop)
+
+			// fmt.Print("OAuth ID: ")
+			// scanner := bufio.NewScanner(os.Stdin)
+			// scanner.Scan()
+			// id = strings.TrimSpace(scanner.Text())
+
+			// fmt.Print("OAuth secret: ")
+			// scanner = bufio.NewScanner(os.Stdin)
+			// scanner.Scan()
+			// secret = strings.TrimSpace(scanner.Text())
+
+			// stop <- 1
+
+			// //store them
+			// optionstore.WriteGob("OAuthID", id)
+			// optionstore.WriteGob("OAuthSecret", secret)
 		}
 
 		var id string
