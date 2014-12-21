@@ -222,3 +222,7 @@ func ListAllMembers() (out []Member) {
 
 	return
 }
+
+func HasMember(username string) bool {
+	return userstore.Has(username)
+}
