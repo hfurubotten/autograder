@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	ci "github.com/hfurubotten/autograder/ci"
 	"github.com/hfurubotten/autograder/git"
 	"github.com/hfurubotten/autograder/web/pages"
 )
@@ -45,13 +46,13 @@ func newcoursehandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	t, err := template.ParseFiles(page)
+	t, err := template.ParseFiles(page, "web/html/template.html")
 	if err != nil {
 		log.Println("Error parsing register html: ", err)
 		return
 	}
 
-	err = t.Execute(w, view)
+	err = t.ExecuteTemplate(w, "template", view)
 	if err != nil {
 		log.Println("Error execute register html: ", err)
 		return
@@ -84,13 +85,13 @@ func selectorghandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	page := "web/html/newcourse-register.html"
-	t, err := template.ParseFiles(page)
+	t, err := template.ParseFiles(page, "web/html/template.html")
 	if err != nil {
 		log.Println("Error parsing register html: ", err)
 		return
 	}
 
-	err = t.Execute(w, view)
+	err = t.ExecuteTemplate(w, "template", view)
 	if err != nil {
 		log.Println("Error execute register html: ", err)
 		return
@@ -129,6 +130,7 @@ func saveorghandler(w http.ResponseWriter, r *http.Request) {
 			Name:     git.COURSE_INFO_NAME,
 			Private:  false,
 			AutoInit: true,
+			Hook:     false,
 		}
 		err = org.CreateRepo(repo)
 		if err != nil {
@@ -140,6 +142,7 @@ func saveorghandler(w http.ResponseWriter, r *http.Request) {
 			Name:     git.STANDARD_REPO_NAME,
 			Private:  org.Private,
 			AutoInit: true,
+			Hook:     false,
 		}
 		err = org.CreateRepo(repo)
 		if err != nil {
@@ -151,6 +154,7 @@ func saveorghandler(w http.ResponseWriter, r *http.Request) {
 			Name:     git.TEST_REPO_NAME,
 			Private:  org.Private,
 			AutoInit: true,
+			Hook:     false,
 		}
 		err = org.CreateRepo(repo)
 		if err != nil {
@@ -207,29 +211,148 @@ func saveorghandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		repos := make([]string, 0)
-		repos = append(repos, git.STANDARD_REPO_NAME, git.COURSE_INFO_NAME)
-		if org.GroupAssignments > 0 {
-			repos = append(repos, git.GROUPS_REPO_NAME)
-		}
-
-		team := git.TeamOptions{
-			Name:       "students",
-			Permission: git.PERMISSION_PULL,
-			RepoNames:  repos,
-		}
-		org.StudentTeamID, err = org.CreateTeam(team)
-		if err != nil {
-			log.Println(err)
-		}
-
 	} else {
-		org.Fork(r.FormValue("template"), git.STANDARD_REPO_NAME)
+		var repo git.RepositoryOptions
+
+		// Tries to fork the course-info repo, if it fails it will create a blank one.
+		err = org.Fork(r.FormValue("template"), git.COURSE_INFO_NAME)
+		if err != nil {
+			repo = git.RepositoryOptions{
+				Name:     git.COURSE_INFO_NAME,
+				Private:  org.Private,
+				AutoInit: true,
+				Hook:     false,
+			}
+			err = org.CreateRepo(repo)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+		}
+
+		// Tries to fork the labs repo, if it fails it will create a blank one.
+		err = org.Fork(r.FormValue("template"), git.STANDARD_REPO_NAME)
+		if err != nil {
+			repo = git.RepositoryOptions{
+				Name:     git.STANDARD_REPO_NAME,
+				Private:  org.Private,
+				AutoInit: true,
+				Hook:     false,
+			}
+			err = org.CreateRepo(repo)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			for i := 0; i < org.IndividualAssignments; i++ {
+				path := "lab" + strconv.Itoa(i+1) + "/README.md"
+				commitmessage := "Adding readme file for lab assignment " + strconv.Itoa(i+1)
+				content := "# Lab assignment " + strconv.Itoa(i+1)
+				err = org.CreateFile(git.STANDARD_REPO_NAME, path, content, commitmessage)
+				if err != nil {
+					log.Println(err)
+				}
+			}
+		}
+
+		// Tries to fork the test-labs repo, if it fails it will create a blank one.
+		err = org.Fork(r.FormValue("template"), git.TEST_REPO_NAME)
+		if err != nil {
+			repo = git.RepositoryOptions{
+				Name:     git.TEST_REPO_NAME,
+				Private:  org.Private,
+				AutoInit: true,
+				Hook:     false,
+			}
+			err = org.CreateRepo(repo)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			for i := 0; i < org.IndividualAssignments; i++ {
+				path := "lab" + strconv.Itoa(i+1) + "/README.md"
+				commitmessage := "Adding readme file for lab assignment " + strconv.Itoa(i+1)
+				content := "# Lab assignment " + strconv.Itoa(i+1)
+				err = org.CreateFile(git.TEST_REPO_NAME, path, content, commitmessage)
+				if err != nil {
+					log.Println(err)
+				}
+			}
+		}
+
 		if org.GroupAssignments > 0 {
-			org.Fork(r.FormValue("template"), git.STANDARD_REPO_NAME)
+			err = org.Fork(r.FormValue("template"), git.GROUPS_REPO_NAME)
+			if err != nil {
+				repo = git.RepositoryOptions{
+					Name:     git.GROUPS_REPO_NAME,
+					Private:  org.Private,
+					AutoInit: true,
+					Hook:     false,
+				}
+				err = org.CreateRepo(repo)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+
+				for i := 0; i < org.IndividualAssignments; i++ {
+					path := "lab" + strconv.Itoa(i+1) + "/README.md"
+					commitmessage := "Adding readme file for lab assignment " + strconv.Itoa(i+1)
+					content := "# Group lab assignment " + strconv.Itoa(i+1)
+					err = org.CreateFile(git.GROUPS_REPO_NAME, path, content, commitmessage)
+					if err != nil {
+						log.Println(err)
+					}
+				}
+			}
+
+			err = org.Fork(r.FormValue("template"), git.GROUPTEST_REPO_NAME)
+			if err != nil {
+				repo = git.RepositoryOptions{
+					Name:     git.GROUPTEST_REPO_NAME,
+					Private:  org.Private,
+					AutoInit: true,
+					Hook:     false,
+				}
+				err = org.CreateRepo(repo)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+
+				for i := 0; i < org.IndividualAssignments; i++ {
+					path := "lab" + strconv.Itoa(i+1) + "/README.md"
+					commitmessage := "Adding readme file for lab assignment " + strconv.Itoa(i+1)
+					content := "# Group lab assignment " + strconv.Itoa(i+1)
+					err = org.CreateFile(git.GROUPTEST_REPO_NAME, path, content, commitmessage)
+					if err != nil {
+						log.Println(err)
+					}
+				}
+			}
 		}
 	}
 
+	// Creates the student team
+	repos := make([]string, 0)
+	repos = append(repos, git.STANDARD_REPO_NAME, git.COURSE_INFO_NAME)
+	if org.GroupAssignments > 0 {
+		repos = append(repos, git.GROUPS_REPO_NAME)
+	}
+
+	team := git.TeamOptions{
+		Name:       "students",
+		Permission: git.PERMISSION_PULL,
+		RepoNames:  repos,
+	}
+	org.StudentTeamID, err = org.CreateTeam(team)
+	if err != nil {
+		log.Println(err)
+	}
+
+	// Saved the new organization info
 	err = org.StickToSystem()
 	if err != nil {
 		log.Println(err)
@@ -481,6 +604,7 @@ func approvecoursemembershiphandler(w http.ResponseWriter, r *http.Request) {
 			Name:     username + "-" + git.STANDARD_REPO_NAME,
 			Private:  org.Private,
 			AutoInit: true,
+			Hook:     true,
 		}
 		err = org.CreateRepo(repo)
 		if err != nil {
@@ -547,6 +671,7 @@ func approvecoursemembershiphandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	delete(org.PendingUser, username)
+	org.Members[username] = nil
 	org.StickToSystem()
 
 	view.Error = false
@@ -555,6 +680,56 @@ func approvecoursemembershiphandler(w http.ResponseWriter, r *http.Request) {
 	enc.Encode(view)
 }
 
-func maincoursepagehandler(w http.ResponseWriter, r *http.Request) {
+type maincourseview struct {
+	Member git.Member
+	CILogs []string
+	Org    git.Organization
+}
 
+func maincoursepagehandler(w http.ResponseWriter, r *http.Request) {
+	// Checks if the user is signed in and a teacher.
+	member, err := checkMemberApproval(w, r, true)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	// Gets the org and check if valid
+	orgname := ""
+	if path := strings.Split(r.URL.Path, "/"); len(path) == 3 {
+		if !git.HasOrganization(path[2]) {
+			pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
+			return
+		}
+
+		orgname = path[2]
+	} else {
+		pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
+		return
+	}
+
+	org := git.NewOrganization(orgname)
+
+	logs, err := ci.GetIntegationResults(org.Name, member.Username)
+	if err != nil {
+		logs = []string{"There is no integration logs yet! Implement some code and push them, we will take it from there."}
+	}
+
+	view := maincourseview{}
+	view.Member = member
+	view.Org = org
+	view.CILogs = logs
+
+	page := "web/html/maincoursepage.html"
+	t, err := template.ParseFiles(page, "web/html/template.html")
+	if err != nil {
+		log.Println("Error parsing register html: ", err)
+		return
+	}
+
+	err = t.ExecuteTemplate(w, "template", view)
+	if err != nil {
+		log.Println("Error execute register html: ", err)
+		return
+	}
 }

@@ -4,11 +4,11 @@
   	<div class="row">
       <div class="col-md-12">
         {{with .Org}}
-        <h1>{{.Name}}</h1>
-        <p>Something...</p>
+        <h1>Teachers pannel</h1>
+        <h2>Course: {{.Name}}</h2>
 
         <!-- input form -->
-          <form class="form-horizontal" role="form" action="/course/create" method="POST">
+          <form class="form-horizontal" role="form" action="/course/update" method="POST">
             <div class="form-group">
               <label for="org" class="col-sm-3 control-label">Organization *</label>
               <div class="col-sm-9">
@@ -56,7 +56,27 @@
               <div class="form-group">
               <label for="org" class="col-sm-3 control-label">Lab assignment {{$i}}</label>
               <div class="col-sm-9">
-                <input type="text" class="form-control" id="org" placeholder="{{$element}}">
+                <input type="text" class="form-control" id="org" name="lab{{$i}}" placeholder="{{$element}}" value="{{$element}}">
+              </div>
+            </div>
+            {{end}}
+
+            <div class="form-group">
+              <div class="col-sm-offset-3 col-sm-9">
+                <button type="submit" class="btn btn-default">Update folder info</button>
+              </div>
+            </div>
+            {{end}}
+
+            {{if gt .GroupAssignments 0 }}
+            <h3>Group assignment folder names</h3>
+            <p>If you change the names of the folders containing the different group assignments, this has to be marked for the automatic system to recognize this. It needs to know which folder to use. The standard folder name is "group#", where the # is replaced by the number in the sequence of assignments it is. Example of this is "group1" for the first assignment. Fill in the folder name below and hit the update button to submit the changes. </p>
+            
+            {{range $i, $element := .GroupLabFolders}}
+              <div class="form-group">
+              <label for="org" class="col-sm-3 control-label">Group assignment {{$i}}</label>
+              <div class="col-sm-9">
+                <input type="text" class="form-control" id="org" name="group{{$i}}" placeholder="{{$element}}" value="{{$element}}">
               </div>
             </div>
             {{end}}
@@ -68,10 +88,20 @@
             </div>
             {{end}}
           </form>
+
+        {{if gt .GroupAssignments 0}}
+        <h3>Pending groups</h3>
+        <p></p>
+
+        
+
+        {{end}}
+
+
         {{end}}
 
         <h3>Pending students</h3>
-        <p>Pending students are a list of students that needs approval to get </p>
+        <p>Pending students are a list of students that needs approval to get access to the course. Students already have access to the course material, but dont have their own repository. Approve students to create repositories for them and give them access to creating groups.</p>
 
         <div class="alert alert-danger alert-dismissible" role="alert" id="pendinguseralert" style="display: none">
           <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
@@ -79,7 +109,6 @@
         </div>
 
           <table class="table table-striped">
-          <caption>Members</caption>
           <thead>
             <tr>
               <th>Username</th>

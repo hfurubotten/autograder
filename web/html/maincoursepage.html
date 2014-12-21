@@ -1,0 +1,19 @@
+{{define "title"}} UIS Autograder {{end}}
+{{define "body"}}
+
+      <div class="container">
+        <div class="row">
+            <h1>{{.Org.Name}}</h1>
+            <p>From your repository there will be triggered a build each time you push new code up. This code will be tested agains what the teacher is expecting the solution to be. Check out how far you have gotten below.</p>
+            <h3>Latest build log</h3>
+
+            <div class="well">            
+              <code>
+                {{range .CILogs}}
+                  # {{.}} <br> 
+                {{end}}
+              </code>
+            </div>
+        </div>
+      </div>
+{{end}}
