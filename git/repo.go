@@ -5,6 +5,7 @@ type RepositoryOptions struct {
 	Private  bool
 	TeamID   int
 	AutoInit bool
+	Hook     bool
 }
 
 type Repo struct {

@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"io"
 	"log"
+	//"net"
 	"net/http"
 	"os"
 	"strconv"
@@ -22,6 +23,33 @@ type Webserver struct {
 func NewWebServer(port int) Webserver {
 	return Webserver{port}
 }
+
+// func FakeServer(port int, stopchan <-chan int) {
+// 	tcpAddr, err := net.ResolveTCPAddr("tcp", ":"+strconv.Itoa(port))
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	listener, err := net.ListenTCP("tcp", tcpAddr)
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+
+// 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+
+// 	})
+// 	http.HandleFunc("/oauth", func(w http.ResponseWriter, r *http.Request) {
+
+// 	})
+
+// 	err = http.Serve(listener, nil)
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+
+// 	<-stopchan
+
+// 	listener.Close()
+// }
 
 func (ws Webserver) Start() {
 
@@ -48,6 +76,7 @@ func (ws Webserver) Start() {
 	http.HandleFunc("/admin/teacher", setteacherhandler)
 	http.HandleFunc("/admin/user", setadminhandler)
 	http.HandleFunc("/course/approvemember/", approvecoursemembershiphandler)
+	http.HandleFunc("/event/hook", webhookeventhandler)
 
 	// static files
 	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("web/js/"))))

@@ -8,6 +8,7 @@ import (
 
 	"code.google.com/p/goauth2/oauth"
 	"github.com/google/go-github/github"
+	"github.com/hfurubotten/autograder/global"
 	"github.com/hfurubotten/diskv"
 )
 
@@ -33,6 +34,8 @@ type Organization struct {
 	Private       bool
 
 	PendingUser map[string]interface{}
+	Members     map[string]interface{}
+	Teachers    map[string]interface{}
 
 	AdminToken  string
 	githubadmin *github.Client
@@ -44,7 +47,14 @@ func NewOrganization(name string) Organization {
 		orgstore.ReadGob(name, &org, false)
 		return org
 	}
-	return Organization{Name: name}
+	return Organization{
+		Name:                 name,
+		IndividualLabFolders: make(map[int]string),
+		GroupLabFolders:      make(map[int]string),
+		PendingUser:          make(map[string]interface{}),
+		Members:              make(map[string]interface{}),
+		Teachers:             make(map[string]interface{}),
+	}
 }
 
 func (o *Organization) connectAdminToGithub() error {
@@ -177,6 +187,22 @@ func (o *Organization) CreateRepo(opt RepositoryOptions) (err error) {
 	}
 
 	_, _, err = o.githubadmin.Repositories.Create(o.Name, repo)
+	if err != nil {
+		return
+	}
+
+	config := make(map[string]interface{})
+	config["url"] = global.Hostname + "/event/hook"
+	config["content_type"] = "json"
+
+	hook := github.Hook{
+		Name:   github.String("web"),
+		Config: config,
+	}
+
+	if opt.Hook {
+		_, _, err = o.githubadmin.Repositories.CreateHook(o.Name, opt.Name, &hook)
+	}
 	return
 }
 
