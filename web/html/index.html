@@ -11,9 +11,41 @@
 
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+
+    <style type="text/css">
+      .marketing .col-lg-4 {
+        margin-bottom: 20px;
+        text-align: center;
+      }
+      .marketing h2 {
+        font-weight: normal;
+      }
+      .marketing .col-lg-4 p {
+        margin-right: 10px;
+        margin-left: 10px;
+      }
+      .featurette-divider {
+        margin: 80px 0; /* Space out the Bootstrap <hr> more */
+      }
+      /* Thin out the marketing headings */
+.featurette-heading {
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: -1px;
+}
+
+/* RESPONSIVE CSS
+-------------------------------------------------- */
+
+@media (min-width: 768px) {
+  .featurette-heading {
+    font-size: 50px;
+  }
+}
+    </style>
 	</head>
-	<body>
-		<div class="navbar navbar-fixed-top navbar-inverse" role="navigation">
+	<body style="padding-top: 51px;">
+		<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
       		<div class="container">
         		<div class="navbar-header">
           			<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
@@ -37,8 +69,101 @@
     	</div><!-- /.navbar -->
 
 
-    	<div class="container" style="padding-top: 51px;">
-			<p>This is html</p>
+      <div class="jumbotron">
+        <div class="container">
+          <h1>Automated student feedback</h1>
+          <p><strong>Autograder </strong> is an automated feedback system created to give students an instantanuous feedback on their work and teachers a valuable tool in grading of lab assignments. </p>
+          <p><a class="btn btn-primary btn-lg" href="#autograder" role="button">Learn more &raquo;</a></p>
+        </div>
+      </div>
+
+    	<div class="container">
+
+        <div class="row marketing">
+          <div class="col-lg-4">
+            <img class="img-circle" src="/img/GitHub-Mark/PNG/GitHub-Mark-120px-plus.png" alt="GitHub logo" style="width: 140px; height: 140px;">
+            <h2>Integrated with GitHub</h2>
+            <p><!----> Manage all students and courses on Github. Providing each student with their own repository, teachers with a common assignment and information repository. All taken care of automatically.</p>
+            <p><a class="btn btn-default" href="#versioncontrol" role="button">View details &raquo;</a></p>
+          </div>
+          <div class="col-lg-4">
+            <!-- Image from http://www.texample.net/tikz/examples/overlapping-arrows/ -->
+            <img class="img-circle" src="/img/overlapping-arrows.png" alt="" style="width: 140px; height: 140px;">
+            <h2>Continuous integration</h2>
+            <p><!-- --> Instantanuous feedback to studens on how well their code preforms through continuous integration. Students can see where they need to work more and what material to focus on. All customaizable for the teachers. </p>
+            <p><a class="btn btn-default" href="#ci" role="button">View details &raquo;</a></p>
+          </div>
+          <div class="col-lg-4">
+            <img class="img-circle" src="/img/Aplus2.png" alt="A+ image" style="width: 140px; height: 140px;">
+            <h2>Grading</h2>
+            <p><!----> On due date the stuents already have their code ready handed on through GitHub. All accessable for the teachers. Together with latest build log makes grading more powerfull and easy.</p>
+            <p><a class="btn btn-default" href="#grading" role="button">View details &raquo;</a></p>
+          </div>
+        </div>
+
+
+        <section id="autograder">
+
+        <hr class="featurette-divider">
+          <div class="row featurette">
+            <div class="col-md-7">
+              <h2 class="featurette-heading">Autograder: <span class="text-muted">Automated student feedback.</span></h2>
+              <p class="lead">Autograder is a project created to give the students fast feedback on their lab work and prepre them on use of tools used in the industry. Autograder builds upon version control systems and continuous integration. When students upload code to their repositories, they can automatically build their code and get feedback from test supplied from teachers. when grading assignments, teachers can access this and have a valueble tool in the grading process. </p>
+            </div>
+            <div class="col-md-5">
+              <img class="featurette-image img-responsive" data-src="holder.js/500x500/auto" alt="Generic placeholder image">
+            </div>
+          </div>
+        </section>
+
+        <section id="versioncontrol">
+        
+        <hr class="featurette-divider">
+        <div class="row featurette">
+          <div class="col-md-5">
+            <img class="featurette-image img-responsive" data-src="holder.js/500x500/auto" alt="Generic placeholder image">
+          </div>
+          <div class="col-md-7">
+            <h2 class="featurette-heading">Integrated with github: <span class="text-muted">Manageing courses and students.</span></h2>
+            <p class="lead">Within a course all students gets organized through an organization on GitHub. In this organization students gets access to their own repository. With this repository the students can store their code while working on it and hand in their code for review or grading by a teacher.</p>
+          </div>
+        </div>
+        </section>
+
+        <section id="ci">
+        
+        <hr class="featurette-divider">
+        <div class="row featurette">
+          <div class="col-md-7">
+            <h2 class="featurette-heading">Continuous integration: <span class="text-muted">instantanuous build and tests students code. </span></h2>
+            <p class="lead">As code gets pushed to to github, an automatic build process, defined by the teacher, generate feedback on how well latest code preforms. When the build process is completed, students imidiatly gets access to this feedback on their personal course page. Tests defined by either teachers or students will be processed and tell students about their progress on the assignments.</p>
+          </div>
+          <div class="col-md-5">
+            <img class="featurette-image img-responsive" data-src="holder.js/500x500/auto" alt="Generic placeholder image">
+          </div>
+        </div>
+        </section>
+
+        <section id="grading">
+
+        <hr class="featurette-divider">
+        <div class="row featurette">
+          <div class="col-md-5">
+            <img class="featurette-image img-responsive" data-src="holder.js/500x500/auto" alt="Generic placeholder image">
+          </div>
+          <div class="col-md-7">
+            <h2 class="featurette-heading">Grading: <span class="text-muted">Powerfull and easy. </span></h2>
+            <p class="lead">When the due date is there teachers can access the test results and use this as a tool in the grading process. The teachers will straight away know about which parts of the code passes their tests and how much of the code is covered by the tests.</p>
+          </div>
+        </div>
+        </section>
+
+			<!-- FOOTER -->
+      <footer>
+        <hr>
+        <p class="pull-right"><a href="#">Back to top</a></p>
+        <p>&copy; 2015 Heine Furubotten and University of Stavanger. &middot; <a href="#">Privacy</a> &middot; <a href="#">Terms</a></p>
+      </footer>
 		</div>
 	</body>
 </html>
