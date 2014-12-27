@@ -16,11 +16,11 @@ import (
 var teststore = diskv.New(diskv.Options{
 	BasePath:     "diskv/CI/",
 	CacheSizeMax: 1024 * 1024 * 256,
-	Transform: func(s string) []string {
-		path := strings.Split(s, ",")
-		path = path[:len(path)-1]
-		return path
-	},
+	//Transform: func(s string) []string {
+	//	path := strings.Split(s, ",")
+	//	path = path[:len(path)-1]
+	//	return path
+	//},
 })
 
 func StartTesterDeamon(load git.HookPayload) {
@@ -64,7 +64,7 @@ func StartTesterDeamon(load git.HookPayload) {
 		"mkdir -p " + basefolder,
 		"git clone http://" + org.AdminToken + ":x-oauth-basic@github.com/" + org.Name + "/" + load.Repo + ".git" + " " + basefolder + load.Repo + "/",
 		"git clone http://" + org.AdminToken + ":x-oauth-basic@github.com/" + org.Name + "/" + git.TEST_REPO_NAME + ".git" + " " + basefolder + git.TEST_REPO_NAME + "/",
-		"/bin/bash -c \"mv -f \"" + basefolder + git.TEST_REPO_NAME + "/*\" \"" + basefolder + load.Repo + "/\" \"",
+		"/bin/bash -c \"cp -rf \"" + basefolder + git.TEST_REPO_NAME + "/*\" \"" + basefolder + load.Repo + "/\" \"",
 
 		"chmod 777 " + basefolder + load.Repo + "/dependencies.sh",
 		"/bin/sh -c \"(cd \"" + basefolder + load.Repo + "/\" && ./dependencies.sh)\"",
@@ -76,11 +76,11 @@ func StartTesterDeamon(load git.HookPayload) {
 		err = execute(&env, cmd, &logarray)
 		if err != nil {
 			log.Println(err)
-			return
+			break
 		}
 	}
 
-	err = teststore.WriteGob(org.Name+","+load.User+",result.log", logarray)
+	err = teststore.WriteGob(org.Name+"/"+load.User+"/result.log", logarray)
 	if err != nil {
 		log.Println(err)
 		return
@@ -89,7 +89,7 @@ func StartTesterDeamon(load git.HookPayload) {
 
 func execute(v *Virtual, cmd string, l *[]string) (err error) {
 
-	read := bytes.NewBuffer(make([]byte, 16))
+	read := bytes.NewBuffer(make([]byte, 0))
 
 	fmt.Println("$", cmd)
 
@@ -128,10 +128,10 @@ func logOutput(s string, l *[]string) {
 }
 
 func GetIntegationResults(org, user string) (logs []string, err error) {
-	if !teststore.Has(org + "," + user + ",result.log") {
+	if !teststore.Has(org + "/" + user + "/result.log") {
 		return nil, errors.New("Doesn't have any CI logs yet.")
 	}
 
-	err = teststore.ReadGob(org+","+user+",result.log", &logs, false)
+	err = teststore.ReadGob(org+"/"+user+"/result.log", &logs, false)
 	return
 }
