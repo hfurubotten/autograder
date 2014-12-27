@@ -213,7 +213,7 @@ func TestExecuteCommands(t *testing.T) {
 
 	cmd := commandtests[0].in
 
-	buf := bytes.NewBuffer(make([]byte, 16))
+	buf := bytes.NewBuffer(make([]byte, 0))
 
 	v.ExecuteCommand(cmd, nil, bufio.NewWriter(buf), bufio.NewWriter(buf))
 	if err != nil {
@@ -229,7 +229,7 @@ func TestExecuteCommands(t *testing.T) {
 		t.Log("Recieved nothing")
 	}
 
-	text := scan.Text()
+	text := strings.Trim(scan.Text(), string(0))
 	t.Log("Read from container: \"" + text + "\"")
 
 	if text != commandtests[0].out {
