@@ -14,6 +14,7 @@ import (
 	"github.com/hfurubotten/autograder/git"
 	"github.com/hfurubotten/autograder/web/pages"
 	"github.com/hfurubotten/autograder/web/sessions"
+	"github.com/hfurubotten/autograder/global"
 )
 
 type Webserver struct {
@@ -103,7 +104,7 @@ func catchallhandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		index, err := os.Open("web/html/index.html")
+		index, err := os.Open(global.Basepath + "web/html/index.html")
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -144,7 +145,7 @@ func homehandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	t, err := template.ParseFiles("web/html/home.html", "web/html/template.html")
+	t, err := template.ParseFiles(global.Basepath + "web/html/home.html", global.Basepath + "web/html/template.html")
 	if err != nil {
 		log.Println("Error parsing register html: ", err)
 		return

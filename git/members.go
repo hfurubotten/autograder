@@ -8,6 +8,7 @@ import (
 	"code.google.com/p/goauth2/oauth"
 	"github.com/google/go-github/github"
 	"github.com/hfurubotten/diskv"
+	"github.com/hfurubotten/autograder/global"
 )
 
 func init() {
@@ -15,7 +16,7 @@ func init() {
 }
 
 var userstore = diskv.New(diskv.Options{
-	BasePath:     "diskv/users/",
+	BasePath:     global.Basepath + "diskv/users/",
 	CacheSizeMax: 1024 * 1024 * 256,
 })
 

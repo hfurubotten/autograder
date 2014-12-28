@@ -17,7 +17,7 @@ func init() {
 }
 
 var orgstore = diskv.New(diskv.Options{
-	BasePath:     "diskv/orgs/",
+	BasePath:     global.Basepath + "diskv/orgs/",
 	CacheSizeMax: 1024 * 1024 * 256,
 })
 

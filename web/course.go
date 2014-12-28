@@ -10,6 +10,7 @@ import (
 
 	ci "github.com/hfurubotten/autograder/ci"
 	"github.com/hfurubotten/autograder/git"
+	"github.com/hfurubotten/autograder/global"
 	"github.com/hfurubotten/autograder/web/pages"
 )
 
@@ -34,9 +35,9 @@ func newcoursehandler(w http.ResponseWriter, r *http.Request) {
 	var page string
 	switch r.URL.Path {
 	case "/course/new":
-		page = "web/html/newcourse-info.html"
+		page = global.Basepath + "web/html/newcourse-info.html"
 	case "/course/new/org":
-		page = "web/html/newcourse-orgselect.html"
+		page = global.Basepath + "web/html/newcourse-orgselect.html"
 
 		view.Orgs, err = member.ListOrgs()
 		if err != nil {
@@ -46,7 +47,7 @@ func newcoursehandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	t, err := template.ParseFiles(page, "web/html/template.html")
+	t, err := template.ParseFiles(page, global.Basepath + "web/html/template.html")
 	if err != nil {
 		log.Println("Error parsing register html: ", err)
 		return
@@ -84,8 +85,8 @@ func selectorghandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	page := "web/html/newcourse-register.html"
-	t, err := template.ParseFiles(page, "web/html/template.html")
+	page := global.Basepath + "web/html/newcourse-register.html"
+	t, err := template.ParseFiles(page, global.Basepath + "web/html/template.html")
 	if err != nil {
 		log.Println("Error parsing register html: ", err)
 		return
@@ -388,8 +389,8 @@ func newcoursememberhandler(w http.ResponseWriter, r *http.Request) {
 	view.Member = &member
 	view.Orgs = git.ListRegisteredOrganizations()
 
-	page := "web/html/course-registermember.html"
-	t, err := template.ParseFiles(page, "web/html/template.html")
+	page := global.Basepath + "web/html/course-registermember.html"
+	t, err := template.ParseFiles(page, global.Basepath + "web/html/template.html")
 	if err != nil {
 		log.Println("Error parsing register html: ", err)
 		return
@@ -440,8 +441,8 @@ func registercoursememberhandler(w http.ResponseWriter, r *http.Request) {
 	view.Member = &member
 	view.Org = orgname
 
-	page := "web/html/course-registeredmemberinfo.html"
-	t, err := template.ParseFiles(page, "web/html/template.html")
+	page := global.Basepath + "web/html/course-registeredmemberinfo.html"
+	t, err := template.ParseFiles(page, global.Basepath + "web/html/template.html")
 	if err != nil {
 		log.Println("Error parsing register html: ", err)
 		return
@@ -526,8 +527,8 @@ func teacherspanelhandler(w http.ResponseWriter, r *http.Request) {
 		Org:         org,
 	}
 
-	page := "web/html/teacherspanel.html"
-	t, err := template.ParseFiles(page, "web/html/template.html")
+	page := global.Basepath + "web/html/teacherspanel.html"
+	t, err := template.ParseFiles(page, global.Basepath + "web/html/template.html")
 	if err != nil {
 		log.Println("Error parsing register html: ", err)
 		return
@@ -720,8 +721,8 @@ func maincoursepagehandler(w http.ResponseWriter, r *http.Request) {
 	view.Org = org
 	view.CILogs = logs
 
-	page := "web/html/maincoursepage.html"
-	t, err := template.ParseFiles(page, "web/html/template.html")
+	page := global.Basepath + "web/html/maincoursepage.html"
+	t, err := template.ParseFiles(page, global.Basepath + "web/html/template.html")
 	if err != nil {
 		log.Println("Error parsing register html: ", err)
 		return

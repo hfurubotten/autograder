@@ -2,11 +2,14 @@ package main
 
 import (
 	"flag"
+	"log"
+	"os"
+    "path/filepath"
+
 	"github.com/hfurubotten/autograder/git"
 	"github.com/hfurubotten/autograder/global"
 	"github.com/hfurubotten/autograder/web"
 	"github.com/hfurubotten/diskv"
-	"log"
 )
 
 var (
@@ -26,11 +29,13 @@ func main() {
 	var err error
 	flag.Parse()
 
+	// prints the available flags to use on start
 	if *help {
 		flag.Usage()
 		return
 	}
 
+	// checks for a domain name
 	if *hostname != "" {
 		optionstore.WriteGob("hostname", *hostname)
 		global.Hostname = *hostname
@@ -48,6 +53,7 @@ func main() {
 		global.Hostname = hname
 	}
 
+	// checks for the application codes to GitHub
 	if *client_ID != "" && *client_secret != "" {
 		optionstore.WriteGob("OAuthID", *client_ID)
 		optionstore.WriteGob("OAuthSecret", *client_secret)
@@ -58,8 +64,8 @@ func main() {
 			log.Println("Missing OAuth details, set this the first time you start the system.")
 			log.Println("To register a new application at GitHub, go to this address to generate OAuth tokens: https://github.com/settings/applications/new")
 			log.Println("If you already have OAuth codes, you can find then on this address: https://github.com/settings/applications")
-			log.Println("The Homepave URL is the domain name you are using to serve the system.")
-			log.Fatal("The Authorization callback URL is your domainname with the path /oauth. (http://example.com/oauth")
+			log.Println("The Homepage URL is the domain name you are using to serve the system.")
+			log.Fatal("The Authorization callback URL is your domainname with the path /oauth. (http://example.com/oauth)")
 
 			// stop := make(chan int)
 
@@ -98,6 +104,7 @@ func main() {
 		global.OAuth_ClientSecret = secret
 	}
 
+	// checks for an admin username
 	if *admin != "" {
 		log.Println("New admin added to the system: ", *admin)
 		m := git.NewMemberFromUsername(*admin)
@@ -108,8 +115,42 @@ func main() {
 		}
 	}
 
+	// checks if the system should be set up as a deamon that starts on system startup.
+
+	// checks for docker installation
+		// install on supported systems
+		// give notice for those systems not supported
+
+	// determins the path to additional files
+	execdir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+    if err != nil {
+    		log.Println("Couldn't determin the path to the executable.")
+            log.Fatal(err)
+    }
+    dir_one := filepath.Join(execdir, "../src/github.com/hfurubotten/autograder/")
+    dir_two := filepath.Join(execdir, "/")
+    if info, err := os.Stat(dir_one); err == nil {
+    	if info.Mode().IsDir() {
+    		global.Basepath = dir_one + "/"
+    	} else {
+    		log.Fatal("Path found to source files is not a directory.")
+    	}
+
+    } else if info, err := os.Stat(dir_two); err == nil {
+		if info.Mode().IsDir() {
+    		global.Basepath = dir_two + "/"
+    	} else {
+    		log.Fatal("Path found to source files is not a directory.")
+    	}
+    } else {
+    	log.Println("Couldn't determin the path ")
+    	log.Fatal("")
+    }
+
+	// log print appearance
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
+	// starts up the webserver	
 	log.Println("Server starting")
 
 	server := web.NewWebServer(80)

@@ -5,10 +5,11 @@ import (
 	"fmt"
 
 	"github.com/hfurubotten/diskv"
+	"github.com/hfurubotten/autograder/global"
 )
 
 var tokenstore = diskv.New(diskv.Options{
-	BasePath:     "diskv/tokens",
+	BasePath:     global.Basepath + "diskv/tokens",
 	CacheSizeMax: 1024 * 1024 * 256,
 })
 

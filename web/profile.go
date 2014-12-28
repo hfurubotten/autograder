@@ -8,6 +8,7 @@ import (
 
 	"github.com/hfurubotten/autograder/auth"
 	"github.com/hfurubotten/autograder/git"
+	"github.com/hfurubotten/autograder/global"
 	"github.com/hfurubotten/autograder/web/pages"
 	"github.com/hfurubotten/autograder/web/sessions"
 )
@@ -33,7 +34,7 @@ func profilehandler(w http.ResponseWriter, r *http.Request) {
 
 	view.Member = git.NewMember(value.(string))
 
-	t, err := template.ParseFiles("web/html/profile.html", "web/html/template.html")
+	t, err := template.ParseFiles(global.Basepath + "web/html/profile.html", global.Basepath + "web/html/template.html")
 	if err != nil {
 		log.Println("Error parsing register html: ", err)
 		return
