@@ -16,11 +16,6 @@ func init() {
 	gob.Register(Organization{})
 }
 
-var orgstore = diskv.New(diskv.Options{
-	BasePath:     global.Basepath + "diskv/orgs/",
-	CacheSizeMax: 1024 * 1024 * 256,
-})
-
 type Organization struct {
 	Name                  string
 	Description           string
@@ -33,27 +28,35 @@ type Organization struct {
 	StudentTeamID int
 	Private       bool
 
-	PendingUser map[string]interface{}
-	Members     map[string]interface{}
-	Teachers    map[string]interface{}
+	GroupCount   int
+	PendingGroup map[string]interface{}
+	PendingUser  map[string]interface{}
+	Members      map[string]interface{}
+	Teachers     map[string]interface{}
 
 	AdminToken  string
 	githubadmin *github.Client
+
+	CI CIOptions
 }
 
 func NewOrganization(name string) Organization {
-	if orgstore.Has(name) {
+	if GetOrgstore().Has(name) {
 		var org Organization
-		orgstore.ReadGob(name, &org, false)
+		GetOrgstore().ReadGob(name, &org, false)
 		return org
 	}
 	return Organization{
 		Name:                 name,
 		IndividualLabFolders: make(map[int]string),
 		GroupLabFolders:      make(map[int]string),
+		PendingGroup:         make(map[string]interface{}),
 		PendingUser:          make(map[string]interface{}),
 		Members:              make(map[string]interface{}),
 		Teachers:             make(map[string]interface{}),
+		CI: CIOptions{
+			Basepath: "/testground/src/github.com/" + name + "/",
+		},
 	}
 }
 
@@ -81,7 +84,6 @@ func (o *Organization) AddMembership(member Member) (err error) {
 
 	_, _, err = o.githubadmin.Organizations.AddTeamMembership(o.StudentTeamID, member.Username)
 	if err != nil {
-		println(err)
 		return
 	}
 
@@ -154,7 +156,7 @@ func (o *Organization) StickToSystem() (err error) {
 		o.GroupLabFolders = newfoldernames
 	}
 
-	return orgstore.WriteGob(o.Name, o)
+	return GetOrgstore().WriteGob(o.Name, o)
 }
 
 func (o *Organization) Fork(owner, repo string) (err error) {
@@ -191,16 +193,16 @@ func (o *Organization) CreateRepo(opt RepositoryOptions) (err error) {
 		return
 	}
 
-	config := make(map[string]interface{})
-	config["url"] = global.Hostname + "/event/hook"
-	config["content_type"] = "json"
-
-	hook := github.Hook{
-		Name:   github.String("web"),
-		Config: config,
-	}
-
 	if opt.Hook {
+		config := make(map[string]interface{})
+		config["url"] = global.Hostname + "/event/hook"
+		config["content_type"] = "json"
+
+		hook := github.Hook{
+			Name:   github.String("web"),
+			Config: config,
+		}
+
 		_, _, err = o.githubadmin.Repositories.CreateHook(o.Name, opt.Name, &hook)
 	}
 	return
@@ -347,7 +349,7 @@ func (o *Organization) CreateFile(repo, path, content, commitmsg string) (err er
 
 func ListRegisteredOrganizations() (out []Organization) {
 	out = make([]Organization, 0)
-	keys := orgstore.Keys()
+	keys := GetOrgstore().Keys()
 	var org Organization
 
 	for key := range keys {
@@ -359,5 +361,18 @@ func ListRegisteredOrganizations() (out []Organization) {
 }
 
 func HasOrganization(name string) bool {
-	return orgstore.Has(name)
+	return GetOrgstore().Has(name)
+}
+
+var orgstore *diskv.Diskv
+
+func GetOrgstore() *diskv.Diskv {
+	if orgstore == nil {
+		orgstore = diskv.New(diskv.Options{
+			BasePath:     global.Basepath + "diskv/orgs/",
+			CacheSizeMax: 1024 * 1024 * 256,
+		})
+	}
+
+	return orgstore
 }

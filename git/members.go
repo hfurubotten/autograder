@@ -7,18 +7,20 @@ import (
 
 	"code.google.com/p/goauth2/oauth"
 	"github.com/google/go-github/github"
-	"github.com/hfurubotten/diskv"
 	"github.com/hfurubotten/autograder/global"
+	"github.com/hfurubotten/diskv"
 )
 
 func init() {
 	gob.Register(Member{})
 }
 
-var userstore = diskv.New(diskv.Options{
-	BasePath:     global.Basepath + "diskv/users/",
-	CacheSizeMax: 1024 * 1024 * 256,
-})
+type CourseOptions struct {
+	Course        string
+	CurrentLabNum int
+	IsGroupMember bool
+	GroupNum      int
+}
 
 type Member struct {
 	githubclient *github.Client
@@ -29,14 +31,19 @@ type Member struct {
 	IsAdmin      bool
 
 	Teaching         map[string]interface{}
-	Courses          map[string]interface{}
+	Courses          map[string]CourseOptions
 	AssistantCourses map[string]interface{}
 
 	accessToken token
 }
 
 func NewMember(oauthtoken string) (m Member) {
-	m = Member{accessToken: NewToken(oauthtoken)}
+	m = Member{
+		accessToken:      NewToken(oauthtoken),
+		Teaching:         make(map[string]interface{}),
+		Courses:          make(map[string]CourseOptions),
+		AssistantCourses: make(map[string]interface{}),
+	}
 
 	var err error
 	if m.accessToken.HasTokenInStore() {
@@ -97,10 +104,10 @@ func (m *Member) loadDataFromGithub() (err error) {
 }
 
 func (m *Member) loadData() (err error) {
-	if userstore.Has(m.Username) {
+	if getUserstore().Has(m.Username) {
 		var tmp Member
 
-		err = userstore.ReadGob(m.Username, &tmp, false)
+		err = getUserstore().ReadGob(m.Username, &tmp, false)
 		if err != nil {
 			return
 		}
@@ -115,7 +122,7 @@ func (m *Member) loadData() (err error) {
 }
 
 func (m Member) StickToSystem() (err error) {
-	return userstore.WriteGob(m.Username, m)
+	return getUserstore().WriteGob(m.Username, m)
 }
 
 func (m *Member) Copy(tmp Member) {
@@ -172,11 +179,14 @@ func (m *Member) ListOrgs() (ls []string, err error) {
 
 func (m *Member) AddOrganization(org Organization) (err error) {
 	if m.Courses == nil {
-		m.Courses = make(map[string]interface{})
+		m.Courses = make(map[string]CourseOptions)
 	}
 
 	if _, ok := m.Courses[org.Name]; !ok {
-		m.Courses[org.Name] = nil
+		m.Courses[org.Name] = CourseOptions{
+			Course:        org.Name,
+			CurrentLabNum: 1,
+		}
 	}
 
 	return
@@ -213,7 +223,7 @@ func (m Member) GetToken() (token string) {
 
 func ListAllMembers() (out []Member) {
 	out = make([]Member, 0)
-	keys := userstore.Keys()
+	keys := getUserstore().Keys()
 	var m Member
 
 	for key := range keys {
@@ -225,5 +235,18 @@ func ListAllMembers() (out []Member) {
 }
 
 func HasMember(username string) bool {
-	return userstore.Has(username)
+	return getUserstore().Has(username)
+}
+
+var userstore *diskv.Diskv
+
+func getUserstore() *diskv.Diskv {
+	if userstore == nil {
+		userstore = diskv.New(diskv.Options{
+			BasePath:     global.Basepath + "diskv/users/",
+			CacheSizeMax: 1024 * 1024 * 256,
+		})
+	}
+
+	return userstore
 }
