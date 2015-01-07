@@ -1,4 +1,4 @@
-package grader
+package ci
 
 import (
 	"bufio"
@@ -155,9 +155,26 @@ func TestAttachToContainer(t *testing.T) {
 	// cleanup
 	defer v.RemoveContainer()
 
-	var reader = strings.NewReader("echo hello world; exit;")
+	//var reader = strings.NewReader("echo hello world\n")
+
+	rw := bytes.NewBuffer(make([]byte, 0))
+	reader := bufio.NewReader(rw)
+	writer := bufio.NewWriter(rw)
 	buf := bytes.NewBufferString("test")
 	stdout := bufio.NewWriter(buf)
+
+	_, err = writer.WriteString("/bin/bash -c echo hello world\n")
+	if err != nil {
+		t.Fail()
+		t.Log("Couldnt write to the stdin: ", err)
+		return
+	}
+	err = writer.Flush()
+	if err != nil {
+		t.Fail()
+		t.Log("Couldnt write to the stdin: ", err)
+		return
+	}
 
 	go v.AttachToContainer(reader, stdout, stdout)
 
@@ -175,7 +192,9 @@ func TestAttachToContainer(t *testing.T) {
 	//	}
 
 	// make sure command is executed
-	time.Sleep(10000 * time.Microsecond)
+	time.Sleep(100000 * time.Microsecond)
+
+	t.Log(rw.String())
 
 	text := buf.String()
 
@@ -237,3 +256,51 @@ func TestExecuteCommands(t *testing.T) {
 		t.Log("Error: " + text + " != " + commandtests[0].out)
 	}
 }
+
+/*func TestRandom(t *testing.T) {
+	lock.Lock()
+	defer lock.Unlock()
+	var err error
+	v, err := NewVirtual()
+	if err != nil {
+		t.Fail()
+		t.Log("Couldn't set up test env.")
+	}
+	err = v.NewContainer("autograder")
+	if err != nil {
+		t.Fail()
+		t.Log("Couldn't set up test env.")
+	}
+
+	// cleanup
+	defer v.RemoveContainer()
+
+	var buf bytes.Buffer
+	err = v.Client.AttachToContainer(docker.AttachToContainerOptions{
+		Container:    v.Container.ID,
+		OutputStream: &buf,
+		InputStream:  strings.NewReader("echo hello world \n\n"),
+		Logs:         true,
+		Stdout:       true,
+		Stdin:        true,
+		Stderr:       true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(1000000 * time.Microsecond)
+	t.Log(buf.String())
+	buf.Reset()
+	err = v.Client.AttachToContainer(docker.AttachToContainerOptions{
+		Container:    v.Container.ID,
+		OutputStream: &buf,
+		Stdout:       true,
+		Stream:       true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(buf.String())
+}
+
+*/
