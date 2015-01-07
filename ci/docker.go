@@ -1,4 +1,4 @@
-package grader
+package ci
 
 import (
 	"errors"
@@ -113,17 +113,17 @@ func (v *Virtual) AttachToContainer(stdin io.Reader, stdout io.Writer, stderr io
 		RawTerminal:  true,
 	}
 
-	err = v.Client.AttachToContainer(attopt)
-	if err != nil {
-		return
-	}
-
 	err = v.Client.StartContainer(v.Container.ID, &docker.HostConfig{})
 	if err != nil {
 		return
 	}
 
 	err = v.Client.ResizeContainerTTY(v.Container.ID, 20, 20)
+	if err != nil {
+		return
+	}
+
+	err = v.Client.AttachToContainer(attopt)
 	if err != nil {
 		return
 	}
