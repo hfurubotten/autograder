@@ -13,6 +13,7 @@ import (
 
 func init() {
 	gob.Register(Member{})
+	gob.Register(CourseOptions{})
 }
 
 type CourseOptions struct {
