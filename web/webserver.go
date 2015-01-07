@@ -55,8 +55,8 @@ func NewWebServer(port int) Webserver {
 func (ws Webserver) Start() {
 
 	// OAuth process
-	http.Handle("/login", http.RedirectHandler(auth.RedirectURL+"?client_id="+auth.Clientid+"&scope="+auth.Scope, 307))
-	http.HandleFunc("/oauth", auth.Handler)
+	http.Handle("/login", http.RedirectHandler(global.OAuth_RedirectURL+"?client_id="+global.OAuth_ClientID+"&scope="+global.OAuth_Scope, 307))
+	http.HandleFunc("/oauth", global.OAuth_Handler)
 	http.HandleFunc(pages.SIGNOUT, auth.RemoveApprovalHandler)
 
 	// Page handlers
