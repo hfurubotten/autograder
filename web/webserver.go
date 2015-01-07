@@ -2,7 +2,6 @@ package web
 
 import (
 	"errors"
-	"html/template"
 	"io"
 	"log"
 	//"net"
@@ -148,17 +147,7 @@ func homehandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	t, err := template.ParseFiles(global.Basepath+"web/html/home.html", global.Basepath+"web/html/template.html")
-	if err != nil {
-		log.Println("Error parsing register html: ", err)
-		return
-	}
-
-	err = t.ExecuteTemplate(w, "template", view)
-	if err != nil {
-		log.Println("Error execute register html: ", err)
-		return
-	}
+	execTemplate("home.html", w, view)
 }
 
 func checkMemberApproval(w http.ResponseWriter, r *http.Request, redirect bool) (member git.Member, err error) {

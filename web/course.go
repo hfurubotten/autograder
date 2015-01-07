@@ -2,7 +2,6 @@ package web
 
 import (
 	"encoding/json"
-	"html/template"
 	"log"
 	"net/http"
 	"strconv"
@@ -10,7 +9,6 @@ import (
 
 	ci "github.com/hfurubotten/autograder/ci"
 	"github.com/hfurubotten/autograder/git"
-	"github.com/hfurubotten/autograder/global"
 	"github.com/hfurubotten/autograder/web/pages"
 )
 
@@ -35,9 +33,9 @@ func newcoursehandler(w http.ResponseWriter, r *http.Request) {
 	var page string
 	switch r.URL.Path {
 	case "/course/new":
-		page = global.Basepath + "web/html/newcourse-info.html"
+		page = "newcourse-info.html"
 	case "/course/new/org":
-		page = global.Basepath + "web/html/newcourse-orgselect.html"
+		page = "newcourse-orgselect.html"
 
 		view.Orgs, err = member.ListOrgs()
 		if err != nil {
@@ -46,18 +44,7 @@ func newcoursehandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-
-	t, err := template.ParseFiles(page, global.Basepath+"web/html/template.html")
-	if err != nil {
-		log.Println("Error parsing register html: ", err)
-		return
-	}
-
-	err = t.ExecuteTemplate(w, "template", view)
-	if err != nil {
-		log.Println("Error execute register html: ", err)
-		return
-	}
+	execTemplate(page, w, view)
 }
 
 func selectorghandler(w http.ResponseWriter, r *http.Request) {
@@ -85,18 +72,7 @@ func selectorghandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	page := global.Basepath + "web/html/newcourse-register.html"
-	t, err := template.ParseFiles(page, global.Basepath+"web/html/template.html")
-	if err != nil {
-		log.Println("Error parsing register html: ", err)
-		return
-	}
-
-	err = t.ExecuteTemplate(w, "template", view)
-	if err != nil {
-		log.Println("Error execute register html: ", err)
-		return
-	}
+	execTemplate("newcourse-register.html", w, view)
 }
 
 func saveorghandler(w http.ResponseWriter, r *http.Request) {
@@ -367,7 +343,6 @@ func saveorghandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	pages.RedirectTo(w, r, pages.FRONTPAGE, 307)
-
 }
 
 type newmemberview struct {
@@ -384,22 +359,11 @@ func newcoursememberhandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	view := newmemberview{}
-	view.Member = &member
-	view.Orgs = git.ListRegisteredOrganizations()
-
-	page := global.Basepath + "web/html/course-registermember.html"
-	t, err := template.ParseFiles(page, global.Basepath+"web/html/template.html")
-	if err != nil {
-		log.Println("Error parsing register html: ", err)
-		return
+	view := newmemberview{
+		Member: &member,
+		Orgs:   git.ListRegisteredOrganizations(),
 	}
-
-	err = t.ExecuteTemplate(w, "template", view)
-	if err != nil {
-		log.Println("Error execute register html: ", err)
-		return
-	}
+	execTemplate("course-registermember.html", w, view)
 }
 
 func registercoursememberhandler(w http.ResponseWriter, r *http.Request) {
@@ -436,22 +400,11 @@ func registercoursememberhandler(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 	}
 
-	view := newmemberview{}
-	view.Member = &member
-	view.Org = orgname
-
-	page := global.Basepath + "web/html/course-registeredmemberinfo.html"
-	t, err := template.ParseFiles(page, global.Basepath+"web/html/template.html")
-	if err != nil {
-		log.Println("Error parsing register html: ", err)
-		return
+	view := newmemberview{
+		Member: &member,
+		Org:    orgname,
 	}
-
-	err = t.ExecuteTemplate(w, "template", view)
-	if err != nil {
-		log.Println("Error execute register html: ", err)
-		return
-	}
+	execTemplate("course-registeredmemberinfo.html", w, view)
 }
 
 type teacherspanelview struct {
@@ -525,19 +478,7 @@ func teacherspanelhandler(w http.ResponseWriter, r *http.Request) {
 		PendingUser: users,
 		Org:         org,
 	}
-
-	page := global.Basepath + "web/html/teacherspanel.html"
-	t, err := template.ParseFiles(page, global.Basepath+"web/html/template.html")
-	if err != nil {
-		log.Println("Error parsing register html: ", err)
-		return
-	}
-
-	err = t.ExecuteTemplate(w, "template", view)
-	if err != nil {
-		log.Println("Error execute register html: ", err)
-		return
-	}
+	execTemplate("teacherspanel.html", w, view)
 }
 
 type approvemembershipview struct {
@@ -709,24 +650,12 @@ func maincoursepagehandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	org := git.NewOrganization(orgname)
-
-	view := maincourseview{}
-	view.Member = member
-	view.Org = org
-	view.Labnum = member.Courses[org.Name].CurrentLabNum - 1
-
-	page := global.Basepath + "web/html/maincoursepage.html"
-	t, err := template.ParseFiles(page, global.Basepath+"web/html/template.html")
-	if err != nil {
-		log.Println("Error parsing register html: ", err)
-		return
+	view := maincourseview{
+		Member: member,
+		Org:    org,
+		Labnum: member.Courses[org.Name].CurrentLabNum - 1,
 	}
-
-	err = t.ExecuteTemplate(w, "template", view)
-	if err != nil {
-		log.Println("Error execute register html: ", err)
-		return
-	}
+	execTemplate("maincoursepage.html", w, view)
 }
 
 type showresultview struct {
@@ -764,26 +693,13 @@ func showresulthandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	org := git.NewOrganization(orgname)
-
 	view := showresultview{
 		Member:   member,
 		Org:      org,
 		Username: username,
 		Labnum:   member.Courses[org.Name].CurrentLabNum - 1,
 	}
-
-	page := global.Basepath + "web/html/teacherresultpage.html"
-	t, err := template.ParseFiles(page, global.Basepath+"web/html/template.html")
-	if err != nil {
-		log.Println("Error parsing register html: ", err)
-		return
-	}
-
-	err = t.ExecuteTemplate(w, "template", view)
-	if err != nil {
-		log.Println("Error execute register html: ", err)
-		return
-	}
+	execTemplate("teacherresultpage.html", w, view)
 }
 
 func approvelabhandler(w http.ResponseWriter, r *http.Request) {

@@ -2,14 +2,12 @@ package web
 
 import (
 	"encoding/json"
-	"html/template"
 	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/hfurubotten/autograder/auth"
 	"github.com/hfurubotten/autograder/git"
-	"github.com/hfurubotten/autograder/global"
 	"github.com/hfurubotten/autograder/web/sessions"
 )
 
@@ -28,18 +26,7 @@ func adminhandler(w http.ResponseWriter, r *http.Request) {
 	view := adminview{}
 	view.Member = &member
 	view.Members = git.ListAllMembers()
-
-	t, err := template.ParseFiles(global.Basepath+"web/html/admin.html", global.Basepath+"web/html/template.html")
-	if err != nil {
-		log.Println("Error parsing register html: ", err)
-		return
-	}
-
-	err = t.ExecuteTemplate(w, "template", view)
-	if err != nil {
-		log.Println("Error execute register html: ", err)
-		return
-	}
+	execTemplate("admin.html", w, view)
 }
 
 func setadminhandler(w http.ResponseWriter, r *http.Request) {
