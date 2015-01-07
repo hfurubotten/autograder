@@ -66,6 +66,17 @@ func NewMember(oauthtoken string) (m Member) {
 		return
 	}
 
+	if m.IsTeacher {
+		var org Organization
+		for k, _ := range m.Teaching {
+			org = NewOrganization(k)
+			if org.AdminToken != oauthtoken {
+				org.AdminToken = oauthtoken
+				org.StickToSystem()
+			}
+		}
+	}
+
 	return
 }
 
