@@ -29,9 +29,9 @@ func adminhandler(w http.ResponseWriter, r *http.Request) {
 	view.Member = &member
 	view.Members = git.ListAllMembers()
 
-	t, err := template.ParseFiles(global.Basepath + "web/html/admin.html", global.Basepath + "web/html/template.html")
+	t, err := template.ParseFiles(global.Basepath+"web/html/admin.html", global.Basepath+"web/html/template.html")
 	if err != nil {
-		log.Println("Error parsing register html: ", err)
+		log.Println("Error parsing register htmlx: ", err)
 		return
 	}
 
@@ -44,29 +44,16 @@ func adminhandler(w http.ResponseWriter, r *http.Request) {
 
 func setadminhandler(w http.ResponseWriter, r *http.Request) {
 	var err error
-	var errmsg struct {
-		Error string
-	}
 	enc := json.NewEncoder(w)
 	if !auth.IsApprovedUser(r) {
-		errmsg = struct {
-			Error string
-		}{
-			Error: "You are not signed in. Please sign in to preform actions.",
-		}
-		err = enc.Encode(errmsg)
+		err = enc.Encode(ErrSignIn)
 		return
 	}
 
 	value, err := sessions.GetSessions(r, sessions.AUTHSESSION, sessions.ACCESSTOKENSESSIONKEY)
 	if err != nil {
 		log.Println("Error getting access token from sessions: ", err)
-		errmsg = struct {
-			Error string
-		}{
-			Error: "Couldn't get you access token. Try to sign in again.",
-		}
-		err = enc.Encode(errmsg)
+		err = enc.Encode(ErrAccessToken)
 		return
 	}
 
@@ -74,45 +61,26 @@ func setadminhandler(w http.ResponseWriter, r *http.Request) {
 
 	if !member.IsAdmin {
 		log.Println("Unautorized request of admin page.")
-		errmsg = struct {
-			Error string
-		}{
-			Error: "You are not a administrator.",
-		}
-		err = enc.Encode(errmsg)
+		err = enc.Encode(ErrNotAdmin)
 		return
 	}
 
+	//TODO Check logic of the following two errors
 	if r.FormValue("user") == "" || r.FormValue("admin") == "" {
-		errmsg = struct {
-			Error string
-		}{
-			Error: "Missing required parameters. ",
-		}
-		err = enc.Encode(errmsg)
+		err = enc.Encode(ErrMissingField)
 		return
 	}
 
 	m := git.NewMemberFromUsername(r.FormValue("user"))
 	m.IsAdmin, err = strconv.ParseBool(r.FormValue("admin"))
 	if err != nil {
-		errmsg = struct {
-			Error string
-		}{
-			Error: "Can't use admin parameters.",
-		}
-		err = enc.Encode(errmsg)
+		err = enc.Encode(ErrInvalidAdminField)
 		return
 	}
 
 	err = m.StickToSystem()
 	if err != nil {
-		errmsg = struct {
-			Error string
-		}{
-			Error: "Edit not stored in system.",
-		}
-		err = enc.Encode(errmsg)
+		err = enc.Encode(ErrNotStored)
 		return
 	}
 
@@ -129,29 +97,16 @@ func setadminhandler(w http.ResponseWriter, r *http.Request) {
 
 func setteacherhandler(w http.ResponseWriter, r *http.Request) {
 	var err error
-	var errmsg struct {
-		Error string
-	}
 	enc := json.NewEncoder(w)
 	if !auth.IsApprovedUser(r) {
-		errmsg = struct {
-			Error string
-		}{
-			Error: "You are not signed in. Please sign in to preform actions.",
-		}
-		err = enc.Encode(errmsg)
+		err = enc.Encode(ErrSignIn)
 		return
 	}
 
 	value, err := sessions.GetSessions(r, sessions.AUTHSESSION, sessions.ACCESSTOKENSESSIONKEY)
 	if err != nil {
 		log.Println("Error getting access token from sessions: ", err)
-		errmsg = struct {
-			Error string
-		}{
-			Error: "Couldn't get you access token. Try to sign in again.",
-		}
-		err = enc.Encode(errmsg)
+		err = enc.Encode(ErrAccessToken)
 		return
 	}
 
@@ -159,48 +114,30 @@ func setteacherhandler(w http.ResponseWriter, r *http.Request) {
 
 	if !member.IsAdmin {
 		log.Println("Unautorized request of admin page.")
-		errmsg = struct {
-			Error string
-		}{
-			Error: "You are not a administrator.",
-		}
-		err = enc.Encode(errmsg)
+		err = enc.Encode(ErrNotAdmin)
 		return
 	}
 
+	//TODO Check logic
 	if r.FormValue("user") == "" || r.FormValue("teacher") == "" {
-		errmsg = struct {
-			Error string
-		}{
-			Error: "Missing required parameters.",
-		}
-		err = enc.Encode(errmsg)
+		err = enc.Encode(ErrMissingField)
 		return
 	}
 
 	m := git.NewMemberFromUsername(r.FormValue("user"))
 	m.IsTeacher, err = strconv.ParseBool(r.FormValue("teacher"))
 	if err != nil {
-		errmsg = struct {
-			Error string
-		}{
-			Error: "Can't use teacher parameters.",
-		}
-		err = enc.Encode(errmsg)
+		err = enc.Encode(ErrInvalidTeacherField)
 		return
 	}
 
 	err = m.StickToSystem()
 	if err != nil {
-		errmsg = struct {
-			Error string
-		}{
-			Error: "Edit not stored in system.",
-		}
-		err = enc.Encode(errmsg)
+		err = enc.Encode(ErrNotStored)
 		return
 	}
 
+	//TODO should this struct also have json tags?
 	msg := struct {
 		User    string
 		Teacher bool

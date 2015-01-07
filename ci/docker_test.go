@@ -1,4 +1,4 @@
-package grader
+package ci
 
 import (
 	"bufio"
