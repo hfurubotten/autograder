@@ -3,150 +3,190 @@
   <div class="container">
   	<div class="row">
       <div class="col-md-12">
-        {{with .Org}}
-        <h1>Teachers pannel</h1>
-        <h2>Course: {{.Name}}</h2>
+        <h1>Teachers panel</h1>
+        <h2>Course: {{.Org.Name}}</h2>
 
-        <!-- input form -->
-          <form class="form-horizontal" role="form" action="/course/update" method="POST">
-            <div class="form-group">
-              <label for="org" class="col-sm-3 control-label">Organization *</label>
-              <div class="col-sm-9">
-                <input type="text" class="form-control" id="org" placeholder="Organization" value="{{.Name}}" disabled>
-                <input type="hidden" id="hiddenorg" name="org" value="{{.Name}}">
+        <div role="tabpanel">
+
+          <!-- Nav tabs -->
+          <ul class="nav nav-tabs" role="tablist" id="teachertab">
+            <li role="presentation"><a href="#students" aria-controls="students" role="tab" data-toggle="tab">Students</a></li>
+            {{if gt .Org.GroupAssignments 0}}<li role="presentation"><a href="#groups" aria-controls="groups" role="tab" data-toggle="tab">Groups</a></li>{{end}}
+            <li role="presentation" class="pull-right"><a href="#settings" aria-controls="settings" role="tab" data-toggle="tab"><span class="glyphicon glyphicon-cog" aria-hidden="true"></span></a></li>
+          </ul>
+
+          <!-- Tab panes -->
+          <div class="tab-content">
+            <div role="tabpanel" class="tab-pane" id="students">
+              <h3>Pending students</h3>
+              <p>Pending students are a list of students that needs approval to get access to the course. Students already have access to the course material, but dont have their own repository. Approve students to create repositories for them and give them access to creating groups.</p>
+
+              <div class="alert alert-danger alert-dismissible" role="alert" id="pendinguseralert" style="display: none">
+                <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <span class="inputtext"></span>
               </div>
+
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Username</th>
+                    <th>Name</th>
+                    <th>Student ID</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {{range $index, $element := .Org.PendingUser}}
+                  <tr id="{{$index}}">
+                    {{with $element}}
+                    <td>{{.Username}}</td>
+                    <td>{{.Name}}</td>
+                    <td>{{.StudentID}}</td>
+                    <td><button type="button" onclick="approveuser('{{.Username}}')" class="btn btn-default">Approve</button></td>
+                    {{end}}
+                  </tr>
+                  {{end}}
+                </tbody>
+              </table>
+
+              <h3>Results</h3>
+              <p>Build and test results from the students. Click in on a student to see complete build log.</p>
+
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Username</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {{$orgname := .Org.Name}}
+                  {{range $index, $element := .Org.Members}}
+                  <tr id="{{$index}}">
+                    <td>{{$index}}</td>
+                    <td><a href="/course/result/{{$orgname}}?user={{$index}}">See results</a></td>
+                  </tr>
+                  {{end}}
+                </tbody>
+              </table>
             </div>
-            <div class="form-group">
-              <div class="col-sm-offset-3 col-sm-9">
-                <div class="checkbox">
-                  <label>
-                    <input type="checkbox" id="private" name="private"> Private repositories
-                  </label>
+            {{if gt .Org.GroupAssignments 0}}
+            <div role="tabpanel" class="tab-pane" id="groups">
+              <h3>Pending groups</h3>
+              <p></p>
+            </div>
+            {{end}}
+            <div role="tabpanel" class="tab-pane" id="settings">
+              {{with .Org}}
+
+              <h3>Standard Settings</h3>
+
+              <!-- input form -->
+              <form class="form-horizontal" role="form" action="/course/update" method="POST">
+                <div class="form-group">
+                  <label for="org" class="col-sm-3 control-label">Organization *</label>
+                  <div class="col-sm-9">
+                    <input type="text" class="form-control" id="org" placeholder="Organization" value="{{.Name}}" disabled>
+                    <input type="hidden" id="hiddenorg" name="org" value="{{.Name}}">
+                  </div>
                 </div>
-              </div>
-            </div>
-            <div class="form-group">
-              <label for="indv" class="col-sm-3 control-label">Number of individual assignments *</label>
-              <div class="col-sm-9">
-                <input type="number" class="form-control" id="indv" name="indv" placeholder="Individual Assignments" value="{{.IndividualAssignments}}">
-              </div>
-            </div>
-            <div class="form-group">
-              <label for="groups" class="col-sm-3 control-label">Number of group assignments *</label>
-              <div class="col-sm-9">
-                <input type="number" class="form-control" id="groups" name="groups" placeholder="Group Assignments" value="{{.GroupAssignments}}">
-              </div>
-            </div>
-            <div class="form-group">
-              <label for="desc" class="col-sm-3 control-label">Course description</label>
-              <div class="col-sm-9">
-                <textarea class="form-control" rows="3" name="desc" id="desc">{{.Description}}</textarea>
-              </div>
-            </div>
-            <div class="form-group">
-              <div class="col-sm-offset-3 col-sm-9">
-                <button type="submit" class="btn btn-default">Update course info</button>
-              </div>
-            </div>
-            {{if gt .IndividualAssignments 0 }}
-            <h3>Individual assignment folder names</h3>
-            <p>If you change the names of the folders containing the different individual assignments, this has to be marked for the automatic system to recognize this. It needs to know which folder to use. The standard folder name is "lab#", where the # is replaced by the number in the sequence of assignments it is. Example of this is "lab1" for the first assignment. Fill in the folder name below and hit the update button to submit the changes. </p>
+                <div class="form-group">
+                  <div class="col-sm-offset-3 col-sm-9">
+                    <div class="checkbox">
+                      <label>
+                        <input type="checkbox" id="private" name="private"> Private repositories
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="indv" class="col-sm-3 control-label">Number of individual assignments *</label>
+                  <div class="col-sm-9">
+                    <input type="number" class="form-control" id="indv" name="indv" placeholder="Individual Assignments" value="{{.IndividualAssignments}}">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="groups" class="col-sm-3 control-label">Number of group assignments *</label>
+                  <div class="col-sm-9">
+                    <input type="number" class="form-control" id="groups" name="groups" placeholder="Group Assignments" value="{{.GroupAssignments}}">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="desc" class="col-sm-3 control-label">Course description</label>
+                  <div class="col-sm-9">
+                    <textarea class="form-control" rows="3" name="desc" id="desc">{{.Description}}</textarea>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <div class="col-sm-offset-3 col-sm-9">
+                    <button type="submit" class="btn btn-default">Update course info</button>
+                  </div>
+                </div>
+                {{if gt .IndividualAssignments 0 }}
+                <h3>Individual assignment folder names</h3>
+                <p>If you change the names of the folders containing the different individual assignments, this has to be marked for the automatic system to recognize this. It needs to know which folder to use. The standard folder name is "lab#", where the # is replaced by the number in the sequence of assignments it is. Example of this is "lab1" for the first assignment. Fill in the folder name below and hit the update button to submit the changes. </p>
             
-            {{range $i, $element := .IndividualLabFolders}}
-              <div class="form-group">
-              <label for="org" class="col-sm-3 control-label">Lab assignment {{$i}}</label>
-              <div class="col-sm-9">
-                <input type="text" class="form-control" id="org" name="lab{{$i}}" placeholder="{{$element}}" value="{{$element}}">
-              </div>
-            </div>
-            {{end}}
+                {{range $i, $element := .IndividualLabFolders}}
+                <div class="form-group">
+                  <label for="org" class="col-sm-3 control-label">Lab assignment {{$i}}</label>
+                  <div class="col-sm-9">
+                    <input type="text" class="form-control" id="org" name="lab{{$i}}" placeholder="{{$element}}" value="{{$element}}">
+                  </div>
+                </div>
+                {{end}}
 
-            <div class="form-group">
-              <div class="col-sm-offset-3 col-sm-9">
-                <button type="submit" class="btn btn-default">Update folder info</button>
-              </div>
-            </div>
-            {{end}}
+                <div class="form-group">
+                  <div class="col-sm-offset-3 col-sm-9">
+                    <button type="submit" class="btn btn-default">Update folder info</button>
+                  </div>
+                </div>
+                {{end}}
 
-            {{if gt .GroupAssignments 0 }}
-            <h3>Group assignment folder names</h3>
-            <p>If you change the names of the folders containing the different group assignments, this has to be marked for the automatic system to recognize this. It needs to know which folder to use. The standard folder name is "group#", where the # is replaced by the number in the sequence of assignments it is. Example of this is "group1" for the first assignment. Fill in the folder name below and hit the update button to submit the changes. </p>
+                {{if gt .GroupAssignments 0 }}
+                <h3>Group assignment folder names</h3>
+                <p>If you change the names of the folders containing the different group assignments, this has to be marked for the automatic system to recognize this. It needs to know which folder to use. The standard folder name is "group#", where the # is replaced by the number in the sequence of assignments it is. Example of this is "group1" for the first assignment. Fill in the folder name below and hit the update button to submit the changes. </p>
             
-            {{range $i, $element := .GroupLabFolders}}
-              <div class="form-group">
-              <label for="org" class="col-sm-3 control-label">Group assignment {{$i}}</label>
-              <div class="col-sm-9">
-                <input type="text" class="form-control" id="org" name="group{{$i}}" placeholder="{{$element}}" value="{{$element}}">
-              </div>
-            </div>
-            {{end}}
+                {{range $i, $element := .GroupLabFolders}}
+                <div class="form-group">
+                  <label for="org" class="col-sm-3 control-label">Group assignment {{$i}}</label>
+                  <div class="col-sm-9">
+                    <input type="text" class="form-control" id="org" name="group{{$i}}" placeholder="{{$element}}" value="{{$element}}">
+                  </div>
+                </div>
+                {{end}}
 
-            <div class="form-group">
-              <div class="col-sm-offset-3 col-sm-9">
-                <button type="submit" class="btn btn-default">Update folder info</button>
-              </div>
-            </div>
-            {{end}}
-          </form>
-
-        {{if gt .GroupAssignments 0}}
-        <h3>Pending groups</h3>
-        <p></p>
-
-        
-
-        {{end}}
-
-
-        {{end}}
-
-        <h3>Pending students</h3>
-        <p>Pending students are a list of students that needs approval to get access to the course. Students already have access to the course material, but dont have their own repository. Approve students to create repositories for them and give them access to creating groups.</p>
-
-        <div class="alert alert-danger alert-dismissible" role="alert" id="pendinguseralert" style="display: none">
-          <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-          <span class="inputtext"></span>
-        </div>
-
-          <table class="table table-striped">
-          <thead>
-            <tr>
-              <th>Username</th>
-              <th>Name</th>
-              <th>Student ID</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {{range $index, $element := .PendingUser}}
-            <tr id="{{$index}}">
-              {{with $element}}
-              <td>{{.Username}}</td>
-              <td>{{.Name}}</td>
-              <td>{{.StudentID}}</td>
-              <td><button type="button" onclick="approveuser('{{.Username}}')" class="btn btn-default">Approve</button></td>
+                <div class="form-group">
+                  <div class="col-sm-offset-3 col-sm-9">
+                    <button type="submit" class="btn btn-default">Update folder info</button>
+                  </div>
+                </div>
+                {{end}}
+              </form>
               {{end}}
-            </tr>
-            {{end}}
-          </tbody>
-        </table>
 
-        <script type="text/javascript">
-          // TODO: expand this!
-          function approveuser(username) {
-            $.post("/course/approvemember/{{.Org.Name}}", {"user": username}, function(base){
-              var data = jQuery.parseJSON(base);
-              if (!data.Error) {
-                $("tr#" + username).slideUp(500);
-              } else {
-                $("#pendinguseralert > span.inputtext").text(data.ErrorMsg);
-                $("div#pendinguseralert").show();
-              }
-            });
-          }
-        </script>
-
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-	</div>
+  </div>
+
+  <script type="text/javascript">
+    $(function(){
+      $('#teachertab a:first').tab('show');
+    });
+
+    // TODO: expand this!
+    function approveuser(username) {
+      $.post("/course/approvemember/{{.Org.Name}}", {"user": username}, function(base){
+        var data = jQuery.parseJSON(base);
+        if (!data.Error) {
+          $("tr#" + username).slideUp(500);
+        } else {
+          $("#pendinguseralert > span.inputtext").text(data.ErrorMsg);
+          $("div#pendinguseralert").show();
+        }
+      });
+    }
+  </script>
 {{end}}

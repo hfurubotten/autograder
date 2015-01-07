@@ -1,19 +1,89 @@
 {{define "title"}} UIS Autograder {{end}}
 {{define "body"}}
 
-      <div class="container">
-        <div class="row">
-            <h1>{{.Org.Name}}</h1>
-            <p>From your repository there will be triggered a build each time you push new code up. This code will be tested agains what the teacher is expecting the solution to be. Check out how far you have gotten below.</p>
-            <h3>Latest build log</h3>
+  <div class="container">
+    <div class="row">
 
-            <div class="well">            
-              <code>
-                {{range .CILogs}}
-                  # {{.}} <br> 
+      <h1>{{.Org.Name}}</h1>
+      <p>From your repository there will be triggered a build each time you push new code up. This code will be tested agains what the teacher is expecting the solution to be. Check out how far you have gotten below.</p>
+
+      <div role="tabpanel">
+
+        <!-- Nav tabs -->
+        <ul class="nav nav-tabs" role="tablist" id="labtypetab">
+          <li role="presentation"><a href="#students" aria-controls="students" role="tab" data-toggle="tab">Individual</a></li>
+          {{if gt .Org.GroupAssignments 0}}<li role="presentation"><a href="#groups" aria-controls="groups" role="tab" data-toggle="tab">Group</a></li>{{end}}
+        </ul>
+
+        <!-- Tab panes -->
+        <div class="tab-content">
+          <div role="tabpanel" class="tab-pane" id="students">
+            
+            <div role="tabpanel">
+
+              <!-- Nav tabs -->
+              <ul class="nav nav-tabs" role="tablist" id="indvlabtab">
+                {{range $index, $element := .Org.IndividualLabFolders}}
+                <li role="presentation"><a href="#{{$element}}" aria-controls="{{$element}}" role="tab" data-toggle="tab">{{$element}}</a></li>
                 {{end}}
-              </code>
+              </ul>
+
+              <!-- Tab panes -->
+              <div class="tab-content">
+              {{range $index, $element := .Org.IndividualLabFolders}}
+                <div role="tabpanel" class="tab-pane" id="{{$element}}">
+
+                  <h3>Latest build log</h3>
+                  <p id="status"></p>
+                  <p id="passes"></p>
+                  <div class="well">            
+                    <code id="logs">
+                
+                    </code>
+                  </div>
+                </div>
+                {{end}}
+              </div>
             </div>
+
+          </div>
+
+          {{if gt .Org.GroupAssignments 0}}
+          <div role="tabpanel" class="tab-pane" id="groups">
+          {{if not .Group}}
+
+          {{else}}
+          {{end}}
+          </div>
+          {{end}}
         </div>
+
       </div>
+
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    var course = "{{.Org.Name}}";
+    var username = "{{.Member.Username}}";
+    $('#indvlabtab > li > a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+      $.getJSON("/course/ciresutls", {"Labname": e.target.innerText, "Course": course, "Username": username}, function(data){
+        $("div#" + e.target.innerText + " > div.well > code#logs").text("")
+        //$("div#" + e.target.innerText + " > p#status").text("Status: ").append(data.Status)
+        $("div#" + e.target.innerText + " > p#passes").text("Number of passed tests: ").append(data.NumPasses)
+        data.Log.forEach(function(t) {
+          $("div#" + e.target.innerText + " > div.well > code#logs").append(" # ").append($(document.createTextNode(t))).append("<br>")
+        });
+      }).error(function(){
+        $("div#" + e.target.innerText + " > div.well > code#logs").text("# There is no build for this lab yet.")
+      });
+    });
+
+    $(function(){
+      $('#labtypetab a:first').tab('show');
+    });
+    $(function(){
+      $('#indvlabtab a:eq({{.Labnum}})').tab('show');
+    });
+  </script>
 {{end}}

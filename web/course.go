@@ -47,7 +47,7 @@ func newcoursehandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	t, err := template.ParseFiles(page, global.Basepath + "web/html/template.html")
+	t, err := template.ParseFiles(page, global.Basepath+"web/html/template.html")
 	if err != nil {
 		log.Println("Error parsing register html: ", err)
 		return
@@ -86,7 +86,7 @@ func selectorghandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	page := global.Basepath + "web/html/newcourse-register.html"
-	t, err := template.ParseFiles(page, global.Basepath + "web/html/template.html")
+	t, err := template.ParseFiles(page, global.Basepath+"web/html/template.html")
 	if err != nil {
 		log.Println("Error parsing register html: ", err)
 		return
@@ -114,8 +114,7 @@ func saveorghandler(w http.ResponseWriter, r *http.Request) {
 	groups, err := strconv.Atoi(r.FormValue("groups"))
 	if err != nil {
 		log.Println("Cannot convert number of groups assignments from string to int: ", err)
-		pages.RedirectTo(w, r, pages.FRONTPAGE, 307)
-		return
+		groups = 0
 	}
 	org.GroupAssignments = groups
 	indv, err := strconv.Atoi(r.FormValue("indv"))
@@ -378,8 +377,8 @@ type newmemberview struct {
 }
 
 func newcoursememberhandler(w http.ResponseWriter, r *http.Request) {
-	// Checks if the user is signed in and a teacher.
-	member, err := checkTeacherApproval(w, r, true)
+	// Checks if the user is signed in.
+	member, err := checkMemberApproval(w, r, true)
 	if err != nil {
 		log.Println(err)
 		return
@@ -390,7 +389,7 @@ func newcoursememberhandler(w http.ResponseWriter, r *http.Request) {
 	view.Orgs = git.ListRegisteredOrganizations()
 
 	page := global.Basepath + "web/html/course-registermember.html"
-	t, err := template.ParseFiles(page, global.Basepath + "web/html/template.html")
+	t, err := template.ParseFiles(page, global.Basepath+"web/html/template.html")
 	if err != nil {
 		log.Println("Error parsing register html: ", err)
 		return
@@ -405,7 +404,7 @@ func newcoursememberhandler(w http.ResponseWriter, r *http.Request) {
 
 func registercoursememberhandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
-	member, err := checkTeacherApproval(w, r, true)
+	member, err := checkMemberApproval(w, r, true)
 	if err != nil {
 		log.Println(err)
 		return
@@ -442,7 +441,7 @@ func registercoursememberhandler(w http.ResponseWriter, r *http.Request) {
 	view.Org = orgname
 
 	page := global.Basepath + "web/html/course-registeredmemberinfo.html"
-	t, err := template.ParseFiles(page, global.Basepath + "web/html/template.html")
+	t, err := template.ParseFiles(page, global.Basepath+"web/html/template.html")
 	if err != nil {
 		log.Println("Error parsing register html: ", err)
 		return
@@ -528,7 +527,7 @@ func teacherspanelhandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	page := global.Basepath + "web/html/teacherspanel.html"
-	t, err := template.ParseFiles(page, global.Basepath + "web/html/template.html")
+	t, err := template.ParseFiles(page, global.Basepath+"web/html/template.html")
 	if err != nil {
 		log.Println("Error parsing register html: ", err)
 		return
@@ -683,7 +682,7 @@ func approvecoursemembershiphandler(w http.ResponseWriter, r *http.Request) {
 
 type maincourseview struct {
 	Member git.Member
-	CILogs []string
+	Labnum int
 	Org    git.Organization
 }
 
@@ -711,18 +710,13 @@ func maincoursepagehandler(w http.ResponseWriter, r *http.Request) {
 
 	org := git.NewOrganization(orgname)
 
-	logs, err := ci.GetIntegationResults(org.Name, member.Username)
-	if err != nil {
-		logs = []string{"There is no integration logs yet! Implement some code and push them, we will take it from there."}
-	}
-
 	view := maincourseview{}
 	view.Member = member
 	view.Org = org
-	view.CILogs = logs
+	view.Labnum = member.Courses[org.Name].CurrentLabNum - 1
 
 	page := global.Basepath + "web/html/maincoursepage.html"
-	t, err := template.ParseFiles(page, global.Basepath + "web/html/template.html")
+	t, err := template.ParseFiles(page, global.Basepath+"web/html/template.html")
 	if err != nil {
 		log.Println("Error parsing register html: ", err)
 		return
@@ -733,4 +727,156 @@ func maincoursepagehandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error execute register html: ", err)
 		return
 	}
+}
+
+type showresultview struct {
+	Member   git.Member
+	Org      git.Organization
+	Username string
+	Labnum   int
+}
+
+func showresulthandler(w http.ResponseWriter, r *http.Request) {
+	// Checks if the user is signed in and a teacher.
+	member, err := checkTeacherApproval(w, r, true)
+	if err != nil {
+		return
+	}
+
+	// Gets the org and check if valid
+	orgname := ""
+	if path := strings.Split(r.URL.Path, "/"); len(path) == 4 {
+		if !git.HasOrganization(path[3]) {
+			pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
+			return
+		}
+
+		orgname = path[3]
+	} else {
+		pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
+		return
+	}
+
+	username := r.FormValue("user")
+	if username == "" {
+		pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
+		return
+	}
+
+	org := git.NewOrganization(orgname)
+
+	view := showresultview{
+		Member:   member,
+		Org:      org,
+		Username: username,
+		Labnum:   member.Courses[org.Name].CurrentLabNum - 1,
+	}
+
+	page := global.Basepath + "web/html/teacherresultpage.html"
+	t, err := template.ParseFiles(page, global.Basepath+"web/html/template.html")
+	if err != nil {
+		log.Println("Error parsing register html: ", err)
+		return
+	}
+
+	err = t.ExecuteTemplate(w, "template", view)
+	if err != nil {
+		log.Println("Error execute register html: ", err)
+		return
+	}
+}
+
+func approvelabhandler(w http.ResponseWriter, r *http.Request) {
+	// Checks if the user is signed in and a teacher.
+	_, err := checkTeacherApproval(w, r, true)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	course := r.FormValue("Course")
+	username := r.FormValue("User")
+	approve := r.FormValue("Approve")
+	labnum, err := strconv.Atoi(r.FormValue("Labnum"))
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), 404)
+		return
+	}
+
+	if approve != "true" {
+		log.Println("Missing approval")
+		http.Error(w, "Not approved", 404)
+		return
+	}
+
+	if !git.HasOrganization(course) || username == "" {
+		log.Println("Missing username or uncorrect course")
+		http.Error(w, "Unknown", 404)
+		return
+	}
+
+	var isgroup bool
+	if git.HasMember(username) {
+		isgroup = false
+	} else {
+		isgroup = strings.Contains(username, "group")
+		if !isgroup {
+			log.Println("No user found")
+			http.Error(w, "Unknown 2", 404)
+			return
+		}
+	}
+
+	if isgroup {
+		gnum, err := strconv.Atoi(username[len("group"):])
+		if err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), 404)
+			return
+		}
+		group, err := git.NewGroup(course, gnum)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), 404)
+			return
+		}
+		group.CurrentLabNum = labnum + 1
+		group.StickToSystem()
+	} else {
+		user := git.NewMemberFromUsername(username)
+		copt := user.Courses[course]
+		copt.CurrentLabNum = labnum + 1
+		user.Courses[course] = copt
+		user.StickToSystem()
+	}
+}
+
+func ciresulthandler(w http.ResponseWriter, r *http.Request) {
+	// Checks if the user is signed in and a teacher.
+	_, err := checkMemberApproval(w, r, false)
+	if err != nil {
+		http.Error(w, err.Error(), 404)
+		log.Println(err)
+		return
+	}
+
+	// TODO: add more security
+	orgname := r.FormValue("Course")
+	username := r.FormValue("Username")
+	labname := r.FormValue("Labname")
+
+	res, err := ci.GetIntegationResults(orgname, username, labname)
+	if err != nil {
+		http.Error(w, err.Error(), 404)
+		return
+	}
+
+	enc := json.NewEncoder(w)
+
+	err = enc.Encode(res)
+	if err != nil {
+		http.Error(w, err.Error(), 404)
+	}
+
 }

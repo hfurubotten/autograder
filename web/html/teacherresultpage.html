@@ -1,0 +1,81 @@
+{{define "title"}}UIS Autograder{{end}}
+{{define "body"}}
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+      	<h1>Results for {{.Username}}</h1>
+      	<h4>Course: {{.Org.Name}}</h4>
+      	
+      	<div role="tabpanel">
+
+          <!-- Nav tabs -->
+          <ul class="nav nav-tabs" role="tablist" id="indvlabtab">
+            {{range $index, $element := .Org.IndividualLabFolders}}
+            <li role="presentation"><a href="#{{$element}}" aria-controls="{{$element}}" role="tab" data-toggle="tab">{{$element}}</a></li>
+            {{end}}
+          </ul>
+
+          <!-- Tab panes -->
+          <div class="tab-content">
+          	{{$course := .Org.Name}}
+          	{{$Username := .Username}}
+            {{range $index, $element := .Org.IndividualLabFolders}}
+              <div role="tabpanel" class="tab-pane" id="{{$element}}">
+
+                <h3>Latest build log</h3>
+                <p id="status"></p>
+                <p id="passes"></p>
+
+                <form>
+      	  	      <input type="hidden" name="Course" value="{{$course}}">
+      	  	      <input type="hidden" name="User" value="{{$Username}}">
+      	  	      <input type="hidden" name="Approve" value="true">
+      	  	      <input type="hidden" name="Labnum" value="{{$index}}">
+      	  	
+      	  	      <button type="submit" class="btn btn-success btn-lg pull-right">Approve</button>
+      	  	    </form>
+
+                <div class="well">            
+                  <code id="logs">
+                
+                  </code>
+                </div>
+              </div>
+            {{end}}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="text/javascript">
+  	$("form").submit(function(event){
+  	  if(confirm("Are you sure you want to approve this lab?")){
+  	    $.post("/course/approvelab", $(this).serialize());
+  	  }
+  	  event.preventDefault();
+  	  return false
+  	});
+
+  	var course = "{{.Org.Name}}";
+    var username = "{{.Username}}";
+    $('#indvlabtab > li > a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+      $.getJSON("/course/ciresutls", {"Labname": e.target.innerText, "Course": course, "Username": username}, function(data){
+        $("div#" + e.target.innerText + " > div.well > code#logs").text("");
+        //$("div#" + e.target.innerText + " > p#status").text("Status: ").append(data.Status);
+        $("div#" + e.target.innerText + " > p#passes").text("Number of passed tests: ").append(data.NumPasses);
+        data.Log.forEach(function(t) {
+          $("div#" + e.target.innerText + " > div.well > code#logs").append(" # ").append($(document.createTextNode(t))).append("<br>");
+        });
+      }).error(function(){
+        $("div#" + e.target.innerText + " > div.well > code#logs").text("# There is no build for this lab yet.");
+      });
+    });
+
+    $(function(){
+      $('#labtypetab a:first').tab('show');
+    });
+    $(function(){
+      $('#indvlabtab a:eq({{.Labnum}})').tab('show');
+    });
+  </script>
+{{end}}

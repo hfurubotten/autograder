@@ -12,9 +12,9 @@ import (
 
 	"github.com/hfurubotten/autograder/auth"
 	"github.com/hfurubotten/autograder/git"
+	"github.com/hfurubotten/autograder/global"
 	"github.com/hfurubotten/autograder/web/pages"
 	"github.com/hfurubotten/autograder/web/sessions"
-	"github.com/hfurubotten/autograder/global"
 )
 
 type Webserver struct {
@@ -71,12 +71,15 @@ func (ws Webserver) Start() {
 	http.HandleFunc("/course/teacher/", teacherspanelhandler)
 	http.HandleFunc("/admin", adminhandler)
 	http.HandleFunc("/course/", maincoursepagehandler)
+	http.HandleFunc("/course/result/", showresulthandler)
 
 	// proccessing handlers
 	http.HandleFunc("/updatemember", updatememberhandler)
 	http.HandleFunc("/admin/teacher", setteacherhandler)
 	http.HandleFunc("/admin/user", setadminhandler)
 	http.HandleFunc("/course/approvemember/", approvecoursemembershiphandler)
+	http.HandleFunc("/course/approvelab", approvelabhandler)
+	http.HandleFunc("/course/ciresutls", ciresulthandler)
 	http.HandleFunc("/event/hook", webhookeventhandler)
 
 	// static files
@@ -145,7 +148,7 @@ func homehandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	t, err := template.ParseFiles(global.Basepath + "web/html/home.html", global.Basepath + "web/html/template.html")
+	t, err := template.ParseFiles(global.Basepath+"web/html/home.html", global.Basepath+"web/html/template.html")
 	if err != nil {
 		log.Println("Error parsing register html: ", err)
 		return
