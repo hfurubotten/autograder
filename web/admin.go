@@ -31,7 +31,7 @@ func adminhandler(w http.ResponseWriter, r *http.Request) {
 
 	t, err := template.ParseFiles(global.Basepath+"web/html/admin.html", global.Basepath+"web/html/template.html")
 	if err != nil {
-		log.Println("Error parsing register htmlx: ", err)
+		log.Println("Error parsing register html: ", err)
 		return
 	}
 
