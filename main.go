@@ -4,7 +4,8 @@ import (
 	"flag"
 	"log"
 	"os"
-    "path/filepath"
+	"path/filepath"
+	"strings"
 
 	"github.com/hfurubotten/autograder/git"
 	"github.com/hfurubotten/autograder/global"
@@ -37,8 +38,18 @@ func main() {
 
 	// checks for a domain name
 	if *hostname != "" {
-		optionstore.WriteGob("hostname", *hostname)
-		global.Hostname = *hostname
+		if !strings.HasPrefix(*hostname, "http://") && !strings.HasPrefix(*hostname, "https://") {
+			log.Fatal("The domain url is not a valid url.")
+		}
+
+		domain := *hostname
+
+		if strings.HasSuffix(domain, "/") {
+			domain = domain[:len(domain)-1]
+		}
+
+		optionstore.WriteGob("hostname", domain)
+		global.Hostname = domain
 	} else {
 		if !optionstore.Has("hostname") {
 			log.Fatal("Missing domain name, set this the first time you start the system.")
@@ -118,39 +129,39 @@ func main() {
 	// checks if the system should be set up as a deamon that starts on system startup.
 
 	// checks for docker installation
-		// install on supported systems
-		// give notice for those systems not supported
+	// install on supported systems
+	// give notice for those systems not supported
 
 	// determins the path to additional files
 	execdir, err := filepath.Abs(filepath.Dir(os.Args[0]))
-    if err != nil {
-    		log.Println("Couldn't determin the path to the executable.")
-            log.Fatal(err)
-    }
-    dir_one := filepath.Join(execdir, "../src/github.com/hfurubotten/autograder/")
-    dir_two := filepath.Join(execdir, "/")
-    if info, err := os.Stat(dir_one); err == nil {
-    	if info.Mode().IsDir() {
-    		global.Basepath = dir_one + "/"
-    	} else {
-    		log.Fatal("Path found to source files is not a directory.")
-    	}
-
-    } else if info, err := os.Stat(dir_two); err == nil {
+	if err != nil {
+		log.Println("Couldn't determin the path to the executable.")
+		log.Fatal(err)
+	}
+	dir_one := filepath.Join(execdir, "../src/github.com/hfurubotten/autograder/")
+	dir_two := filepath.Join(execdir, "/")
+	if info, err := os.Stat(dir_one); err == nil {
 		if info.Mode().IsDir() {
-    		global.Basepath = dir_two + "/"
-    	} else {
-    		log.Fatal("Path found to source files is not a directory.")
-    	}
-    } else {
-    	log.Println("Couldn't determin the path ")
-    	log.Fatal("")
-    }
+			global.Basepath = dir_one + "/"
+		} else {
+			log.Fatal("Path found to source files is not a directory.")
+		}
+
+	} else if info, err := os.Stat(dir_two); err == nil {
+		if info.Mode().IsDir() {
+			global.Basepath = dir_two + "/"
+		} else {
+			log.Fatal("Path found to source files is not a directory.")
+		}
+	} else {
+		log.Println("Couldn't determin the path ")
+		log.Fatal("")
+	}
 
 	// log print appearance
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
-	// starts up the webserver	
+	// starts up the webserver
 	log.Println("Server starting")
 
 	server := web.NewWebServer(80)
