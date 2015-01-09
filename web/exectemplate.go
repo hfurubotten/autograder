@@ -1,9 +1,9 @@
 package web
 
 import (
+	"html/template"
 	"log"
 	"net/http"
-	"text/template"
 )
 
 func execTemplate(page string, w http.ResponseWriter, view interface{}) {
