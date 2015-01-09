@@ -491,15 +491,13 @@ type approvemembershipview struct {
 func approvecoursemembershiphandler(w http.ResponseWriter, r *http.Request) {
 	enc := json.NewEncoder(w)
 	view := approvemembershipview{}
+	view.Error = true // default is an error; if its not we anyway set it to false before encoding
 
 	// Checks if the user is signed in and a teacher.
 	/*member*/ _, err := checkTeacherApproval(w, r, false)
 	if err != nil {
 		log.Println(err)
-
-		view.Error = true
 		view.ErrorMsg = "You are not singed in or not a teacher."
-
 		enc.Encode(view)
 		return
 	}
@@ -511,7 +509,6 @@ func approvecoursemembershiphandler(w http.ResponseWriter, r *http.Request) {
 			pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
 			return
 		}
-
 		orgname = path[3]
 	} else {
 		pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
@@ -520,22 +517,16 @@ func approvecoursemembershiphandler(w http.ResponseWriter, r *http.Request) {
 
 	username := r.FormValue("user")
 	if username == "" {
-		view.Error = true
 		view.ErrorMsg = "Username was not set in the request."
-
 		enc.Encode(view)
 		return
 	}
 
 	org := git.NewOrganization(orgname)
-
 	teams, err := org.ListTeams()
 	if err != nil {
 		log.Println(err)
-
-		view.Error = true
 		view.ErrorMsg = "Error communicating with Github. Can't get list teams."
-
 		enc.Encode(view)
 		return
 	}
@@ -550,10 +541,7 @@ func approvecoursemembershiphandler(w http.ResponseWriter, r *http.Request) {
 		err = org.CreateRepo(repo)
 		if err != nil {
 			log.Println(err)
-
-			view.Error = true
 			view.ErrorMsg = "Error communicating with Github. Couldn't create repository."
-
 			enc.Encode(view)
 			return
 		}
@@ -568,10 +556,7 @@ func approvecoursemembershiphandler(w http.ResponseWriter, r *http.Request) {
 			teamID, err := org.CreateTeam(newteam)
 			if err != nil {
 				log.Println(err)
-
-				view.Error = true
 				view.ErrorMsg = "Error communicating with Github. Can't create team."
-
 				enc.Encode(view)
 				return
 			}
@@ -579,10 +564,7 @@ func approvecoursemembershiphandler(w http.ResponseWriter, r *http.Request) {
 			err = org.AddMemberToTeam(teamID, username)
 			if err != nil {
 				log.Println(err)
-
-				view.Error = true
 				view.ErrorMsg = "Error communicating with Github. Can't add member to team."
-
 				enc.Encode(view)
 				return
 			}
@@ -590,10 +572,7 @@ func approvecoursemembershiphandler(w http.ResponseWriter, r *http.Request) {
 			err = org.LinkRepoToTeam(t.ID, username+"-"+git.STANDARD_REPO_NAME)
 			if err != nil {
 				log.Println(err)
-
-				view.Error = true
 				view.ErrorMsg = "Error communicating with Github. Can't link repo to team."
-
 				enc.Encode(view)
 				return
 			}
@@ -601,10 +580,7 @@ func approvecoursemembershiphandler(w http.ResponseWriter, r *http.Request) {
 			err = org.AddMemberToTeam(t.ID, username)
 			if err != nil {
 				log.Println(err)
-
-				view.Error = true
 				view.ErrorMsg = "Error communicating with Github. Can't add member to team."
-
 				enc.Encode(view)
 				return
 			}
@@ -615,7 +591,7 @@ func approvecoursemembershiphandler(w http.ResponseWriter, r *http.Request) {
 	org.Members[username] = nil
 	org.StickToSystem()
 
-	view.Error = false
+	view.Error = false // it wasn't an error after all
 	view.Approved = true
 	view.User = username
 	enc.Encode(view)
