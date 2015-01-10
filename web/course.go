@@ -811,7 +811,7 @@ func updatecoursehandler(w http.ResponseWriter, r *http.Request) {
 	var fname string
 	var fkey string
 	for i := 1; i <= indv; i = i + 1 {
-		fkey = "Lab" + strconv.Itoa(i)
+		fkey = "lab" + strconv.Itoa(i)
 		fname = r.FormValue(fkey)
 		if fname == "" {
 			fname = fkey
@@ -821,7 +821,7 @@ func updatecoursehandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for i := 1; i <= groups; i = i + 1 {
-		fkey = "Group" + strconv.Itoa(i)
+		fkey = "group" + strconv.Itoa(i)
 		fname = r.FormValue(fkey)
 		if fname == "" {
 			fname = fkey
