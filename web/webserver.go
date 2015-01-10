@@ -80,6 +80,7 @@ func (ws Webserver) Start() {
 	http.HandleFunc("/course/approvemember/", approvecoursemembershiphandler)
 	http.HandleFunc("/course/approvelab", approvelabhandler)
 	http.HandleFunc("/course/ciresutls", ciresulthandler)
+	http.HandleFunc("/course/update", updatecoursehandler)
 	http.HandleFunc("/event/hook", webhookeventhandler)
 
 	// static files

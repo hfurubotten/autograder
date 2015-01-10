@@ -796,3 +796,65 @@ func ciresulthandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 }
+
+func updatecoursehandler(w http.ResponseWriter, r *http.Request) {
+	// Checks if the user is signed in and a teacher.
+	member, err := checkTeacherApproval(w, r, true)
+	if err != nil {
+		pages.RedirectTo(w, r, "/", 307)
+		log.Println(err)
+		return
+	}
+
+	orgname := r.FormValue("org")
+
+	if _, ok := member.Teaching[orgname]; !ok {
+		http.Error(w, "Not valid organization.", 404)
+		return
+	}
+
+	org := git.NewOrganization(orgname)
+
+	indv, err := strconv.Atoi(r.FormValue("indv"))
+	if err != nil {
+		http.Error(w, "Cant use the individual assignment format.", 415)
+		return
+	}
+	org.IndividualAssignments = indv
+
+	groups, err := strconv.Atoi(r.FormValue("groups"))
+	if err != nil {
+		http.Error(w, "Cant use the group assignment format.", 415)
+		return
+	}
+	org.GroupAssignments = groups
+
+	org.Description = r.FormValue("desc")
+	org.Private = r.FormValue("private") == "on"
+
+	var fname string
+	var fkey string
+	for i := 1; i <= indv; i = i + 1 {
+		fkey = "Lab" + strconv.Itoa(i)
+		fname = r.FormValue(fkey)
+		if fname == "" {
+			fname = fkey
+		}
+
+		org.IndividualLabFolders[i] = fname
+	}
+
+	for i := 1; i <= groups; i = i + 1 {
+		fkey = "Group" + strconv.Itoa(i)
+		fname = r.FormValue(fkey)
+		if fname == "" {
+			fname = fkey
+		}
+
+		org.GroupLabFolders[i] = fname
+	}
+
+	org.StickToSystem()
+
+	pages.RedirectTo(w, r, "/course/teacher/"+org.Name, 307)
+}
