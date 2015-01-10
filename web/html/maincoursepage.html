@@ -66,16 +66,18 @@
   <script type="text/javascript">
     var course = "{{.Org.Name}}";
     var username = "{{.Member.Username}}";
-    $('#indvlabtab > li > a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-      $.getJSON("/course/ciresutls", {"Labname": e.target.innerText, "Course": course, "Username": username}, function(data){
-        $("div#" + e.target.innerText + " > div.well > code#logs").text("")
-        //$("div#" + e.target.innerText + " > p#status").text("Status: ").append(data.Status)
-        $("div#" + e.target.innerText + " > p#passes").text("Number of passed tests: ").append(data.NumPasses)
-        data.Log.forEach(function(t) {
-          $("div#" + e.target.innerText + " > div.well > code#logs").append(" # ").append($(document.createTextNode(t))).append("<br>")
+    $(function(){
+      $('#indvlabtab > li > a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+        $.getJSON("/course/ciresutls", {"Labname": e.target.innerHTML, "Course": course, "Username": username}, function(data){
+          $("div#" + e.target.innerHTML + " > div.well > code#logs").text("");
+          //$("div#" + e.target.innerHTML + " > p#status").text("Status: ").append(data.Status)
+          $("div#" + e.target.innerHTML + " > p#passes").text("Number of passed tests: ").append(data.NumPasses);
+          data.Log.forEach(function(t) {
+            $("div#" + e.target.innerHTML + " > div.well > code#logs").append(" # ").append($(document.createTextNode(t))).append("<br>");
+          });
+        }).error(function(){
+          $("div#" + e.target.innerHTML + " > div.well > code#logs").text("# There is no build for this lab yet.");
         });
-      }).error(function(){
-        $("div#" + e.target.innerText + " > div.well > code#logs").text("# There is no build for this lab yet.")
       });
     });
 
