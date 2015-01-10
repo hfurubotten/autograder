@@ -1,11 +1,16 @@
 package git
 
 import (
+	"encoding/gob"
 	"strconv"
 
 	"github.com/hfurubotten/autograder/global"
 	"github.com/hfurubotten/diskv"
 )
+
+func init() {
+	gob.Register(Group{})
+}
 
 type Group struct {
 	ID            int
