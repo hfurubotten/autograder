@@ -71,6 +71,7 @@ func (ws Webserver) Start() {
 	http.HandleFunc("/admin", adminhandler)
 	http.HandleFunc("/course/", maincoursepagehandler)
 	http.HandleFunc("/course/result/", showresulthandler)
+	http.HandleFunc("/help/", helphandler)
 
 	// proccessing handlers
 	http.HandleFunc("/updatemember", updatememberhandler)
