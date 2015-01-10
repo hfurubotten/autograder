@@ -16,6 +16,8 @@ import (
 	"github.com/hfurubotten/autograder/web/sessions"
 )
 
+var htmlBase string = global.Basepath + "web/html/"
+
 type Webserver struct {
 	Port int
 }
@@ -108,7 +110,7 @@ func catchallhandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		index, err := os.Open(global.Basepath + "web/html/index.html")
+		index, err := os.Open(htmlBase + "index.html")
 		if err != nil {
 			log.Fatal(err)
 		}

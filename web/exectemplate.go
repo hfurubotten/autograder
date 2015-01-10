@@ -1,14 +1,10 @@
 package web
 
 import (
+	"html/template"
 	"log"
 	"net/http"
-	"text/template"
-
-	"github.com/hfurubotten/autograder/global"
 )
-
-var htmlBase string = global.Basepath + "web/html/"
 
 func execTemplate(page string, w http.ResponseWriter, view interface{}) {
 	t, err := template.ParseFiles(htmlBase+page, htmlBase+"template.html")
