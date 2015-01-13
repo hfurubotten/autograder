@@ -28,11 +28,13 @@ type Organization struct {
 	StudentTeamID int
 	Private       bool
 
-	GroupCount   int
-	PendingGroup map[string]interface{}
-	PendingUser  map[string]interface{}
-	Members      map[string]interface{}
-	Teachers     map[string]interface{}
+	GroupCount         int
+	PendingGroup       map[int]interface{}
+	PendingRandomGroup map[string]interface{}
+	Groups             map[string]interface{}
+	PendingUser        map[string]interface{}
+	Members            map[string]interface{}
+	Teachers           map[string]interface{}
 
 	AdminToken  string
 	githubadmin *github.Client
@@ -50,7 +52,8 @@ func NewOrganization(name string) Organization {
 		Name:                 name,
 		IndividualLabFolders: make(map[int]string),
 		GroupLabFolders:      make(map[int]string),
-		PendingGroup:         make(map[string]interface{}),
+		PendingGroup:         make(map[int]interface{}),
+		PendingRandomGroup:   make(map[string]interface{}),
 		PendingUser:          make(map[string]interface{}),
 		Members:              make(map[string]interface{}),
 		Teachers:             make(map[string]interface{}),
@@ -150,7 +153,7 @@ func (o *Organization) StickToSystem() (err error) {
 			if v, ok := o.GroupLabFolders[i]; ok {
 				newfoldernames[i] = v
 			} else {
-				newfoldernames[i] = "lab" + strconv.Itoa(i)
+				newfoldernames[i] = "grouplab" + strconv.Itoa(i)
 			}
 		}
 		o.GroupLabFolders = newfoldernames

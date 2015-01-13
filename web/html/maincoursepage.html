@@ -50,9 +50,78 @@
 
           {{if gt .Org.GroupAssignments 0}}
           <div role="tabpanel" class="tab-pane" id="groups">
-          {{if not .Group}}
+          {{if.Group}}
+            {{if .Group.Active}}
+            <div role="tabpanel">
 
+              <!-- Nav tabs -->
+              <ul class="nav nav-tabs" role="tablist" id="grouplabtab">
+                {{range $index, $element := .Org.GroupLabFolders}}
+                <li role="presentation"><a href="#{{$element}}" aria-controls="{{$element}}" role="tab" data-toggle="tab">{{$element}}</a></li>
+                {{end}}
+              </ul>
+
+              <!-- Tab panes -->
+              <div class="tab-content">
+                {{range $index, $element := .Org.GroupLabFolders}}
+                <div role="tabpanel" class="tab-pane" id="{{$element}}">
+
+                  <h3>Latest build log</h3>
+                  <p id="status"></p>
+                  <p id="passes"></p>
+                  <div class="well">            
+                    <code id="grouplogs">
+                
+                    </code>
+                  </div>
+                </div>
+                {{end}}
+              </div>
+            </div>
+            {{else}}
+            <h3>Group pending</h3>
+            <p>You are a member of group {{.Group.ID}}. The teacher or a teaching assistant need to approve your group. </p>
+            <p>Group members:</p>
+            <ol>
+              {{range $index, $element := .Group.Members}}
+              <li>{{$index}}</li>
+              {{end}}
+            </ol>
+            {{end}}
           {{else}}
+            <h3>Group registation</h3>
+            <p></p>
+            <div class="row">
+              <div class="col-lg-4 col-lg-offset-1 text-center">
+                <p>If you do not have any preferences of who you are on group select this option. </p>
+                <button type="button" class="btn btn-primary" id="random">Random group</button>
+              </div>
+              <div class="col-lg-4 col-lg-offset-2 text-center">
+                <p>Select the members of your group below and submit them. </p>
+                <button type="button" class="btn btn-primary" id="groupsubmit">Submit new group</button>
+              </div>
+            </div>
+
+            <form action="/course/newgroup" method="post" accept-charset="utf-8" id="groupselection">
+              <input type="hidden" name="course" value="{{.Org.Name}}">
+              <input type="hidden" name="member" value="{{.Member.Username}}">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Selection</th>
+                    <th>Username</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {{range $index, $element := .Org.Members}}
+                  <tr id="{{$index}}">
+                    <td><input type="checkbox" name="member" value="{{$index}}"></td>
+                    <td>{{$index}}</td>
+                  </tr>
+                  {{end}}
+                </tbody>
+              </table>
+            </form>
           {{end}}
           </div>
           {{end}}
@@ -69,23 +138,53 @@
     $(function(){
       $('#indvlabtab > li > a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
         $.getJSON("/course/ciresutls", {"Labname": e.target.innerHTML, "Course": course, "Username": username}, function(data){
-          $("div#" + e.target.innerHTML + " > div.well > code#logs").text("");
+          $("#students > div > .tab-content > div#" + e.target.innerHTML + " > div.well > code#logs").text("");
           //$("div#" + e.target.innerHTML + " > p#status").text("Status: ").append(data.Status)
-          $("div#" + e.target.innerHTML + " > p#passes").text("Number of passed tests: ").append(data.NumPasses);
+          $("#students > div > .tab-content > div#" + e.target.innerHTML + " > p#passes").text("Number of passed tests: ").append(data.NumPasses);
           data.Log.forEach(function(t) {
-            $("div#" + e.target.innerHTML + " > div.well > code#logs").append(" # ").append($(document.createTextNode(t))).append("<br>");
+            $("#students > div > .tab-content > div#" + e.target.innerHTML + " > div.well > code#logs").append(" # ").append($(document.createTextNode(t))).append("<br>");
           });
         }).error(function(){
-          $("div#" + e.target.innerHTML + " > div.well > code#logs").text("# There is no build for this lab yet.");
+          $("#students > div > .tab-content > div#" + e.target.innerHTML + " > div.well > code#logs").text("# There is no build for this lab yet.");
         });
       });
     });
 
     $(function(){
       $('#labtypetab a:first').tab('show');
-    });
-    $(function(){
       $('#indvlabtab a:eq({{.Labnum}})').tab('show');
     });
+
+    {{if.Group}}
+    var groupname = "group{{.Group.ID}}";
+    $(function(){
+      $('#grouplabtab > li > a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+        $.getJSON("/course/ciresutls", {"Labname": e.target.innerHTML, "Course": course, "Username": groupname}, function(data){
+          $("#groups > div > .tab-content > div#" + e.target.innerHTML + " > div.well > code#grouplogs").text("");
+          //$("div#" + e.target.innerHTML + " > p#status").text("Status: ").append(data.Status)
+          $("#groups > div > .tab-content  > div#" + e.target.innerHTML + " > p#passes").text("Number of passed tests: ").append(data.NumPasses);
+          data.Log.forEach(function(t) {
+            $("#groups > div > .tab-content > div#" + e.target.innerHTML + " > div.well > code#grouplogs").append(" # ").append($(document.createTextNode(t))).append("<br>");
+          });
+        }).error(function(){
+          $("#groups > div > .tab-content > div#" + e.target.innerHTML + " > div.well > code#grouplogs").text("# There is no build for this lab yet.");
+        });
+      });
+    });
+
+    $(function(){
+      $('#grouplabtab a:eq({{.GroupLabnum}})').tab('show');
+    });
+
+    {{else}}
+
+    $("button#groupsubmit").click(function(){
+      $("form#groupselection").submit();
+    });
+    $("button#random").click(function(){
+      $.post("/course/requestrandomgroup", {"course": {{.Org.Name}}})
+    });
+
+    {{end}}
   </script>
 {{end}}

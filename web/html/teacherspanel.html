@@ -72,9 +72,86 @@
             </div>
             {{if gt .Org.GroupAssignments 0}}
             <div role="tabpanel" class="tab-pane" id="groups">
+
+              <div class="alert alert-danger alert-dismissible" role="alert" id="pendinggroupalert" style="display: none">
+                <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <span class="inputtext"></span>
+              </div>
+
               <h3>Pending groups</h3>
               <p></p>
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Group name</th>
+                    <th>Members</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {{range $index, $element := .PendingGroup}}
+                  <tr id="group{{$index}}">
+                    {{with $element}}
+                    <td>{{.ID}}</td>
+                    <td>group{{.ID}}</td>
+                    <td>
+                      {{range $username, $obj := .Members}}
+                      {{$obj.Username}} - {{$obj.Name}} - {{$obj.StudentID}} <br />
+                      {{end}}
+                    </td>
+                    <td><button type="button" onclick="approvegroup({{$index}})" class="btn btn-default">Approve</button></td>
+                    {{end}}
+                  </tr>
+                  {{end}}
+                </tbody>
+              </table>
+
+              <h3>Manuall group assignment</h3>
+              <p>List of students who waits for manuall assignment to a group</p>
+              <form action="/course/newgroup" method="post" accept-charset="utf-8" id="groupselection">
+                <input type="hidden" name="course" value="{{.Org.Name}}">
+                <table class="table table-striped">
+                  <thead>
+                    <tr>
+                      <th>Selection</th>
+                      <th>Username</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {{range $index, $element := .Org.PendingRandomGroup}}
+                    <tr id="{{$index}}">
+                      <td><input type="checkbox" name="member" value="{{$index}}"></td>
+                      <td>{{$index}}</td>
+                    </tr>
+                    {{end}}
+                  </tbody>
+                </table>
+              </form>
+
+              <h3>Results</h3>
+              <p>Build and test results from the students. Click in on a student to see complete build log.</p>
+
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Username</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {{$orgname := .Org.Name}}
+                  {{range $index, $element := .Org.Groups}}
+                  <tr id="{{$index}}">
+                    <td>{{$index}}</td>
+                    <td><a href="/course/result/{{$orgname}}?user=group{{$index}}">See results</a></td>
+                  </tr>
+                  {{end}}
+                </tbody>
+              </table>
+
             </div>
+
             {{end}}
             <div role="tabpanel" class="tab-pane" id="settings">
               {{with .Org}}
@@ -185,6 +262,19 @@
         } else {
           $("#pendinguseralert > span.inputtext").text(data.ErrorMsg);
           $("div#pendinguseralert").show();
+        }
+      });
+    }
+
+    // TODO: expand this!
+    function approvegroup(groupid) {
+      $.post("/course/approvegroup", {"course": "{{.Org.Name}}", "groupid": groupid}, function(base){
+        var data = jQuery.parseJSON(base);
+        if (!data.Error) {
+          $("tr#group" + groupid).slideUp(500);
+        } else {
+          $("#pendinggroupalert > span.inputtext").text(data.ErrorMsg);
+          $("div#pendinggroupalert").show();
         }
       });
     }

@@ -120,15 +120,18 @@ func StartTesterDeamon(load git.HookPayload) {
 		Timestamp: time.Now(),
 	}
 
+	r.User = user.Username
+
+	var name string
 	if isgroup {
-		r.User = load.Repo
+		name = load.Repo
 	} else {
-		r.User = user.Username
+		name = user.Username
 	}
 
 	parseResults(&r)
 
-	teststore := getCIStorage(org.Name, load.User)
+	teststore := getCIStorage(org.Name, name)
 
 	err = teststore.WriteGob(labfolder, r)
 	if err != nil {

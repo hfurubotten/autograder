@@ -10,37 +10,69 @@
 
           <!-- Nav tabs -->
           <ul class="nav nav-tabs" role="tablist" id="indvlabtab">
+          {{if .IsGroup}}
+            {{range $index, $element := .Org.GroupLabFolders}}
+            <li role="presentation"><a href="#{{$element}}" aria-controls="{{$element}}" role="tab" data-toggle="tab">{{$element}}</a></li>
+            {{end}}
+          {{else}}
             {{range $index, $element := .Org.IndividualLabFolders}}
             <li role="presentation"><a href="#{{$element}}" aria-controls="{{$element}}" role="tab" data-toggle="tab">{{$element}}</a></li>
             {{end}}
+          {{end}}
           </ul>
 
           <!-- Tab panes -->
           <div class="tab-content">
           	{{$course := .Org.Name}}
           	{{$Username := .Username}}
-            {{range $index, $element := .Org.IndividualLabFolders}}
-              <div role="tabpanel" class="tab-pane" id="{{$element}}">
+            {{if .IsGroup}}
+              {{range $index, $element := .Org.GroupLabFolders}}
+                <div role="tabpanel" class="tab-pane" id="{{$element}}">
 
-                <h3>Latest build log</h3>
-                <p id="status"></p>
-                <p id="passes"></p>
+                  <h3>Latest build log</h3>
+                  <p id="status"></p>
+                  <p id="passes"></p>
 
-                <form>
-      	  	      <input type="hidden" name="Course" value="{{$course}}">
-      	  	      <input type="hidden" name="User" value="{{$Username}}">
-      	  	      <input type="hidden" name="Approve" value="true">
-      	  	      <input type="hidden" name="Labnum" value="{{$index}}">
+                  <form>
+      	    	      <input type="hidden" name="Course" value="{{$course}}">
+      	    	      <input type="hidden" name="User" value="{{$Username}}">
+        	  	      <input type="hidden" name="Approve" value="true">
+        	  	      <input type="hidden" name="Labnum" value="{{$index}}">
       	  	
-      	  	      <button type="submit" class="btn btn-success btn-lg pull-right">Approve</button>
-      	  	    </form>
+        	  	      <button type="submit" class="btn btn-success btn-lg pull-right">Approve</button>
+        	  	    </form>
 
-                <div class="well">            
-                  <code id="logs">
+                  <div class="well">            
+                    <code id="logs">
                 
-                  </code>
+                    </code>
+                  </div>
                 </div>
-              </div>
+              {{end}}
+            {{else}}
+              {{range $index, $element := .Org.IndividualLabFolders}}
+                <div role="tabpanel" class="tab-pane" id="{{$element}}">
+
+                  <h3>Latest build log</h3>
+                  <p id="status"></p>
+                  <p id="passes"></p>
+
+                  <form>
+                    <input type="hidden" name="Course" value="{{$course}}">
+                    <input type="hidden" name="User" value="{{$Username}}">
+                    <input type="hidden" name="Approve" value="true">
+                    <input type="hidden" name="Labnum" value="{{$index}}">
+            
+                    <button type="submit" class="btn btn-success btn-lg pull-right">Approve</button>
+                  </form>
+
+                  <div class="well">            
+                    <code id="logs">
+                
+                    </code>
+                  </div>
+                </div>
+              {{end}}
             {{end}}
           </div>
         </div>
