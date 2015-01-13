@@ -61,3 +61,8 @@ func GetGroupStore(org string) *diskv.Diskv {
 		CacheSizeMax: 1024 * 1024 * 256,
 	})
 }
+
+func HasGroup(org string, groupid int) bool {
+	storage := GetGroupStore(org)
+	return storage.Has(strconv.Itoa(groupid))
+}
