@@ -128,25 +128,34 @@ func catchallhandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+type homeview struct {
+	Member    *git.Member
+	Teaching  map[string]git.Organization
+	Assisting map[string]git.Organization
+	Courses   map[string]git.Organization
+}
+
 func homehandler(w http.ResponseWriter, r *http.Request) {
 	member, err := checkMemberApproval(w, r, true)
 	if err != nil {
 		return
 	}
 
-	type homeview struct {
-		Member *git.Member
-		Org    []string
+	view := homeview{
+		Member:    &member,
+		Teaching:  make(map[string]git.Organization),
+		Assisting: make(map[string]git.Organization),
+		Courses:   make(map[string]git.Organization),
 	}
 
-	view := homeview{}
-
-	view.Member = &member
-	view.Org, err = member.ListOrgs()
-	if err != nil {
-		log.Println(err)
-		pages.RedirectTo(w, r, pages.SIGNOUT, 307)
-		return
+	for key, _ := range member.Teaching {
+		view.Teaching[key] = git.NewOrganization(key)
+	}
+	for key, _ := range member.AssistantCourses {
+		view.Assisting[key] = git.NewOrganization(key)
+	}
+	for key, _ := range member.Courses {
+		view.Courses[key] = git.NewOrganization(key)
 	}
 
 	if !member.IsComplete() {
@@ -194,7 +203,7 @@ func checkTeacherApproval(w http.ResponseWriter, r *http.Request, redirect bool)
 		return
 	}
 
-	if !member.IsTeacher {
+	if !member.IsTeacher && !member.IsAssistant {
 		err = errors.New("The user is not a teacher.")
 		if redirect {
 			pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
@@ -202,7 +211,7 @@ func checkTeacherApproval(w http.ResponseWriter, r *http.Request, redirect bool)
 		return
 	}
 
-	if member.Scope == "" {
+	if member.Scope == "" && member.IsTeacher {
 		err = errors.New("Teacher need to renew scope.")
 		if redirect {
 			pages.RedirectTo(w, r, global.OAuth_RedirectURL+"?client_id="+global.OAuth_ClientID+"&scope="+global.OAuth_Scope, 307)

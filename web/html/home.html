@@ -1,9 +1,90 @@
 {{define "title"}}UIS Autograder{{end}}
 {{define "body"}}
-    	<div class="container">
-        <h1>Your Organizations:</h1>
-        {{range .Org}}
-
-			   <p>{{.}}</p>
+  {{$member := .Member}}
+  <div class="container">
+	<div class="page-header">
+      <h1>Hi, {{.Member.Name}}. <small>Welcome to Autograder</small></h1>
+    </div>
+    <div class="row">
+      <div class="col-lg-7">
+      {{if .Member.IsTeacher}}
+        <h3>Courses you are teaching</h3>
+        {{range $index, $element := .Teaching}}
+          <hr>
+          <h4><a href="\course\teacher\{{$index}}">{{$index}}</a></h4>
+          <p>
+            <i>{{$element.Description}}</i>
+          </p>
+          <p>
+            <strong>Individual assignments: {{$element.IndividualAssignments}}</strong>
+          </p>
+          <p>
+            <strong>Group assignments: {{$element.GroupAssignments}}</strong>
+          </p>
+        {{else}}
+          <p>You are currently not teaching any courses.</p>
         {{end}}
+      {{end}}
+      {{if .Member.IsAssistant}}
+        <h3>Assisting in courses</h3>
+        {{range $index, $element := .Assisting}}
+          <hr>
+          <h4><a href="\course\teacher\{{$index}}">{{$index}}</a></h4>
+          <p>
+            <i>{{$element.Description}}</i>
+          </p>
+          <p>
+            <strong>Individual assignments: {{$element.IndividualLabFolders}}</strong>
+          </p>
+          <p>
+            <strong>Group assignments: {{$element.GroupAssignments}}</strong>
+          </p>
+        {{end}}
+      {{end}}
+      <h3>Attending courses</h3>
+      {{range $index, $element := .Courses}}
+        <hr>
+        <h4><a href="\course\{{$index}}">{{$index}}</a></h4>
+        <p>
+          <i>{{$element.Description}}</i>
+        </p>
+        <p>
+          <strong>Individual assignments: {{$element.IndividualAssignments}}</strong>
+        </p>
+        <p>
+          <strong>Group assignments: {{$element.GroupAssignments}}</strong>
+        </p>
+      {{else}}
+        <p>You are currently not attending any courses. Find one <a href="/course/register">here.</a></p>
+      {{end}}
+      </div>
+      <div class="col-lg-5">
+      	<h3>GitHub shortcuts</h3>
+      	{{range $index, $element := .Member.Courses}}
+      	  <hr>
+      	  <h4><a href="http://github.com/{{$index}}" target="_blank">{{$index}}</a></h4>
+      	  <p>
+      	  	<strong>Course info</strong> <br>
+          	<a href="http://github.com/{{$index}}/course-info" target="_blank">http://github.com/{{$index}}/course-info</a>
+          </p>
+      	  <p>
+      	  	<strong>Assignment repository</strong> <br>
+          	<a href="http://github.com/{{$index}}/labs" target="_blank">http://github.com/{{$index}}/labs</a>
+          </p>
+      	  <p>
+      	  	<strong>Your repository</strong> <br>
+          	<a href="http://github.com/{{$index}}/{{$member.Username}}-labs" target="_blank">http://github.com/{{$index}}/{{$member.Username}}-labs</a>
+          </p>
+          {{if $element.IsGroupMember}}
+          	<p>
+      	      <strong>Your group repository</strong> <br>
+          	  <a href="http://github.com/{{$index}}/group{{$element.GroupNum}}" target="_blank">http://github.com/{{$index}}/group{{$element.GroupNum}}</a>
+            </p>
+          {{end}}
+        {{else}}
+          <p>No courses to give shortcuts for yet.</p>
+        {{end}}
+      </div>
+    </div>
+  </div>
 {{end}}
