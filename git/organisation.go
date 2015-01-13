@@ -90,8 +90,8 @@ func (o *Organization) AddMembership(member Member) (err error) {
 		return
 	}
 
-	member.AddOrganization(*o)
-	err = member.StickToSystem()
+	//member.AddOrganization(*o)
+	//err = member.StickToSystem()
 	if o.PendingUser == nil {
 		o.PendingUser = make(map[string]interface{})
 	}

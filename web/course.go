@@ -610,6 +610,10 @@ func approvecoursemembershiphandler(w http.ResponseWriter, r *http.Request) {
 	org.Members[username] = nil
 	org.StickToSystem()
 
+	member := git.NewMemberFromUsername(username)
+	member.AddOrganization(org)
+	err = member.StickToSystem()
+
 	view.Error = false // it wasn't an error after all
 	view.Approved = true
 	view.User = username
