@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/hfurubotten/autograder/git"
 	"github.com/hfurubotten/autograder/global"
 	"github.com/hfurubotten/autograder/web/pages"
 	"github.com/hfurubotten/autograder/web/sessions"
@@ -41,7 +42,7 @@ func github_oauthhandler(w http.ResponseWriter, r *http.Request) {
 		req, err := http.NewRequest("POST", requrl, bytes.NewBuffer(postdata))
 		if err != nil {
 			log.Println("Echange error with github: ", err)
-			// Do something to redirect or tell user of error
+			pages.RedirectTo(w, r, pages.FRONTPAGE, 307)
 			return
 		}
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -50,21 +51,21 @@ func github_oauthhandler(w http.ResponseWriter, r *http.Request) {
 		resp, err := client.Do(req)
 		if err != nil {
 			log.Println("Echange error with github: ", err)
-			// Do something to redirect or tell user of error
+			pages.RedirectTo(w, r, pages.FRONTPAGE, 307)
 			return
 		}
 
 		data, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			log.Println("Read error: ", err)
-			// Do something to redirect or tell user of error
+			pages.RedirectTo(w, r, pages.FRONTPAGE, 307)
 			return
 		}
 
 		q, err := url.ParseQuery(string(data))
 		if err != nil {
 			log.Println("Data error from github: ", err)
-			// Do something to redirect or tell user of error
+			pages.RedirectTo(w, r, pages.FRONTPAGE, 307)
 			return
 		}
 
@@ -74,10 +75,18 @@ func github_oauthhandler(w http.ResponseWriter, r *http.Request) {
 
 		if len(errstr) > 0 {
 			log.Println("Access token error: " + errstr)
-			// redirect to home page
+			pages.RedirectTo(w, r, pages.FRONTPAGE, 307)
 			return
 		} else {
 			approved = true
+		}
+
+		scope := q.Get("scope")
+
+		if scope != "" {
+			m := git.NewMember(access_token)
+			m.Scope = scope
+			m.StickToSystem()
 		}
 
 		sessions.SetSessions(w, r, sessions.AUTHSESSION, sessions.APPROVEDSESSIONKEY, approved)

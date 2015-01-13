@@ -144,10 +144,12 @@ func (m *Member) Copy(tmp Member) {
 	m.Name = tmp.Name
 	m.StudentID = tmp.StudentID
 	m.IsTeacher = tmp.IsTeacher
+	m.IsAssistant = tmp.IsAssistant
 	m.IsAdmin = tmp.IsAdmin
 	m.Teaching = tmp.Teaching
 	m.Courses = tmp.Courses
 	m.AssistantCourses = tmp.AssistantCourses
+	m.Scope = tmp.Scope
 }
 
 func (m Member) IsComplete() bool {

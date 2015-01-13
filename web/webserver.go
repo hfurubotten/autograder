@@ -56,7 +56,7 @@ func NewWebServer(port int) Webserver {
 func (ws Webserver) Start() {
 
 	// OAuth process
-	http.Handle("/login", http.RedirectHandler(global.OAuth_RedirectURL+"?client_id="+global.OAuth_ClientID+"&scope="+global.OAuth_Scope, 307))
+	http.Handle("/login", http.RedirectHandler(global.OAuth_RedirectURL+"?client_id="+global.OAuth_ClientID, 307))
 	http.HandleFunc("/oauth", global.OAuth_Handler)
 	http.HandleFunc(pages.SIGNOUT, auth.RemoveApprovalHandler)
 
@@ -198,6 +198,14 @@ func checkTeacherApproval(w http.ResponseWriter, r *http.Request, redirect bool)
 		err = errors.New("The user is not a teacher.")
 		if redirect {
 			pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
+		}
+		return
+	}
+
+	if member.Scope == "" {
+		err = errors.New("Teacher need to renew scope.")
+		if redirect {
+			pages.RedirectTo(w, r, global.OAuth_RedirectURL+"?client_id="+global.OAuth_ClientID+"&scope="+global.OAuth_Scope, 307)
 		}
 		return
 	}
