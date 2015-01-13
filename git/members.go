@@ -29,6 +29,7 @@ type Member struct {
 	Name         string
 	StudentID    int
 	IsTeacher    bool
+	IsAssistant  bool
 	IsAdmin      bool
 
 	Teaching         map[string]interface{}
@@ -36,6 +37,7 @@ type Member struct {
 	AssistantCourses map[string]interface{}
 
 	accessToken token
+	Scope       string
 }
 
 func NewMember(oauthtoken string) (m Member) {
