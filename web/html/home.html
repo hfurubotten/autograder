@@ -11,7 +11,7 @@
         <h3>Courses you are teaching</h3>
         {{range $index, $element := .Teaching}}
           <hr>
-          <h4><a href="\course\teacher\{{$index}}">{{$index}}</a></h4>
+          <h4><a href="/course/teacher/{{$index}}">{{$index}}</a></h4>
           <p>
             <i>{{$element.Description}}</i>
           </p>
@@ -29,7 +29,7 @@
         <h3>Assisting in courses</h3>
         {{range $index, $element := .Assisting}}
           <hr>
-          <h4><a href="\course\teacher\{{$index}}">{{$index}}</a></h4>
+          <h4><a href="/course/teacher/{{$index}}">{{$index}}</a></h4>
           <p>
             <i>{{$element.Description}}</i>
           </p>
@@ -44,7 +44,7 @@
       <h3>Attending courses</h3>
       {{range $index, $element := .Courses}}
         <hr>
-        <h4><a href="\course\{{$index}}">{{$index}}</a></h4>
+        <h4><a href="/course/{{$index}}">{{$index}}</a></h4>
         <p>
           <i>{{$element.Description}}</i>
         </p>
