@@ -30,9 +30,10 @@
                 <div role="tabpanel" class="tab-pane" id="{{$element}}">
                   <div class="row">
                     <div class="col-lg-8">
-                      <h3>Latest build log</h3>
+                      <h3>Latest build</h3>
                       <p id="status">Status: Unknown</p>
                       <p id="passes">Number of passed tests: 0</p>
+                      <p id="timedate">Build time: Not yet</p>
                     </div>
                     <div class="col-lg-4">
                       <h3>Actions</h3>
@@ -75,9 +76,10 @@
                 <div role="tabpanel" class="tab-pane" id="{{$element}}">
                   <div class="row">
                     <div class="col-lg-8">
-                      <h3>Latest build log</h3>
+                      <h3>Latest build</h3>
                       <p id="status">Status: Unknown</p>
                       <p id="passes">Number of passed tests: 0</p>
+                      <p id="timedate">Build time: Not yet</p>
                     </div>
                     <div class="col-lg-4">
                       <h3>Actions</h3>
@@ -130,6 +132,8 @@
         data.Log.forEach(function(t) {
           $("div#" + lab + " > div.well > code#logs").append(" # ").append($(document.createTextNode(t))).append("<br>");
         });
+        var d = new Date(data.Timestamp)
+        $("div#" + lab + " > div > div > p#timedate").text("Build time: ").append(d.toLocaleDateString() + " - " + d.toLocaleTimeString());
       }).fail(function(){
         $("div#" + lab + " > div.well > code#logs").text("# There is no build for this lab yet.");
       });
