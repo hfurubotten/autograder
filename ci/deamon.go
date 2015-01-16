@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -21,55 +20,29 @@ func init() {
 	gob.Register(Result{})
 }
 
-func StartTesterDeamon(load git.HookPayload) {
+type DaemonOptions struct {
+	Org          string
+	User         string
+	Repo         string
+	BaseFolder   string
+	LabFolder    string
+	AdminToken   string
+	MimicLabRepo bool
+}
+
+func StartTesterDaemon(opt DaemonOptions) {
 	// safeguard
-	/*defer func() {
+	defer func() {
 		if r := recover(); r != nil {
 			log.Println("Recovered from panic: ", r)
 		}
-	}()*/
-
-	if !git.HasMember(load.User) {
-		log.Println("Not a valid user: ", load.User)
-		return
-	}
-
-	if !git.HasOrganization(load.Organization) {
-		log.Println("Not a valid org: ", load.Organization)
-		return
-	}
+	}()
 
 	logarray := make([]string, 0)
-	logarray = append(logarray, "CI starting up on repo "+load.Fullname)
-	org := git.NewOrganization(load.Organization)
-	user := git.NewMemberFromUsername(load.User)
-
-	isgroup := !strings.Contains(load.Repo, "-labs")
-
-	var labfolder string
-	var labnum int
-	if isgroup {
-		gnum, err := strconv.Atoi(load.Repo[len("group"):])
-		if err != nil {
-			panic(err)
-		}
-
-		group, err := git.NewGroup(org.Name, gnum)
-		if err != nil {
-			panic(err)
-		}
-
-		labnum = group.CurrentLabNum
-		labfolder = org.GroupLabFolders[labnum]
-	} else {
-		labnum = user.Courses[org.Name].CurrentLabNum
-		labfolder = org.IndividualLabFolders[labnum]
-	}
-
-	basefolder := org.CI.Basepath
+	logarray = append(logarray, "CI starting up on repo "+opt.Org+"/"+opt.Repo)
 
 	// Test execution
-	log.Println("CI starting up on repo", load.Fullname)
+	log.Println("CI starting up on repo", opt.Org, "/", opt.Repo)
 
 	env, err := NewVirtual()
 	if err != nil {
@@ -84,6 +57,13 @@ func StartTesterDeamon(load git.HookPayload) {
 	// cleanup
 	defer env.RemoveContainer()
 
+	var destfolder string
+	if opt.MimicLabRepo {
+		destfolder = git.STANDARD_REPO_NAME
+	} else {
+		destfolder = opt.Repo
+	}
+
 	// mkdir /testground/github.com/
 	// git clone user-labs
 	// git clone test-labs
@@ -91,21 +71,24 @@ func StartTesterDeamon(load git.HookPayload) {
 	// /bin/sh dependecies.sh
 	// /bin/sh test.sh
 
-	cmds := []string{
-		"mkdir -p " + basefolder,
-		"git clone https://" + org.AdminToken + ":x-oauth-basic@github.com/" + org.Name + "/" + load.Repo + ".git" + " " + basefolder + load.Repo + "/",
-		"git clone https://" + org.AdminToken + ":x-oauth-basic@github.com/" + org.Name + "/" + git.TEST_REPO_NAME + ".git" + " " + basefolder + git.TEST_REPO_NAME + "/",
-		"/bin/bash -c \"cp -rf \"" + basefolder + git.TEST_REPO_NAME + "/*\" \"" + basefolder + load.Repo + "/\" \"",
+	cmds := []struct {
+		Cmd       string
+		Breakable bool
+	}{
+		{"mkdir -p " + opt.BaseFolder, true},
+		{"git clone https://" + opt.AdminToken + ":x-oauth-basic@github.com/" + opt.Org + "/" + opt.Repo + ".git" + " " + opt.BaseFolder + destfolder + "/", true},
+		{"git clone https://" + opt.AdminToken + ":x-oauth-basic@github.com/" + opt.Org + "/" + git.TEST_REPO_NAME + ".git" + " " + opt.BaseFolder + git.TEST_REPO_NAME + "/", true},
+		{"/bin/bash -c \"cp -rf \"" + opt.BaseFolder + git.TEST_REPO_NAME + "/*\" \"" + opt.BaseFolder + destfolder + "/\" \"", true},
 
-		"chmod 777 " + basefolder + load.Repo + "/dependencies.sh",
-		"/bin/sh -c \"(cd \"" + basefolder + load.Repo + "/\" && ./dependencies.sh)\"",
-		"chmod 777 " + basefolder + load.Repo + "/" + labfolder + "/test.sh",
-		"/bin/sh -c \"(cd \"" + basefolder + load.Repo + "/" + labfolder + "/\" && ./test.sh)\"",
+		{"chmod 777 " + opt.BaseFolder + destfolder + "/dependencies.sh", true},
+		{"/bin/sh -c \"(cd \"" + opt.BaseFolder + destfolder + "/\" && ./dependencies.sh)\"", true},
+		{"chmod 777 " + opt.BaseFolder + destfolder + "/" + opt.LabFolder + "/test.sh", true},
+		{"/bin/sh -c \"(cd \"" + opt.BaseFolder + destfolder + "/" + opt.LabFolder + "/\" && ./test.sh)\"", false},
 	}
 
 	for _, cmd := range cmds {
-		err = execute(&env, cmd, &logarray)
-		if err != nil {
+		err = execute(&env, cmd.Cmd, &logarray)
+		if err != nil && cmd.Breakable {
 			logOutput("Unexpected end of integration.", &logarray)
 			log.Println(err)
 			break
@@ -115,25 +98,23 @@ func StartTesterDeamon(load git.HookPayload) {
 	// parsing the results
 	r := Result{
 		Log:       logarray,
-		Course:    org.Name,
-		Labnum:    labnum,
+		Course:    opt.Org,
 		Timestamp: time.Now(),
-	}
-
-	r.User = user.Username
-
-	var name string
-	if isgroup {
-		name = load.Repo
-	} else {
-		name = user.Username
+		User:      opt.User,
+		Status:    "Active lab assignment",
 	}
 
 	parseResults(&r)
 
-	teststore := getCIStorage(org.Name, name)
+	teststore := GetCIStorage(opt.Org, opt.User)
 
-	err = teststore.WriteGob(labfolder, r)
+	if teststore.Has(opt.LabFolder) {
+		oldr := Result{}
+		err = teststore.ReadGob(opt.LabFolder, &oldr, false)
+		r.Status = oldr.Status
+	}
+
+	err = teststore.WriteGob(opt.LabFolder, r)
 	if err != nil {
 		panic(err)
 	}
@@ -149,7 +130,7 @@ func parseResults(r *Result) {
 	log.Println("Found ", r.NumPasses, " passed tests.")
 }
 
-func getCIStorage(course, user string) *diskv.Diskv {
+func GetCIStorage(course, user string) *diskv.Diskv {
 	return diskv.New(diskv.Options{
 		BasePath:     global.Basepath + "diskv/CI/" + course + "/" + user,
 		CacheSizeMax: 1024 * 1024 * 256,
@@ -158,13 +139,14 @@ func getCIStorage(course, user string) *diskv.Diskv {
 
 func execute(v *Virtual, cmd string, l *[]string) (err error) {
 
-	read := bytes.NewBuffer(make([]byte, 0))
+	buf := bytes.NewBuffer(make([]byte, 0))
+	bufw := bufio.NewWriter(buf)
 
 	fmt.Println("$", cmd)
 
-	err = v.ExecuteCommand(cmd, nil, bufio.NewWriter(read), bufio.NewWriter(read))
+	err = v.ExecuteCommand(cmd, nil, bufw, bufw)
 
-	s := bufio.NewScanner(read)
+	s := bufio.NewScanner(buf)
 
 	for s.Scan() {
 		text := s.Text()
@@ -197,7 +179,7 @@ func logOutput(s string, l *[]string) {
 }
 
 func GetIntegationResults(org, user, lab string) (logs Result, err error) {
-	teststore := getCIStorage(org, user)
+	teststore := GetCIStorage(org, user)
 
 	if !teststore.Has(lab) {
 		err = errors.New("Doesn't have any CI logs yet.")
