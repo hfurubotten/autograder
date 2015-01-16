@@ -1070,7 +1070,7 @@ func approvegrouphandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(group.Members) >= 1 {
+	if len(group.Members) <= 1 {
 		view.ErrorMsg = "No members in this group."
 		err = enc.Encode(view)
 		if err != nil {
