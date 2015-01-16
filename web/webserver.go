@@ -87,6 +87,7 @@ func (ws Webserver) Start() {
 	http.HandleFunc("/course/requestrandomgroup", requestrandomgrouphandler)
 	http.HandleFunc("/course/approvegroup", approvegrouphandler)
 	http.HandleFunc("/event/hook", webhookeventhandler)
+	http.HandleFunc("/event/manualbuild", manualcihandler)
 
 	// static files
 	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("web/js/"))))

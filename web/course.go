@@ -654,7 +654,13 @@ func maincoursepagehandler(w http.ResponseWriter, r *http.Request) {
 	view := maincourseview{
 		Member: &member,
 		Org:    &org,
-		Labnum: member.Courses[org.Name].CurrentLabNum - 1,
+	}
+
+	nr := member.Courses[org.Name].CurrentLabNum
+	if nr >= org.IndividualAssignments {
+		view.Labnum = org.IndividualAssignments - 1
+	} else {
+		view.Labnum = nr - 1
 	}
 
 	if member.Courses[orgname].IsGroupMember {
@@ -664,7 +670,11 @@ func maincoursepagehandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		view.Group = &group
-		view.GroupLabnum = group.CurrentLabNum - 1
+		if group.CurrentLabNum >= org.GroupAssignments {
+			view.GroupLabnum = org.GroupAssignments - 1
+		} else {
+			view.GroupLabnum = group.CurrentLabNum - 1
+		}
 	}
 
 	execTemplate("maincoursepage.html", w, view)
@@ -727,13 +737,22 @@ func showresulthandler(w http.ResponseWriter, r *http.Request) {
 				pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
 				return
 			}
-			labnum = group.CurrentLabNum - 1
+			if group.CurrentLabNum >= org.GroupAssignments {
+				labnum = org.GroupAssignments - 1
+			} else {
+				labnum = group.CurrentLabNum - 1
+			}
 		} else {
 			pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
 			return
 		}
 	} else {
-		labnum = member.Courses[org.Name].CurrentLabNum - 1
+		nr := member.Courses[org.Name].CurrentLabNum
+		if nr >= org.IndividualAssignments {
+			labnum = org.IndividualAssignments - 1
+		} else {
+			labnum = nr - 1
+		}
 	}
 
 	view := showresultview{
@@ -772,9 +791,11 @@ func approvelabhandler(w http.ResponseWriter, r *http.Request) {
 
 	if !git.HasOrganization(course) || username == "" {
 		log.Println("Missing username or uncorrect course")
-		http.Error(w, "Unknown", 404)
+		http.Error(w, "Unknown Organization", 404)
 		return
 	}
+
+	org := git.NewOrganization(course)
 
 	var isgroup bool
 	if git.HasMember(username) {
@@ -783,11 +804,12 @@ func approvelabhandler(w http.ResponseWriter, r *http.Request) {
 		isgroup = strings.Contains(username, "group")
 		if !isgroup {
 			log.Println("No user found")
-			http.Error(w, "Unknown 2", 404)
+			http.Error(w, "Unknown User", 404)
 			return
 		}
 	}
 
+	var labfolder string
 	if isgroup {
 		gnum, err := strconv.Atoi(username[len("group"):])
 		if err != nil {
@@ -801,14 +823,37 @@ func approvelabhandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), 404)
 			return
 		}
-		group.CurrentLabNum = labnum + 1
-		group.StickToSystem()
+
+		if group.CurrentLabNum <= labnum {
+			group.CurrentLabNum = labnum + 1
+			group.StickToSystem()
+		}
+
+		labfolder = org.GroupLabFolders[labnum]
 	} else {
 		user := git.NewMemberFromUsername(username)
 		copt := user.Courses[course]
-		copt.CurrentLabNum = labnum + 1
-		user.Courses[course] = copt
-		user.StickToSystem()
+		if copt.CurrentLabNum <= labnum {
+			copt.CurrentLabNum = labnum + 1
+			user.Courses[course] = copt
+			user.StickToSystem()
+		}
+		labfolder = org.IndividualLabFolders[labnum]
+	}
+
+	teststore := ci.GetCIStorage(org.Name, username)
+
+	res := ci.Result{}
+	err = teststore.ReadGob(labfolder, &res, false)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	res.Status = "Approved"
+
+	err = teststore.WriteGob(labfolder, res)
+	if err != nil {
+		log.Println(err)
 	}
 }
 
@@ -1101,4 +1146,61 @@ func approvegrouphandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println(err)
 	}
+}
+
+func manualcihandler(w http.ResponseWriter, r *http.Request) {
+	// Checks if the user is signed in and a teacher.
+	member, err := checkMemberApproval(w, r, false)
+	if err != nil {
+		http.Error(w, err.Error(), 404)
+		log.Println(err)
+		return
+	}
+
+	course := r.FormValue("course")
+	user := r.FormValue("user")
+	lab := r.FormValue("lab")
+
+	if !git.HasOrganization(course) {
+		http.Error(w, "Unknown organization", 404)
+		return
+	}
+
+	org := git.NewOrganization(course)
+
+	var repo string
+	if _, ok := org.Members[user]; ok {
+		repo = user + "-" + git.STANDARD_REPO_NAME
+	} else if _, ok := org.Groups[user]; ok {
+		repo = user
+	} else {
+		http.Error(w, "Unknown user", 404)
+		return
+	}
+
+	_, ok1 := member.Teaching[course]
+	_, ok2 := member.AssistantCourses[course]
+
+	if !ok1 && !ok2 {
+		if _, ok := org.Members[member.Username]; ok {
+			user = member.Username
+		} else {
+			http.Error(w, "Not a member of the course", 404)
+			return
+		}
+	}
+
+	opt := ci.DaemonOptions{
+		Org:          org.Name,
+		User:         user,
+		Repo:         repo,
+		BaseFolder:   org.CI.Basepath,
+		LabFolder:    lab,
+		AdminToken:   org.AdminToken,
+		MimicLabRepo: true,
+	}
+
+	log.Println(opt)
+
+	ci.StartTesterDaemon(opt)
 }

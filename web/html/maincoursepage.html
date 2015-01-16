@@ -30,12 +30,32 @@
 
               <!-- Tab panes -->
               <div class="tab-content">
+              {{$course := .Org.Name}}
+              {{$Username := .Member.Username}}
               {{range $index, $element := .Org.IndividualLabFolders}}
                 <div role="tabpanel" class="tab-pane" id="{{$element}}">
+                  <div class="row">
+                    <div class="col-lg-8">
+                      <h3>Latest build log</h3>
+                      <p id="status">Status: No build yet</p>
+                      <p id="passes">Number of passed tests: 0</p>
+                    </div>
+                    <div class="col-lg-4">
+                      <h3>Actions</h3>
+                      <div class="row">
+                        <div class="col-lg-12">
+                          <form action="/event/manualbuild" method="get" class="rebuild">
+                            <input type="hidden" name="course" value="{{$course}}">
+                            <input type="hidden" name="user" value="{{$Username}}">
+                            <input type="hidden" name="lab" value="{{$element}}">
 
-                  <h3>Latest build log</h3>
-                  <p id="status"></p>
-                  <p id="passes"></p>
+                            <button type="submit" class="btn btn-primary">Rebuild code</button>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="alert alert-success" role="alert" style="display: none"></div>
                   <div class="well">            
                     <code id="logs">
                 
@@ -63,17 +83,38 @@
 
               <!-- Tab panes -->
               <div class="tab-content">
+                {{$groupid := .Group.ID}}
                 {{range $index, $element := .Org.GroupLabFolders}}
                 <div role="tabpanel" class="tab-pane" id="{{$element}}">
 
-                  <h3>Latest build log</h3>
-                  <p id="status"></p>
-                  <p id="passes"></p>
+                  <div class="row">
+                    <div class="col-lg-8">
+                      <h3>Latest build log</h3>
+                      <p id="status">Status: No build yet</p>
+                      <p id="passes">Number of passed tests: 0</p>
+                    </div>
+                    <div class="col-lg-4">
+                      <h3>Actions</h3>
+                      <div class="row">
+                        <div class="col-lg-12">
+                          <form action="/event/manualbuild" method="get" class="rebuild">
+                            <input type="hidden" name="course" value="{{$course}}">
+                            <input type="hidden" name="user" value="group{{$groupid}}">
+                            <input type="hidden" name="lab" value="{{$element}}">
+
+                            <button type="submit" class="btn btn-primary">Rebuild code</button>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="alert alert-success" role="alert" style="display: none"></div>
                   <div class="well">            
-                    <code id="grouplogs">
+                    <code id="logs">
                 
                     </code>
                   </div>
+
                 </div>
                 {{end}}
               </div>
@@ -135,18 +176,37 @@
   <script type="text/javascript">
     var course = "{{.Org.Name}}";
     var username = "{{.Member.Username}}";
+    var loadLabResult = function(user, lab){
+      $.getJSON("/course/ciresutls", {"Labname": lab, "Course": course, "Username": user}, function(data){
+        $("div#" + lab + " > div.well > code#logs").text("");
+        $("div#" + lab + " > div > div > p#status").text("Status: ").append(data.Status);
+        $("div#" + lab + " > div > div > p#passes").text("Number of passed tests: ").append(data.NumPasses);
+        data.Log.forEach(function(t) {
+          $("div#" + lab + " > div.well > code#logs").append(" # ").append($(document.createTextNode(t))).append("<br>");
+        });
+      }).fail(function(){
+        $("div#" + lab + " > div.well > code#logs").text("# There is no build for this lab yet.");
+      });
+    }
+
+    $("form.rebuild").submit(function(event){
+      var lab = $(this).children("input[name='lab']").val();
+      $("div#" + lab + " > div.alert").show(200);
+      $("div#" + lab + " > div.alert").removeClass("alert-primary alert-danger alert-success").addClass("alert-warning").text("Running build");
+      $.post("/event/manualbuild", $(this).serialize(), function(){
+        $("div#" + lab + " > div.alert").removeClass("alert-warning").addClass("alert-success").text("Successfull rebuild. Build log updated.");
+        loadLabResult(username, lab)
+      }).fail(function(){
+        $("div#" + lab + " > div.alert").removeClass("alert-warning").addClass("alert-danger").text("Rebuild failure");
+      });
+      event.preventDefault();
+      return false
+    });
+
     $(function(){
       $('#indvlabtab > li > a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-        $.getJSON("/course/ciresutls", {"Labname": e.target.innerHTML, "Course": course, "Username": username}, function(data){
-          $("#students > div > .tab-content > div#" + e.target.innerHTML + " > div.well > code#logs").text("");
-          //$("div#" + e.target.innerHTML + " > p#status").text("Status: ").append(data.Status)
-          $("#students > div > .tab-content > div#" + e.target.innerHTML + " > p#passes").text("Number of passed tests: ").append(data.NumPasses);
-          data.Log.forEach(function(t) {
-            $("#students > div > .tab-content > div#" + e.target.innerHTML + " > div.well > code#logs").append(" # ").append($(document.createTextNode(t))).append("<br>");
-          });
-        }).error(function(){
-          $("#students > div > .tab-content > div#" + e.target.innerHTML + " > div.well > code#logs").text("# There is no build for this lab yet.");
-        });
+        var lab = e.target.innerHTML
+        loadLabResult(username, lab)
       });
     });
 
@@ -159,17 +219,8 @@
     var groupname = "group{{.Group.ID}}";
     $(function(){
       $('#grouplabtab > li > a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-        $.getJSON("/course/ciresutls", {"Labname": e.target.innerHTML, "Course": course, "Username": groupname}, function(data){
-          $("#groups > div > .tab-content > div#" + e.target.innerHTML + " > div.well > code#grouplogs").text("");
-          //$("div#" + e.target.innerHTML + " > p#status").text("Status: ").append(data.Status)
-          $("#groups > div > .tab-content  > div#" + e.target.innerHTML + " > p#passes").text("Number of passed tests: ").append(data.NumPasses);
-          data.Log.forEach(function(t) {
-            $("#groups > div > .tab-content > div#" + e.target.innerHTML + " > div.well > code#grouplogs").append(" # ").append($(document.createTextNode(t))).append("<br>");
-          });
-        }).error(function(){
-          $("#groups > div > .tab-content > div#" + e.target.innerHTML + " > div.well > code#grouplogs").text("# There is no build for this lab yet.");
-        });
-      });
+        var lab = e.target.innerHTML
+        loadLabResult(groupname, lab)
     });
 
     $(function(){
