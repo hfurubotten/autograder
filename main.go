@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/hfurubotten/autograder/git"
@@ -27,6 +28,9 @@ var optionstore = diskv.New(diskv.Options{
 })
 
 func main() {
+	// enables multi core use.
+	runtime.GOMAXPROCS(runtime.NumCPU())
+
 	var err error
 	flag.Parse()
 
