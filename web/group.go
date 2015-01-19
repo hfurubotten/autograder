@@ -70,6 +70,10 @@ func newgrouphandler(w http.ResponseWriter, r *http.Request) {
 		user.Courses[course] = opt
 		user.StickToSystem()
 		group.AddMember(username)
+
+		if _, ok := org.PendingRandomGroup[username]; ok {
+			delete(org.PendingRandomGroup, username)
+		}
 	}
 
 	org.PendingGroup[org.GroupCount] = nil
@@ -195,7 +199,7 @@ func approvegrouphandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	delete(org.PendingGroup, groupID)
+	org.AddGroup(group)
 	org.StickToSystem()
 
 	group.Active = true

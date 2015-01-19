@@ -185,7 +185,7 @@
                   {{range $index, $element := .Org.Groups}}
                   <tr id="{{$index}}">
                     <td>{{$index}}</td>
-                    <td><a href="/course/result/{{$orgname}}?user=group{{$index}}">See results</a></td>
+                    <td><a href="/course/result/{{$orgname}}?user={{$index}}">See results</a></td>
                   </tr>
                   {{else}}
                     <td>No groups yet</td>
@@ -215,7 +215,7 @@
                   <div class="col-sm-offset-3 col-sm-9">
                     <div class="checkbox">
                       <label>
-                        <input type="checkbox" id="private" name="private"> Private repositories
+                        <input type="checkbox" id="private" name="private"{{if.Private}} checked{{end}}> Private repositories
                       </label>
                     </div>
                   </div>

@@ -195,11 +195,12 @@
 
     $("form.rebuild").submit(function(event){
       var lab = $(this).children("input[name='lab']").val();
+      var user = $(this).children("input[name='user']").val();
       $("div#" + lab + " > div.alert").show(200);
       $("div#" + lab + " > div.alert").removeClass("alert-primary alert-danger alert-success").addClass("alert-warning").text("Running build");
       $.post("/event/manualbuild", $(this).serialize(), function(){
         $("div#" + lab + " > div.alert").removeClass("alert-warning").addClass("alert-success").text("Successfull rebuild. Build log updated.");
-        loadLabResult(username, lab)
+        loadLabResult(user, lab)
       }).fail(function(){
         $("div#" + lab + " > div.alert").removeClass("alert-warning").addClass("alert-danger").text("Rebuild failure");
       });
@@ -238,7 +239,9 @@
       $("form#groupselection").submit();
     });
     $("button#random").click(function(){
-      $.post("/course/requestrandomgroup", {"course": {{.Org.Name}}})
+      $.post("/course/requestrandomgroup", {"course": {{.Org.Name}}}, function(){
+        alert("You have been added to the list over people who wants random groups assignment.")
+      });
     });
 
     {{end}}
