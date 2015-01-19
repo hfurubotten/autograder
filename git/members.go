@@ -214,9 +214,7 @@ func (m *Member) AddTeachingOrganization(org Organization) (err error) {
 	}
 
 	m.IsTeacher = true
-	if _, ok := m.Teaching[org.Name]; !ok {
-		m.Teaching[org.Name] = nil
-	}
+	m.Teaching[org.Name] = nil
 
 	return
 }
@@ -226,9 +224,8 @@ func (m *Member) AddAssistingOrganization(org Organization) (err error) {
 		m.AssistantCourses = make(map[string]interface{})
 	}
 
-	if _, ok := m.AssistantCourses[org.Name]; !ok {
-		m.AssistantCourses[org.Name] = nil
-	}
+	m.IsAssistant = true
+	m.AssistantCourses[org.Name] = nil
 
 	return
 }
