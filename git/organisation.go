@@ -126,6 +126,11 @@ func (o *Organization) AddTeacher(member Member) (err error) {
 	return
 }
 
+func (o Organization) IsTeacher(member Member) bool {
+	_, ok := o.Teachers[member.Username]
+	return ok
+}
+
 func (o *Organization) GetMembership(member Member) (status string, err error) {
 	err = o.connectAdminToGithub()
 	if err != nil {
