@@ -391,6 +391,11 @@ func registercoursememberhandler(w http.ResponseWriter, r *http.Request) {
 
 	org := git.NewOrganization(orgname)
 
+	if _, ok := git.Member[member.Username]; ok {
+		http.Redirect(w, r, "/course/"+orgname, 307)
+		return
+	}
+
 	err = org.AddMembership(member)
 	if err != nil {
 		log.Println(err)
