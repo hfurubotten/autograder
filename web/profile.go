@@ -17,14 +17,14 @@ type profileview struct {
 
 func profilehandler(w http.ResponseWriter, r *http.Request) {
 	if !auth.IsApprovedUser(r) {
-		pages.RedirectTo(w, r, pages.FRONTPAGE, 307)
+		http.Redirect(w, r, pages.FRONTPAGE, 307)
 		return
 	}
 
 	value, err := sessions.GetSessions(r, sessions.AUTHSESSION, sessions.ACCESSTOKENSESSIONKEY)
 	if err != nil {
 		log.Println("Error getting access token from sessions: ", err)
-		pages.RedirectTo(w, r, pages.FRONTPAGE, 307)
+		http.Redirect(w, r, pages.FRONTPAGE, 307)
 		return
 	}
 
@@ -41,14 +41,14 @@ func updatememberhandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if !auth.IsApprovedUser(r) {
-			pages.RedirectTo(w, r, pages.FRONTPAGE, 307)
+			http.Redirect(w, r, pages.FRONTPAGE, 307)
 			return
 		}
 
 		value, err := sessions.GetSessions(r, sessions.AUTHSESSION, sessions.ACCESSTOKENSESSIONKEY)
 		if err != nil {
 			log.Println("Error getting access token from sessions: ", err)
-			pages.RedirectTo(w, r, pages.FRONTPAGE, 307)
+			http.Redirect(w, r, pages.FRONTPAGE, 307)
 			return
 		}
 
@@ -57,14 +57,14 @@ func updatememberhandler(w http.ResponseWriter, r *http.Request) {
 		studentid, err := strconv.Atoi(r.FormValue("studentid"))
 		if err != nil {
 			log.Println("studentid atoi error: ", err)
-			pages.RedirectTo(w, r, pages.REGISTER_REDIRECT, 307)
+			http.Redirect(w, r, pages.REGISTER_REDIRECT, 307)
 			return
 		}
 
 		member.StudentID = studentid
 		member.StickToSystem()
 
-		pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
+		http.Redirect(w, r, pages.HOMEPAGE, 307)
 	} else {
 		http.Error(w, "This is not the page you are looking for!\n", 404)
 	}

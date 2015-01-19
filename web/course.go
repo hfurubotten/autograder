@@ -39,7 +39,7 @@ func newcoursehandler(w http.ResponseWriter, r *http.Request) {
 		view.Orgs, err = member.ListOrgs()
 		if err != nil {
 			log.Println(err)
-			pages.RedirectTo(w, r, pages.SIGNOUT, 307)
+			http.Redirect(w, r, pages.SIGNOUT, 307)
 			return
 		}
 	}
@@ -59,7 +59,7 @@ func selectorghandler(w http.ResponseWriter, r *http.Request) {
 	if path := strings.Split(r.URL.Path, "/"); len(path) == 5 {
 		view.Org = path[4]
 	} else {
-		pages.RedirectTo(w, r, "/course/new", 307)
+		http.Redirect(w, r, "/course/new", 307)
 		return
 	}
 
@@ -67,7 +67,7 @@ func selectorghandler(w http.ResponseWriter, r *http.Request) {
 	view.Orgs, err = member.ListOrgs()
 	if err != nil {
 		log.Println(err)
-		pages.RedirectTo(w, r, pages.SIGNOUT, 307)
+		http.Redirect(w, r, pages.SIGNOUT, 307)
 		return
 	}
 
@@ -95,7 +95,7 @@ func saveorghandler(w http.ResponseWriter, r *http.Request) {
 	indv, err := strconv.Atoi(r.FormValue("indv"))
 	if err != nil {
 		log.Println("Cannot convert number of individual assignments from string to int: ", err)
-		pages.RedirectTo(w, r, pages.FRONTPAGE, 307)
+		http.Redirect(w, r, pages.HOMEPAGE, 307)
 		return
 	}
 	org.IndividualAssignments = indv
@@ -343,7 +343,7 @@ func saveorghandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pages.RedirectTo(w, r, pages.FRONTPAGE, 307)
+	http.Redirect(w, r, pages.FRONTPAGE, 307)
 }
 
 type newmemberview struct {
@@ -379,13 +379,13 @@ func registercoursememberhandler(w http.ResponseWriter, r *http.Request) {
 	orgname := ""
 	if path := strings.Split(r.URL.Path, "/"); len(path) == 4 {
 		if !git.HasOrganization(path[3]) {
-			pages.RedirectTo(w, r, "/course/register", 307)
+			http.Redirect(w, r, "/course/register", 307)
 			return
 		}
 
 		orgname = path[3]
 	} else {
-		pages.RedirectTo(w, r, "/course/register", 307)
+		http.Redirect(w, r, "/course/register", 307)
 		return
 	}
 
@@ -433,12 +433,12 @@ func approvecoursemembershiphandler(w http.ResponseWriter, r *http.Request) {
 	orgname := ""
 	if path := strings.Split(r.URL.Path, "/"); len(path) == 4 {
 		if !git.HasOrganization(path[3]) {
-			pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
+			http.Redirect(w, r, pages.HOMEPAGE, 307)
 			return
 		}
 		orgname = path[3]
 	} else {
-		pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
+		http.Redirect(w, r, pages.HOMEPAGE, 307)
 		return
 	}
 
@@ -548,13 +548,13 @@ func maincoursepagehandler(w http.ResponseWriter, r *http.Request) {
 	orgname := ""
 	if path := strings.Split(r.URL.Path, "/"); len(path) == 3 {
 		if !git.HasOrganization(path[2]) {
-			pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
+			http.Redirect(w, r, pages.HOMEPAGE, 307)
 			return
 		}
 
 		orgname = path[2]
 	} else {
-		pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
+		http.Redirect(w, r, pages.HOMEPAGE, 307)
 		return
 	}
 
@@ -600,7 +600,7 @@ func updatecoursehandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
 	member, err := checkTeacherApproval(w, r, true)
 	if err != nil {
-		pages.RedirectTo(w, r, "/", 307)
+		http.Redirect(w, r, pages.FRONTPAGE, 307)
 		log.Println(err)
 		return
 	}
@@ -655,7 +655,7 @@ func updatecoursehandler(w http.ResponseWriter, r *http.Request) {
 
 	org.StickToSystem()
 
-	pages.RedirectTo(w, r, "/course/teacher/"+org.Name, 307)
+	http.Redirect(w, r, "/course/teacher/"+org.Name, 307)
 }
 
 func removependinguserhandler(w http.ResponseWriter, r *http.Request) {

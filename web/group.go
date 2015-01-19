@@ -42,7 +42,7 @@ func newgrouphandler(w http.ResponseWriter, r *http.Request) {
 	course := r.FormValue("course")
 
 	if _, ok := member.Courses[course]; !ok {
-		pages.RedirectTo(w, r, "/", 307)
+		http.Redirect(w, r, pages.FRONTPAGE, 307)
 		log.Println("Unknown course.")
 		return
 	}
@@ -52,7 +52,7 @@ func newgrouphandler(w http.ResponseWriter, r *http.Request) {
 
 	group, err := git.NewGroup(course, org.GroupCount)
 	if err != nil {
-		pages.RedirectTo(w, r, "/", 307)
+		http.Redirect(w, r, pages.FRONTPAGE, 307)
 		log.Println("Couldn't make new group object.")
 		return
 	}
@@ -81,9 +81,9 @@ func newgrouphandler(w http.ResponseWriter, r *http.Request) {
 	group.StickToSystem()
 
 	if member.IsTeacher {
-		pages.RedirectTo(w, r, "/course/teacher/"+org.Name+"#groups", 307)
+		http.Redirect(w, r, "/course/teacher/"+org.Name+"#groups", 307)
 	} else {
-		pages.RedirectTo(w, r, "/course/"+org.Name+"#groups", 307)
+		http.Redirect(w, r, "/course/"+org.Name+"#groups", 307)
 	}
 }
 

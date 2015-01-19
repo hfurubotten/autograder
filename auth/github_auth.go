@@ -33,7 +33,7 @@ func github_oauthhandler(w http.ResponseWriter, r *http.Request) {
 
 		if len(errstr) > 0 {
 			log.Println("OAuth error: " + errstr)
-			pages.RedirectTo(w, r, pages.FRONTPAGE, 307)
+			http.Redirect(w, r, pages.FRONTPAGE, 307)
 			return
 		}
 
@@ -42,7 +42,7 @@ func github_oauthhandler(w http.ResponseWriter, r *http.Request) {
 		req, err := http.NewRequest("POST", requrl, bytes.NewBuffer(postdata))
 		if err != nil {
 			log.Println("Echange error with github: ", err)
-			pages.RedirectTo(w, r, pages.FRONTPAGE, 307)
+			http.Redirect(w, r, pages.FRONTPAGE, 307)
 			return
 		}
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -51,21 +51,21 @@ func github_oauthhandler(w http.ResponseWriter, r *http.Request) {
 		resp, err := client.Do(req)
 		if err != nil {
 			log.Println("Echange error with github: ", err)
-			pages.RedirectTo(w, r, pages.FRONTPAGE, 307)
+			http.Redirect(w, r, pages.FRONTPAGE, 307)
 			return
 		}
 
 		data, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			log.Println("Read error: ", err)
-			pages.RedirectTo(w, r, pages.FRONTPAGE, 307)
+			http.Redirect(w, r, pages.FRONTPAGE, 307)
 			return
 		}
 
 		q, err := url.ParseQuery(string(data))
 		if err != nil {
 			log.Println("Data error from github: ", err)
-			pages.RedirectTo(w, r, pages.FRONTPAGE, 307)
+			http.Redirect(w, r, pages.FRONTPAGE, 307)
 			return
 		}
 
@@ -75,7 +75,7 @@ func github_oauthhandler(w http.ResponseWriter, r *http.Request) {
 
 		if len(errstr) > 0 {
 			log.Println("Access token error: " + errstr)
-			pages.RedirectTo(w, r, pages.FRONTPAGE, 307)
+			http.Redirect(w, r, pages.FRONTPAGE, 307)
 			return
 		} else {
 			approved = true

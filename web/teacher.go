@@ -22,7 +22,7 @@ func teacherspanelhandler(w http.ResponseWriter, r *http.Request) {
 	member, err := checkTeacherApproval(w, r, true)
 	if err != nil {
 		log.Println(err)
-		pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
+		http.Redirect(w, r, pages.HOMEPAGE, 307)
 		return
 	}
 
@@ -30,13 +30,13 @@ func teacherspanelhandler(w http.ResponseWriter, r *http.Request) {
 	orgname := ""
 	if path := strings.Split(r.URL.Path, "/"); len(path) == 4 {
 		if !git.HasOrganization(path[3]) {
-			pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
+			http.Redirect(w, r, pages.HOMEPAGE, 307)
 			return
 		}
 
 		orgname = path[3]
 	} else {
-		pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
+		http.Redirect(w, r, pages.HOMEPAGE, 307)
 		return
 	}
 
@@ -49,7 +49,7 @@ func teacherspanelhandler(w http.ResponseWriter, r *http.Request) {
 			org.StickToSystem()
 		} else {
 			log.Println("User is not a teacher for this course.")
-			pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
+			http.Redirect(w, r, pages.HOMEPAGE, 307)
 			return
 		}
 
@@ -115,24 +115,24 @@ func showresulthandler(w http.ResponseWriter, r *http.Request) {
 	orgname := ""
 	if path := strings.Split(r.URL.Path, "/"); len(path) == 4 {
 		if !git.HasOrganization(path[3]) {
-			pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
+			http.Redirect(w, r, pages.HOMEPAGE, 307)
 			return
 		}
 
 		orgname = path[3]
 	} else {
-		pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
+		http.Redirect(w, r, pages.HOMEPAGE, 307)
 		return
 	}
 
 	username := r.FormValue("user")
 	if username == "" {
-		pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
+		http.Redirect(w, r, pages.HOMEPAGE, 307)
 		return
 	}
 
 	if !git.HasOrganization(orgname) {
-		pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
+		http.Redirect(w, r, pages.HOMEPAGE, 307)
 		return
 	}
 
@@ -143,14 +143,14 @@ func showresulthandler(w http.ResponseWriter, r *http.Request) {
 	if !git.HasMember(username) {
 		groupnum, err := strconv.Atoi(username[len("group"):])
 		if err != nil {
-			pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
+			http.Redirect(w, r, pages.HOMEPAGE, 307)
 			return
 		}
 		if git.HasGroup(org.Name, groupnum) {
 			isgroup = true
 			group, err := git.NewGroup(org.Name, groupnum)
 			if err != nil {
-				pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
+				http.Redirect(w, r, pages.HOMEPAGE, 307)
 				return
 			}
 			if group.CurrentLabNum >= org.GroupAssignments {
@@ -159,7 +159,7 @@ func showresulthandler(w http.ResponseWriter, r *http.Request) {
 				labnum = group.CurrentLabNum - 1
 			}
 		} else {
-			pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
+			http.Redirect(w, r, pages.HOMEPAGE, 307)
 			return
 		}
 	} else {

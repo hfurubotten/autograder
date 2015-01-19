@@ -112,7 +112,7 @@ func catchallhandler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
 		if auth.IsApprovedUser(r) {
-			pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
+			http.Redirect(w, r, pages.HOMEPAGE, 307)
 			return
 		}
 
@@ -162,7 +162,7 @@ func homehandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !member.IsComplete() {
-		pages.RedirectTo(w, r, pages.REGISTER_REDIRECT, 307)
+		http.Redirect(w, r, pages.REGISTER_REDIRECT, 307)
 		return
 	}
 
@@ -172,7 +172,7 @@ func homehandler(w http.ResponseWriter, r *http.Request) {
 func checkMemberApproval(w http.ResponseWriter, r *http.Request, redirect bool) (member git.Member, err error) {
 	if !auth.IsApprovedUser(r) {
 		if redirect {
-			pages.RedirectTo(w, r, pages.FRONTPAGE, 307)
+			http.Redirect(w, r, pages.FRONTPAGE, 307)
 		}
 		err = errors.New("The user is not logged in")
 		return
@@ -182,7 +182,7 @@ func checkMemberApproval(w http.ResponseWriter, r *http.Request, redirect bool) 
 	if err != nil {
 		err = errors.New("Error getting access token from sessions")
 		if redirect {
-			pages.RedirectTo(w, r, pages.FRONTPAGE, 307)
+			http.Redirect(w, r, pages.FRONTPAGE, 307)
 		}
 		return
 	}
@@ -191,7 +191,7 @@ func checkMemberApproval(w http.ResponseWriter, r *http.Request, redirect bool) 
 
 	if !member.IsComplete() {
 		if redirect {
-			pages.RedirectTo(w, r, pages.REGISTER_REDIRECT, 307)
+			http.Redirect(w, r, pages.REGISTER_REDIRECT, 307)
 		}
 		err = errors.New("Member got an uncomplete profile, redirecting.")
 		return
@@ -209,7 +209,7 @@ func checkTeacherApproval(w http.ResponseWriter, r *http.Request, redirect bool)
 	if !member.IsTeacher && !member.IsAssistant {
 		err = errors.New("The user is not a teacher.")
 		if redirect {
-			pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
+			http.Redirect(w, r, pages.HOMEPAGE, 307)
 		}
 		return
 	}
@@ -217,7 +217,7 @@ func checkTeacherApproval(w http.ResponseWriter, r *http.Request, redirect bool)
 	if member.Scope == "" && member.IsTeacher {
 		err = errors.New("Teacher need to renew scope.")
 		if redirect {
-			pages.RedirectTo(w, r, global.OAuth_RedirectURL+"?client_id="+global.OAuth_ClientID+"&scope="+global.OAuth_Scope, 307)
+			http.Redirect(w, r, global.OAuth_RedirectURL+"?client_id="+global.OAuth_ClientID+"&scope="+global.OAuth_Scope, 307)
 		}
 		return
 	}
@@ -234,7 +234,7 @@ func checkAdminApproval(w http.ResponseWriter, r *http.Request, redirect bool) (
 	if !member.IsAdmin {
 		err = errors.New("The user is not a teacher.")
 		if redirect {
-			pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
+			http.Redirect(w, r, pages.HOMEPAGE, 307)
 		}
 		return
 	}
