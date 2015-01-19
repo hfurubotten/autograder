@@ -1,7 +1,13 @@
 package web
 
 import (
+	"log"
 	"net/http"
+	"strconv"
+	"strings"
+
+	"github.com/hfurubotten/autograder/ci"
+	"github.com/hfurubotten/autograder/git"
 )
 
 func approvelabhandler(w http.ResponseWriter, r *http.Request) {

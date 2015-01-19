@@ -327,6 +327,8 @@ func saveorghandler(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 	}
 
+	org.AddTeacher(member)
+
 	// Saved the new organization info
 	err = org.StickToSystem()
 	if err != nil {
@@ -654,4 +656,8 @@ func updatecoursehandler(w http.ResponseWriter, r *http.Request) {
 	org.StickToSystem()
 
 	pages.RedirectTo(w, r, "/course/teacher/"+org.Name, 307)
+}
+
+func removependinguserhandler(w http.ResponseWriter, r *http.Request) {
+
 }

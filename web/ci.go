@@ -1,9 +1,12 @@
 package web
 
 import (
+	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/hfurubotten/autograder/ci"
+	"github.com/hfurubotten/autograder/git"
 )
 
 func manualcihandler(w http.ResponseWriter, r *http.Request) {

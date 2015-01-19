@@ -1,9 +1,13 @@
 package web
 
 import (
+	"encoding/json"
+	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/hfurubotten/autograder/git"
+	"github.com/hfurubotten/autograder/web/pages"
 )
 
 func requestrandomgrouphandler(w http.ResponseWriter, r *http.Request) {
