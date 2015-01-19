@@ -104,6 +104,14 @@ func teacherspanelhandler(w http.ResponseWriter, r *http.Request) {
 	execTemplate("teacherspanel.html", w, view)
 }
 
+type showresultview struct {
+	Member   git.Member
+	Org      git.Organization
+	Username string
+	Labnum   int
+	IsGroup  bool
+}
+
 func showresulthandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
 	member, err := checkTeacherApproval(w, r, true)
@@ -163,7 +171,8 @@ func showresulthandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		nr := member.Courses[org.Name].CurrentLabNum
+		user := git.NewMemberFromUsername(username)
+		nr := user.Courses[org.Name].CurrentLabNum
 		if nr >= org.IndividualAssignments {
 			labnum = org.IndividualAssignments - 1
 		} else {

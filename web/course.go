@@ -391,7 +391,7 @@ func registercoursememberhandler(w http.ResponseWriter, r *http.Request) {
 
 	org := git.NewOrganization(orgname)
 
-	if _, ok := git.Member[member.Username]; ok {
+	if _, ok := org.Members[member.Username]; ok {
 		http.Redirect(w, r, "/course/"+orgname, 307)
 		return
 	}
@@ -591,14 +591,6 @@ func maincoursepagehandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	execTemplate("maincoursepage.html", w, view)
-}
-
-type showresultview struct {
-	Member   git.Member
-	Org      git.Organization
-	Username string
-	Labnum   int
-	IsGroup  bool
 }
 
 func updatecoursehandler(w http.ResponseWriter, r *http.Request) {
