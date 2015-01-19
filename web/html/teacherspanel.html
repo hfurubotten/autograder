@@ -312,6 +312,15 @@
       }
     }
 
+    function removependinguser(username){
+      $.post("/course/removepending", {"course": course, "user": username}, function(base){
+          $("tr#" + username).slideUp(500);
+        }).fail(function(){
+          $("#pendinguseralert > span.inputtext").text("Error removing the user from the list.");
+          $("div#pendinguseralert").show();
+        });
+    }
+
     // TODO: expand this!
     function approveuser(username) {
       $.post("/course/approvemember/{{.Org.Name}}", {"user": username}, function(base){

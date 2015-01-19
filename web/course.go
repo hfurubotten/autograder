@@ -659,5 +659,31 @@ func updatecoursehandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func removependinguserhandler(w http.ResponseWriter, r *http.Request) {
+	// Checks if the user is signed in and a teacher.
+	member, err := checkTeacherApproval(w, r, true)
+	if err != nil {
+		http.Redirect(w, r, "/", 307)
+		log.Println(err)
+		return
+	}
 
+	username := r.FormValue("user")
+	course := r.FormValue("course")
+
+	if !git.HasOrganization(course) {
+		http.Error(w, "Unknown course.", 404)
+		return
+	}
+
+	org := git.NewOrganization(course)
+
+	if !org.IsTeacher(member) {
+		http.Error(w, "Is not a teacher or assistant for this course.", 404)
+		return
+	}
+
+	if _, ok := org.PendingUser[username]; ok {
+		delete(org.PendingUser, username)
+		org.StickToSystem()
+	}
 }
