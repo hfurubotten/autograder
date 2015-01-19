@@ -1,7 +1,13 @@
 package web
 
 import (
+	"log"
 	"net/http"
+	"strconv"
+	"strings"
+
+	"github.com/hfurubotten/autograder/git"
+	"github.com/hfurubotten/autograder/web/pages"
 )
 
 type teacherspanelview struct {
@@ -36,33 +42,34 @@ func teacherspanelhandler(w http.ResponseWriter, r *http.Request) {
 
 	org := git.NewOrganization(orgname)
 
-	users := org.PendingUser
+	if _, ok := org.Teachers[member.Username]; !ok {
+		// migrate from bug where org does not contain teacher names.
+		if _, ok := member.Teaching[org.Name]; ok {
+			org.AddTeacher(member)
+			org.StickToSystem()
+		} else {
+			log.Println("User is not a teacher for this course.")
+			pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
+			return
+		}
 
-	repos, err := org.ListRepos()
-	if err != nil {
-		log.Println("Couldn't get all the repos in the organization. ")
-		pages.RedirectTo(w, r, pages.HOMEPAGE, 307)
-		return
 	}
+
+	users := org.PendingUser
 
 	// gets pending users
 	var status string
 	for username, _ := range users {
-		// TODO: check status up against Github
+		// check status up against Github
 		users[username] = git.NewMemberFromUsername(username)
 		status, err = org.GetMembership(users[username].(git.Member))
-
 		if err != nil {
 			log.Println(err)
 			continue
 		}
 
 		if status == "active" {
-			if _, ok := repos[username+"-"+git.STANDARD_REPO_NAME]; !ok && org.IndividualAssignments > 0 {
-				continue
-			} else {
-				delete(users, username)
-			}
+			continue
 			// TODO: what about group assignments?
 		} else if status == "pending" {
 			delete(users, username)
@@ -172,4 +179,42 @@ func showresulthandler(w http.ResponseWriter, r *http.Request) {
 		IsGroup:  isgroup,
 	}
 	execTemplate("teacherresultpage.html", w, view)
+}
+
+func addassistanthandler(w http.ResponseWriter, r *http.Request) {
+	// Checks if the user is signed in and a teacher.
+	member, err := checkTeacherApproval(w, r, true)
+	if err != nil {
+		return
+	}
+
+	username := r.FormValue("assistant")
+	course := r.FormValue("course")
+
+	if !git.HasOrganization(course) {
+		http.Error(w, "Unknown course.", 404)
+		return
+	}
+
+	if _, ok := member.Teaching[course]; !ok {
+		http.Error(w, "User is not the teacher for this course.", 404)
+		return
+	}
+
+	if username == member.Username {
+		return
+	}
+
+	assistant := git.NewMemberFromUsername(username)
+	org := git.NewOrganization(course)
+
+	assistant.AddAssistingOrganization(org)
+	assistant.StickToSystem()
+
+	org.AddTeacher(assistant)
+	if _, ok := org.PendingUser[username]; ok {
+		delete(org.PendingUser, username)
+	}
+	org.StickToSystem()
+
 }

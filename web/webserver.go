@@ -86,6 +86,7 @@ func (ws Webserver) Start() {
 	http.HandleFunc("/course/newgroup", newgrouphandler)
 	http.HandleFunc("/course/requestrandomgroup", requestrandomgrouphandler)
 	http.HandleFunc("/course/approvegroup", approvegrouphandler)
+	http.HandleFunc("/course/addassistant", addassistanthandler)
 	http.HandleFunc("/event/hook", webhookeventhandler)
 	http.HandleFunc("/event/manualbuild", manualcihandler)
 

@@ -42,9 +42,23 @@
                     <td>{{.Username}}</td>
                     <td>{{.Name}}</td>
                     <td>{{.StudentID}}</td>
-                    <td><button type="button" onclick="approveuser('{{.Username}}')" class="btn btn-default">Approve</button></td>
+                    <td>
+                      <div class="btn-group">
+                        <button type="button" onclick="approveuser('{{.Username}}')" class="btn btn-default"><span class="glyphicon glyphicon-ok"></span></button>
+                        <button type="button" class="btn btn-default" onclick="removependinguser({{.Username}})"><span class="glyphicon glyphicon-remove"></span></button>
+                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                          <span class="caret"></span>
+                          <span class="sr-only">Toggle Dropdown</span>
+                        </button>
+                        <ul class="dropdown-menu" role="menu">
+                          <li><a onclick="addassistant({{.Username}}, true)">Make Teaching Assistant</a></li>
+                        </ul>
+                      </div>
+                    </td>
                     {{end}}
                   </tr>
+                  {{else}}
+                  <td>No pending students</td>
                   {{end}}
                 </tbody>
               </table>
@@ -64,8 +78,22 @@
                   {{range $index, $element := .Org.Members}}
                   <tr id="{{$index}}">
                     <td>{{$index}}</td>
-                    <td><a href="/course/result/{{$orgname}}?user={{$index}}">See results</a></td>
+                    <td>
+                      <div class="btn-group">
+                        <a class="btn btn-default" href="/course/result/{{$orgname}}?user={{$index}}">See results</a>
+                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                          <span class="caret"></span>
+                          <span class="sr-only">Toggle Dropdown</span>
+                        </button>
+                        <ul class="dropdown-menu" role="menu">
+                          <li><a onclick="addassistant({{$index}}, false)">Make Teaching Assistant</a></li>
+                        </ul>
+                      </div>
+                      
+                    </td>
                   </tr>
+                  {{else}}
+                  <td>No students</td>
                   {{end}}
                 </tbody>
               </table>
@@ -103,6 +131,8 @@
                     <td><button type="button" onclick="approvegroup({{$index}})" class="btn btn-default">Approve</button></td>
                     {{end}}
                   </tr>
+                  {{else}}
+                  <td>No pending groups</td>
                   {{end}}
                 </tbody>
               </table>
@@ -124,6 +154,8 @@
                       <td><input type="checkbox" name="member" value="{{$index}}"></td>
                       <td>{{$index}}</td>
                     </tr>
+                    {{else}}
+                      <td>No pending students</td>
                     {{end}}
                   </tbody>
                 </table>
@@ -253,6 +285,20 @@
     $(function(){
       $('#teachertab a:first').tab('show');
     });
+
+    var course = "{{.Org.Name}}";
+
+    function addassistant(username, remove){
+      if(confirm("Are you sure you want to make " + username + " a "))
+      $.post("/course/addassistant", {"course": course, "assistant": username}, function(base){
+        if(remove) {
+          $("tr#" + username).slideUp(500);
+        }
+      }).fail(function(){
+        $("#pendinguseralert > span.inputtext").text("Error adding the user as assistant.");
+        $("div#pendinguseralert").show();
+      });
+    }
 
     // TODO: expand this!
     function approveuser(username) {
