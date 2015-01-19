@@ -1,8 +1,19 @@
 package score
 
-// This struct is used to decode a score from a test or tests. When a test
-// is passed or a calculation of partial passed test is found, output a JSON
-// object representing this struct.
+import (
+	"encoding/json"
+	"testing"
+)
+
+// Unique secret for every course.
+const (
+	secretDAT520 = "ab553ad7c8a21"
+	secretDATFOO = "abcdefghijklm"
+)
+
+// Score is a struct used to encode/decode a score from a test or tests. When a
+// test is passed or a calculation of partial passed test is found, output a
+// JSON object representing this struct.
 //
 // Secret read from the output steam need to correspond to the course identifier
 // given on the teachers panel. All other output will be ignored.
@@ -24,4 +35,30 @@ type Score struct {
 	Score    int    // The score the student has accomplished
 	MaxScore int    // Max score possible to get on this specific test(s)
 	Weight   int    // The weight of this test(s)
+}
+
+// DumpAsJSON encodes s as JSON and prints the result to testing context t.
+func (s *Score) DumpAsJSON(t *testing.T) {
+	b, err := json.Marshal(s)
+	if err != nil {
+		t.Logf("error dumping score to json: %v\n", err)
+	}
+	t.Logf("%s\n", b)
+}
+
+// DumpScoreToStudent prints score s to testing context t as a string using the
+// format: "TestName: 2/10 cases passed".
+func (s *Score) DumpScoreToStudent(t *testing.T) {
+	t.Logf("%s: %d/%d cases passed", s.TestName, s.Score, s.MaxScore)
+}
+
+// NewScoreDAT520 returns a new Score with the given arguments and the secret
+// for course DAT520 set.
+func NewScoreDAT520(testName string, max, weight int) *Score {
+	return &Score{
+		Secret:   secretDAT520,
+		TestName: testName,
+		MaxScore: max,
+		Weight:   weight,
+	}
 }
