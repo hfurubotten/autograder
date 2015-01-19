@@ -55,6 +55,7 @@ func NewOrganization(name string) Organization {
 		GroupLabFolders:      make(map[int]string),
 		PendingGroup:         make(map[int]interface{}),
 		PendingRandomGroup:   make(map[string]interface{}),
+		Groups:               make(map[string]interface{}),
 		PendingUser:          make(map[string]interface{}),
 		Members:              make(map[string]interface{}),
 		Teachers:             make(map[string]interface{}),
@@ -129,6 +130,17 @@ func (o *Organization) AddTeacher(member Member) (err error) {
 func (o Organization) IsTeacher(member Member) bool {
 	_, ok := o.Teachers[member.Username]
 	return ok
+}
+
+func (o *Organization) AddGroup(g Group) {
+	if o.Groups == nil {
+		o.Groups = make(map[string]interface{})
+	}
+
+	if _, ok := o.PendingGroup[g.ID]; ok {
+		delete(o.PendingGroup, g.ID)
+	}
+	o.Groups["group"+strconv.Itoa(g.ID)] = nil
 }
 
 func (o *Organization) GetMembership(member Member) (status string, err error) {
