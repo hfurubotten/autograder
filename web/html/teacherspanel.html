@@ -58,7 +58,10 @@
                     {{end}}
                   </tr>
                   {{else}}
-                  <td>No pending students</td>
+                    <td>No pending students</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
                   {{end}}
                 </tbody>
               </table>
@@ -93,7 +96,8 @@
                     </td>
                   </tr>
                   {{else}}
-                  <td>No students</td>
+                    <td>No students</td>
+                    <td></td>
                   {{end}}
                 </tbody>
               </table>
@@ -132,7 +136,10 @@
                     {{end}}
                   </tr>
                   {{else}}
-                  <td>No pending groups</td>
+                    <td>No pending groups</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
                   {{end}}
                 </tbody>
               </table>
@@ -156,6 +163,7 @@
                     </tr>
                     {{else}}
                       <td>No pending students</td>
+                      <td></td>
                     {{end}}
                   </tbody>
                 </table>
@@ -179,6 +187,9 @@
                     <td>{{$index}}</td>
                     <td><a href="/course/result/{{$orgname}}?user=group{{$index}}">See results</a></td>
                   </tr>
+                  {{else}}
+                    <td>No groups yet</td>
+                    <td></td>
                   {{end}}
                 </tbody>
               </table>
@@ -289,15 +300,16 @@
     var course = "{{.Org.Name}}";
 
     function addassistant(username, remove){
-      if(confirm("Are you sure you want to make " + username + " a "))
-      $.post("/course/addassistant", {"course": course, "assistant": username}, function(base){
-        if(remove) {
-          $("tr#" + username).slideUp(500);
-        }
-      }).fail(function(){
-        $("#pendinguseralert > span.inputtext").text("Error adding the user as assistant.");
-        $("div#pendinguseralert").show();
-      });
+      if(confirm("Are you sure you want to make " + username + " a teaching assistant?")){
+        $.post("/course/addassistant", {"course": course, "assistant": username}, function(base){
+          if(remove) {
+            $("tr#" + username).slideUp(500);
+          }
+        }).fail(function(){
+          $("#pendinguseralert > span.inputtext").text("Error adding the user as assistant.");
+          $("div#pendinguseralert").show();
+        });
+      }
     }
 
     // TODO: expand this!
