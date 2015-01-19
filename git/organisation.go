@@ -26,6 +26,7 @@ type Organization struct {
 	GroupLabFolders      map[int]string
 
 	StudentTeamID int
+	OwnerTeamID   int
 	Private       bool
 
 	GroupCount         int
@@ -100,6 +101,28 @@ func (o *Organization) AddMembership(member Member) (err error) {
 		o.PendingUser[member.Username] = nil
 	}
 
+	return
+}
+
+func (o *Organization) AddTeacher(member Member) (err error) {
+	err = o.connectAdminToGithub()
+	if err != nil {
+		return
+	}
+
+	o.Teachers[member.Username] = nil
+
+	var teams map[string]Team
+	if o.OwnerTeamID == 0 {
+		teams, err = o.ListTeams()
+		owners, ok := teams["Owners"]
+		if !ok {
+			return errors.New("Couldn't find the owners team.")
+		}
+		o.OwnerTeamID = owners.ID
+	}
+
+	_, _, err = o.githubadmin.Organizations.AddTeamMembership(o.OwnerTeamID, member.Username)
 	return
 }
 
