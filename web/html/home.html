@@ -62,23 +62,23 @@
       	<h3>GitHub shortcuts</h3>
       	{{range $index, $element := .Member.Courses}}
       	  <hr>
-      	  <h4><a href="http://github.com/{{$index}}" target="_blank">{{$index}}</a></h4>
+      	  <h4><a href="https://github.com/{{$index}}" target="_blank">{{$index}}</a></h4>
       	  <p>
       	  	<strong>Course info</strong> <br>
-          	<a href="http://github.com/{{$index}}/course-info" target="_blank">http://github.com/{{$index}}/course-info</a>
+          	<a href="https://github.com/{{$index}}/course-info" target="_blank">https://github.com/{{$index}}/course-info</a>
           </p>
       	  <p>
       	  	<strong>Assignment repository</strong> <br>
-          	<a href="http://github.com/{{$index}}/labs" target="_blank">http://github.com/{{$index}}/labs</a>
+          	<a href="https://github.com/{{$index}}/labs" target="_blank">https://github.com/{{$index}}/labs</a>
           </p>
       	  <p>
       	  	<strong>Your repository</strong> <br>
-          	<a href="http://github.com/{{$index}}/{{$member.Username}}-labs" target="_blank">http://github.com/{{$index}}/{{$member.Username}}-labs</a>
+          	<a href="https://github.com/{{$index}}/{{$member.Username}}-labs" target="_blank">https://github.com/{{$index}}/{{$member.Username}}-labs</a>
           </p>
           {{if $element.IsGroupMember}}
           	<p>
       	      <strong>Your group repository</strong> <br>
-          	  <a href="http://github.com/{{$index}}/group{{$element.GroupNum}}" target="_blank">http://github.com/{{$index}}/group{{$element.GroupNum}}</a>
+          	  <a href="https://github.com/{{$index}}/group{{$element.GroupNum}}" target="_blank">https://github.com/{{$index}}/group{{$element.GroupNum}}</a>
             </p>
           {{end}}
         {{else}}
