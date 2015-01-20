@@ -37,6 +37,20 @@ type Score struct {
 	Weight   int    // The weight of this test(s)
 }
 
+// Inc increments score if score is less than MaxScore.
+func (s *Score) Inc() {
+	if s.Score < s.MaxScore {
+		s.Score++
+	}
+}
+
+// Dec decrements score if score is greater than zero.
+func (s *Score) Dec() {
+	if s.Score > 0 {
+		s.Score--
+	}
+}
+
 // DumpAsJSON encodes s as JSON and prints the result to testing context t.
 func (s *Score) DumpAsJSON(t *testing.T) {
 	b, err := json.Marshal(s)
