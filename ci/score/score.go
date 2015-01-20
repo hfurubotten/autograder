@@ -2,8 +2,16 @@ package score
 
 import (
 	"encoding/json"
+	"runtime"
+	"strings"
 	"testing"
 )
+
+// GolbalSecret represents the unique course identifier that will be used in
+// the Score struct constructors. Users of this package should set this
+// variable appropriately (for example in func init) before using any exported
+// function in this package.
+var GlobalSecret string = "NOT SET"
 
 // Score is a struct used to encode/decode a score from a test or tests. When a
 // test is passed or a calculation of partial passed test is found, output a
@@ -29,6 +37,29 @@ type Score struct {
 	Score    int    // The score the student has accomplished
 	MaxScore int    // Max score possible to get on this specific test(s)
 	Weight   int    // The weight of this test(s)
+}
+
+// NewScore returns a new Score with the given arguments and Secret set to the
+// value of GlobalSecret.
+func NewScore(max, weight int) *Score {
+	return &Score{
+		Secret:   GlobalSecret,
+		TestName: testName(),
+		MaxScore: max,
+		Weight:   weight,
+	}
+}
+
+// NewScore returns a new Score with the given arguments, Secret set to the
+// value of GlobalSecret and MaxScore set to max.
+func NewScoreMax(max, weight int) *Score {
+	return &Score{
+		Secret:   GlobalSecret,
+		TestName: testName(),
+		Score:    max,
+		MaxScore: max,
+		Weight:   weight,
+	}
 }
 
 // Inc increments score if score is less than MaxScore.
@@ -58,4 +89,21 @@ func (s *Score) DumpAsJSON(t *testing.T) {
 // format: "TestName: 2/10 cases passed".
 func (s *Score) DumpScoreToStudent(t *testing.T) {
 	t.Logf("%s: %d/%d cases passed", s.TestName, s.Score, s.MaxScore)
+}
+
+// testName returns the name of a test when used by the Score-constructors.
+//
+// NOTE: This function is specifically constructed to be called from the
+// Score-constructors. It is not safe for other usage due to the hard-coded
+// skip constant used when calling runtime.Callers.
+func testName() string {
+	const skip = 3
+	pc := make([]uintptr, skip)
+	runtime.Callers(skip, pc)
+	f := runtime.FuncForPC(pc[0])
+	s := strings.Split(f.Name(), ".")
+	if s == nil {
+		return "Unknown test"
+	}
+	return s[len(s)-1]
 }
