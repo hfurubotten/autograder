@@ -5,12 +5,6 @@ import (
 	"testing"
 )
 
-// Unique secret for every course.
-const (
-	secretDAT520 = "ab553ad7c8a21"
-	secretDATFOO = "abcdefghijklm"
-)
-
 // Score is a struct used to encode/decode a score from a test or tests. When a
 // test is passed or a calculation of partial passed test is found, output a
 // JSON object representing this struct.
@@ -64,15 +58,4 @@ func (s *Score) DumpAsJSON(t *testing.T) {
 // format: "TestName: 2/10 cases passed".
 func (s *Score) DumpScoreToStudent(t *testing.T) {
 	t.Logf("%s: %d/%d cases passed", s.TestName, s.Score, s.MaxScore)
-}
-
-// NewScoreDAT520 returns a new Score with the given arguments and the secret
-// for course DAT520 set.
-func NewScoreDAT520(testName string, max, weight int) *Score {
-	return &Score{
-		Secret:   secretDAT520,
-		TestName: testName,
-		MaxScore: max,
-		Weight:   weight,
-	}
 }
