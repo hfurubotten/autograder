@@ -28,7 +28,7 @@ const (
 // Calculations in the CI follows this formula:
 // total_weight    = sum(Weight)
 // task_score[0:n] = Score[i] / MaxScore[i], gives {0 < task_score < 1}
-// student_score   = sum( task_score[i] * (Weight[i]/x) ), gives {0 < student_score < 1}
+// student_score   = sum( task_score[i] * (Weight[i]/total_weight) ), gives {0 < student_score < 1}
 type Score struct {
 	Secret   string // the unique identifier for your course
 	TestName string // Name of the tests that is covered
