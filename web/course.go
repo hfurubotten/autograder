@@ -628,6 +628,11 @@ func updatecoursehandler(w http.ResponseWriter, r *http.Request) {
 	org.Description = r.FormValue("desc")
 	org.Private = r.FormValue("private") == "on"
 
+	basepath := r.FormValue("basepath")
+	if basepath != "" {
+		org.CI.Basepath = basepath
+	}
+
 	var fname string
 	var fkey string
 	for i := 1; i <= indv; i = i + 1 {
