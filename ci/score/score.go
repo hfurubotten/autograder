@@ -2,6 +2,7 @@ package score
 
 import (
 	"encoding/json"
+	"fmt"
 	"runtime"
 	"strings"
 	"testing"
@@ -82,7 +83,8 @@ func (s *Score) DumpAsJSON(t *testing.T) {
 	if err != nil {
 		t.Logf("error dumping score to json: %v\n", err)
 	}
-	t.Logf("%s\n", b)
+	//t.Logf("%s\n", b)
+	fmt.Printf("%s\n", b)
 }
 
 // DumpScoreToStudent prints score s to testing context t as a string using the
