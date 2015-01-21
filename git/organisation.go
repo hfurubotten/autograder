@@ -1,10 +1,13 @@
 package git
 
 import (
+	"crypto/md5"
 	"encoding/gob"
 	"errors"
+	"fmt"
 	"log"
 	"strconv"
+	"time"
 
 	"code.google.com/p/goauth2/oauth"
 	"github.com/google/go-github/github"
@@ -47,6 +50,13 @@ func NewOrganization(name string) Organization {
 	if GetOrgstore().Has(name) {
 		var org Organization
 		GetOrgstore().ReadGob(name, &org, false)
+
+		// migrating to use of CI.Secret
+		if org.CI.Secret == "" {
+			org.CI.Secret = fmt.Sprintf("%x", md5.Sum([]byte(name+time.Now().String())))
+			org.StickToSystem()
+		}
+
 		return org
 	}
 	return Organization{
@@ -61,6 +71,7 @@ func NewOrganization(name string) Organization {
 		Teachers:             make(map[string]interface{}),
 		CI: CIOptions{
 			Basepath: "/testground/src/github.com/" + name + "/",
+			Secret:   fmt.Sprintf("%x", md5.Sum([]byte(name+time.Now().String()))),
 		},
 	}
 }

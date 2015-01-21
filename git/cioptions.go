@@ -10,4 +10,5 @@ func init() {
 
 type CIOptions struct {
 	Basepath string
+	Secret   string
 }
