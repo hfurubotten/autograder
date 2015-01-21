@@ -64,6 +64,8 @@ func webhookeventhandler(w http.ResponseWriter, r *http.Request) {
 		LabFolder:    labfolder,
 		AdminToken:   org.AdminToken,
 		MimicLabRepo: true,
+		IsPush:       true,
+		Secret:       org.CI.Secret,
 	}
 
 	go ci.StartTesterDaemon(opt)

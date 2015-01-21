@@ -59,6 +59,8 @@ func manualcihandler(w http.ResponseWriter, r *http.Request) {
 		LabFolder:    lab,
 		AdminToken:   org.AdminToken,
 		MimicLabRepo: true,
+		Secret:       org.CI.Secret,
+		IsPush:       false,
 	}
 
 	log.Println(opt)
