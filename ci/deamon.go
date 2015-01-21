@@ -119,6 +119,10 @@ func StartTesterDaemon(opt DaemonOptions) {
 		}
 	}
 
+	if r.NumBuildFailure > 0 {
+		r.TotalScore = 0
+	}
+
 	teststore := GetCIStorage(opt.Org, opt.User)
 
 	if teststore.Has(opt.LabFolder) {
@@ -164,9 +168,11 @@ func CalculateTestScore(s []Score) (total int) {
 func SimpleParsing(r *Result) {
 	key := "--- PASS"
 	negkey := "--- FAIL"
+	bfkey := "build failed"
 	for _, l := range r.Log {
 		r.NumPasses = r.NumPasses + strings.Count(l, key)
 		r.NumFails = r.NumFails + strings.Count(l, negkey)
+		r.NumBuildFailure = r.NumBuildFailure + strings.Count(l, bfkey)
 	}
 
 	log.Println("Found ", r.NumPasses, " passed tests.")
