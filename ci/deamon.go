@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/gob"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -11,6 +12,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	. "github.com/hfurubotten/autograder/ci/score"
 	"github.com/hfurubotten/autograder/git"
 	"github.com/hfurubotten/autograder/global"
 	"github.com/hfurubotten/diskv"
@@ -28,6 +30,8 @@ type DaemonOptions struct {
 	LabFolder    string
 	AdminToken   string
 	MimicLabRepo bool
+	Secret       string
+	IsPush       bool
 }
 
 func StartTesterDaemon(opt DaemonOptions) {
@@ -86,25 +90,34 @@ func StartTesterDaemon(opt DaemonOptions) {
 		{"/bin/sh -c \"(cd \"" + opt.BaseFolder + destfolder + "/" + opt.LabFolder + "/\" && ./test.sh)\"", false},
 	}
 
+	r := Result{
+		Log:        logarray,
+		Course:     opt.Org,
+		Timestamp:  time.Now(),
+		PushTime:   time.Now(),
+		User:       opt.User,
+		Status:     "Active lab assignment",
+		TestScores: make([]Score, 0),
+	}
+
 	for _, cmd := range cmds {
-		err = execute(&env, cmd.Cmd, &logarray)
+		err = execute(&env, cmd.Cmd, &r, opt)
 		if err != nil && cmd.Breakable {
-			logOutput("Unexpected end of integration.", &logarray)
+			logOutput("Unexpected end of integration.", &r, opt)
 			log.Println(err)
 			break
 		}
 	}
 
 	// parsing the results
-	r := Result{
-		Log:       logarray,
-		Course:    opt.Org,
-		Timestamp: time.Now(),
-		User:      opt.User,
-		Status:    "Active lab assignment",
+	SimpleParsing(&r)
+	if len(r.TestScores) > 0 {
+		r.TotalScore = CalculateTestScore(r.TestScores)
+	} else {
+		if r.NumPasses+r.NumFails != 0 {
+			r.TotalScore = int((float64(r.NumPasses) / float64(r.NumPasses+r.NumFails)) * 100.0)
+		}
 	}
-
-	parseResults(&r)
 
 	teststore := GetCIStorage(opt.Org, opt.User)
 
@@ -112,8 +125,11 @@ func StartTesterDaemon(opt DaemonOptions) {
 		oldr := Result{}
 		err = teststore.ReadGob(opt.LabFolder, &oldr, false)
 		r.Status = oldr.Status
+		if !opt.IsPush {
+			r.PushTime = oldr.PushTime
+		}
 	}
-
+	log.Println(r)
 	err = teststore.WriteGob(opt.LabFolder, r)
 	if err != nil {
 		panic(err)
@@ -121,10 +137,36 @@ func StartTesterDaemon(opt DaemonOptions) {
 
 }
 
-func parseResults(r *Result) {
+// Uses a array of Score objects to calculate a total score between 0 and 100.
+func CalculateTestScore(s []Score) (total int) {
+	total_weight := float32(0)
+	weight := make([]float32, 0)
+	score := make([]float32, 0)
+	max := make([]float32, 0)
+	for _, ts := range s {
+		total_weight += float32(ts.Weight)
+		weight = append(weight, float32(ts.Weight))
+		score = append(score, float32(ts.Score))
+		max = append(max, float32(ts.MaxScore))
+	}
+
+	tmp_total := float32(0)
+	for i := 0; i < len(s); i = i + 1 {
+		if score[i] > max[i] {
+			score[i] = max[i]
+		}
+		tmp_total += ((score[i] / max[i]) * (weight[i] / total_weight))
+	}
+
+	return int(tmp_total * 100)
+}
+
+func SimpleParsing(r *Result) {
 	key := "--- PASS"
+	negkey := "--- FAIL"
 	for _, l := range r.Log {
 		r.NumPasses = r.NumPasses + strings.Count(l, key)
+		r.NumFails = r.NumFails + strings.Count(l, negkey)
 	}
 
 	log.Println("Found ", r.NumPasses, " passed tests.")
@@ -137,7 +179,7 @@ func GetCIStorage(course, user string) *diskv.Diskv {
 	})
 }
 
-func execute(v *Virtual, cmd string, l *[]string) (err error) {
+func execute(v *Virtual, cmd string, l *Result, opt DaemonOptions) (err error) {
 
 	buf := bytes.NewBuffer(make([]byte, 0))
 	bufw := bufio.NewWriter(buf)
@@ -150,13 +192,13 @@ func execute(v *Virtual, cmd string, l *[]string) (err error) {
 
 	for s.Scan() {
 		text := s.Text()
-		logOutput(text, l)
+		logOutput(text, l, opt)
 	}
 
 	return
 }
 
-func logOutput(s string, l *[]string) {
+func logOutput(s string, l *Result, opt DaemonOptions) {
 	if !utf8.ValidString(s) {
 		v := make([]rune, 0, len(s))
 		for i, r := range s {
@@ -174,7 +216,18 @@ func logOutput(s string, l *[]string) {
 	s = strings.Trim(s, string(0))
 	s = strings.TrimSpace(s)
 
-	*l = append(*l, strings.TrimSpace(s))
+	var score Score
+	// TODO: must be a better way of detecting JSON data!
+	err := json.Unmarshal([]byte(s), &score)
+	if err == nil {
+		if score.Secret == opt.Secret {
+			score.Secret = "Sanitized"
+			l.TestScores = append(l.TestScores, score)
+		}
+		return
+	}
+
+	l.Log = append(l.Log, strings.TrimSpace(s))
 	fmt.Println(s)
 }
 
