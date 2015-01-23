@@ -133,7 +133,7 @@ func StartTesterDaemon(opt DaemonOptions) {
 			r.PushTime = oldr.PushTime
 		}
 	}
-	log.Println(r)
+
 	err = teststore.WriteGob(opt.LabFolder, r)
 	if err != nil {
 		panic(err)
