@@ -12,7 +12,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	. "github.com/hfurubotten/autograder/ci/score"
+	. "github.com/hfurubotten/ag-scoring/score"
 	"github.com/hfurubotten/autograder/git"
 	"github.com/hfurubotten/autograder/global"
 	"github.com/hfurubotten/diskv"

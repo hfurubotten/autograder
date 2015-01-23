@@ -3,7 +3,7 @@ package ci
 import (
 	"time"
 
-	. "github.com/hfurubotten/autograder/ci/score"
+	. "github.com/hfurubotten/ag-scoring/score"
 )
 
 type Result struct {
