@@ -96,3 +96,47 @@ func ciresulthandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 }
+
+type summaryview struct {
+	Course  string
+	User    string
+	Summary map[string]ci.Result
+}
+
+func ciresultsummaryhandler(w http.ResponseWriter, r *http.Request) {
+	// Checks if the user is signed in and a teacher.
+	_, err := checkTeacherApproval(w, r, false)
+	if err != nil {
+		http.Error(w, err.Error(), 404)
+		log.Println(err)
+		return
+	}
+
+	// TODO: add more security
+	orgname := r.FormValue("Course")
+	username := r.FormValue("Username")
+
+	if orgname == "" || username == "" {
+		http.Error(w, "Empty request.", 404)
+		return
+	}
+
+	res, err := ci.GetIntegationResultSummary(orgname, username)
+	if err != nil {
+		http.Error(w, err.Error(), 404)
+		return
+	}
+
+	view := summaryview{
+		Course:  orgname,
+		User:    username,
+		Summary: res,
+	}
+
+	enc := json.NewEncoder(w)
+
+	err = enc.Encode(view)
+	if err != nil {
+		http.Error(w, err.Error(), 404)
+	}
+}

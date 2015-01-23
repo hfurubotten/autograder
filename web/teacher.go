@@ -79,6 +79,11 @@ func teacherspanelhandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// gets users
+	for username, _ := range org.Members {
+		org.Members[username] = git.NewMemberFromUsername(username)
+	}
+
 	// get pending groups
 	var group git.Group
 	var groupmember git.Member

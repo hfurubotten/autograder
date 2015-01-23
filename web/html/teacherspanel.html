@@ -69,21 +69,32 @@
               <h3>Results</h3>
               <p>Build and test results from the students. Click in on a student to see complete build log.</p>
 
-              <table class="table table-striped">
+              <div class="table-responsive">
+              <table class="table table-striped" id="studentresults">
                 <thead>
                   <tr>
                     <th>Username</th>
+                    <th>Name</th>
+                    <th>StudentID</th>
+                    {{range $labname := .Org.IndividualLabFolders}}
+                    <th>{{$labname}}</th>
+                    {{end}}
                     <th></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {{$orgname := .Org.Name}}
+                  {{$org := .Org}}
                   {{range $index, $element := .Org.Members}}
                   <tr id="{{$index}}">
                     <td>{{$index}}</td>
+                    <td>{{$element.Name}}</td>
+                    <td>{{$element.StudentID}}</td>
+                    {{range $labname := $org.IndividualLabFolders}}
+                    <td class="{{$labname}}">0%</td>
+                    {{end}}
                     <td>
                       <div class="btn-group">
-                        <a class="btn btn-default" href="/course/result/{{$orgname}}?user={{$index}}">See results</a>
+                        <a class="btn btn-default" href="/course/result/{{$org.Name}}?user={{$index}}">See results</a>
                         <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
                           <span class="caret"></span>
                           <span class="sr-only">Toggle Dropdown</span>
@@ -101,6 +112,7 @@
                   {{end}}
                 </tbody>
               </table>
+              </div>
             </div>
             {{if gt .Org.GroupAssignments 0}}
             <div role="tabpanel" class="tab-pane" id="groups">
@@ -173,19 +185,29 @@
               <h3>Results</h3>
               <p>Build and test results from the students. Click in on a student to see complete build log.</p>
 
-              <table class="table table-striped">
+              <div  class="table-responsive">
+              <table class="table table-striped" id="groupresults">
                 <thead>
                   <tr>
                     <th>Username</th>
+                    {{range $index, $element := .Org.GroupLabFolders}}
+                    <th>{{$element}}</th>
+                    {{end}}
                     <th></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {{$orgname := .Org.Name}}
                   {{range $index, $element := .Org.Groups}}
                   <tr id="{{$index}}">
                     <td>{{$index}}</td>
-                    <td><a href="/course/result/{{$orgname}}?user={{$index}}">See results</a></td>
+                    {{range $index, $element := $org.GroupLabFolders}}
+                    <td class="{{$element}}">0%</td>
+                    {{end}}
+                    <td>
+                      <div class="btn-group">
+                        <a class="btn btn-default" href="/course/result/{{$org.Name}}?user={{$index}}">See results</a>
+                      </div>
+                    </td>
                   </tr>
                   {{else}}
                     <td>No groups yet</td>
@@ -193,7 +215,7 @@
                   {{end}}
                 </tbody>
               </table>
-
+              </div>
             </div>
 
             {{end}}
@@ -314,11 +336,30 @@
   </div>
 
   <script type="text/javascript">
+    var course = "{{.Org.Name}}";
+
+    var updatesummary = function(index, element){
+      var username = $(element).attr("id");
+      $.getJSON("/course/cisummary", {"Course": course, "Username": username}, function(data){
+        $.each(data.Summary, function(labname, s){
+          $("tr#" + data.User + " > td." + labname).text(s.TotalScore + "%")
+          if(s.Status.toLowerCase() == "Active lab assignment".toLowerCase()){
+            $("tr#" + data.User + " > td." + labname).addClass("info");
+          } else if(s.Status.toLowerCase() == "Approved".toLowerCase()){
+            $("tr#" + data.User + " > td." + labname).addClass("success");
+          }
+        });
+      }).fail(function(){
+
+      });
+    }
+
     $(function(){
       $('#teachertab a:first').tab('show');
-    });
 
-    var course = "{{.Org.Name}}";
+      $("table#studentresults > tbody > tr").each(updatesummary);
+      $("table#groupresults > tbody > tr").each(updatesummary);
+    });
 
     function addassistant(username, remove){
       if(confirm("Are you sure you want to make " + username + " a teaching assistant?")){

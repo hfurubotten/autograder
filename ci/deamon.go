@@ -248,3 +248,19 @@ func GetIntegationResults(org, user, lab string) (logs Result, err error) {
 	err = teststore.ReadGob(lab, &logs, false)
 	return
 }
+
+func GetIntegationResultSummary(org, user string) (summary map[string]Result, err error) {
+	summary = make(map[string]Result)
+	teststore := GetCIStorage(org, user)
+	keys := teststore.Keys()
+	for key := range keys {
+		var res Result
+		err = teststore.ReadGob(key, &res, false)
+		if err != nil {
+			return
+		}
+		res.Log = make([]string, 0)
+		summary[key] = res
+	}
+	return
+}
