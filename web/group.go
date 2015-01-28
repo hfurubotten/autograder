@@ -213,3 +213,56 @@ func approvegrouphandler(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 	}
 }
+
+func removependinggrouphandler(w http.ResponseWriter, r *http.Request) {
+	// Checks if the user is signed in and a teacher.
+	member, err := checkTeacherApproval(w, r, true)
+	if err != nil {
+		http.Redirect(w, r, "/", 307)
+		log.Println(err)
+		return
+	}
+
+	groupid, err := strconv.Atoi(r.FormValue("groupid"))
+	if err != nil {
+		http.Error(w, "Group ID is not a number: "+err.Error(), 404)
+		return
+	}
+	course := r.FormValue("course")
+
+	if !git.HasOrganization(course) {
+		http.Error(w, "Unknown course.", 404)
+		return
+	}
+
+	org := git.NewOrganization(course)
+
+	if !org.IsTeacher(member) {
+		http.Error(w, "Is not a teacher or assistant for this course.", 404)
+		return
+	}
+
+	if !git.HasGroup(org.Name, groupid) {
+		http.Error(w, "Unknown group.", 404)
+		return
+	}
+
+	if _, ok := org.PendingGroup[groupid]; ok {
+		delete(org.PendingGroup, groupid)
+		org.StickToSystem()
+	}
+
+	groupname := "group" + strconv.Itoa(groupid)
+	if _, ok := org.Groups[groupname]; ok {
+		delete(org.Groups, groupname)
+		org.StickToSystem()
+	}
+
+	group, err := git.NewGroup(org.Name, groupid)
+	if err != nil {
+		http.Error(w, "Could not get the group: "+err.Error(), 404)
+		return
+	}
+
+	group.Delete()
+}

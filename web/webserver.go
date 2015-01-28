@@ -86,6 +86,7 @@ func (ws Webserver) Start() {
 	http.HandleFunc("/course/update", updatecoursehandler)
 	http.HandleFunc("/course/newgroup", newgrouphandler)
 	http.HandleFunc("/course/requestrandomgroup", requestrandomgrouphandler)
+	http.HandleFunc("/course/removegroup", removependinggrouphandler)
 	http.HandleFunc("/course/approvegroup", approvegrouphandler)
 	http.HandleFunc("/course/addassistant", addassistanthandler)
 	http.HandleFunc("/course/removepending", removependinguserhandler)

@@ -144,7 +144,12 @@
                       {{$obj.Username}} - {{$obj.Name}} - {{$obj.StudentID}} <br />
                       {{end}}
                     </td>
-                    <td><button type="button" onclick="approvegroup({{$index}})" class="btn btn-default">Approve</button></td>
+                    <td>
+                      <div class="btn-group">
+                        <button type="button" onclick="approvegroup({{$index}})" class="btn btn-default"><span class="glyphicon glyphicon-ok"></span></button>
+                        <button type="button" class="btn btn-default" onclick="removegroup({{$index}})"><span class="glyphicon glyphicon-remove"></span></button>
+                      </div>
+                    </td>
                     {{end}}
                   </tr>
                   {{else}}
@@ -200,12 +205,19 @@
                   {{range $index, $element := .Org.Groups}}
                   <tr id="{{$index}}">
                     <td>{{$index}}</td>
-                    {{range $index, $element := $org.GroupLabFolders}}
+                    {{range $element := $org.GroupLabFolders}}
                     <td class="{{$element}}">0%</td>
                     {{end}}
                     <td>
                       <div class="btn-group">
                         <a class="btn btn-default" href="/course/result/{{$org.Name}}?user={{$index}}">See results</a>
+                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                          <span class="caret"></span>
+                          <span class="sr-only">Toggle Dropdown</span>
+                        </button>
+                        <ul class="dropdown-menu" role="menu">
+                          <li><a onclick="removegroup({{$index}})">Remove this group</a></li>
+                        </ul>
                       </div>
                     </td>
                   </tr>
@@ -407,6 +419,22 @@
           $("div#pendinggroupalert").show();
         }
       });
+    }
+
+    function removegroup(groupid){
+      if(confirm("Are you sure you want to remove this group?")){
+
+        if (typeof groupid == "string") {
+          groupid = groupid.substring(5)
+        }
+
+        $.post("/course/removegroup", {"course": course, "groupid": groupid}, function(base){
+          $("tr#group" + groupid).slideUp(500);
+        }).fail(function(){
+          $("#pendinggroupalert > span.inputtext").text("Error removing the group from the list.");
+          $("div#pendinggroupalert").show();
+        });
+      }
     }
   </script>
 {{end}}
