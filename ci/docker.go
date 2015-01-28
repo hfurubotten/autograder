@@ -161,7 +161,7 @@ func (v *Virtual) ExecuteCommand(commands string, stdin io.Reader, stdout, stder
 	}()
 
 	select {
-	case <-time.After(7 * time.Second):
+	case <-time.After(5 * time.Minute):
 		if err := cmd.Process.Kill(); err != nil {
 			return err
 		}
