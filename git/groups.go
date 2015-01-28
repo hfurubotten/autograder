@@ -55,6 +55,19 @@ func (g Group) StickToSystem() error {
 	return g.store.WriteGob(strconv.Itoa(g.ID), g)
 }
 
+func (g *Group) Delete() error {
+	for username, _ := range g.Members {
+		user := NewMemberFromUsername(username)
+		courseopt := user.Courses[g.Course]
+		courseopt.IsGroupMember = false
+		courseopt.GroupNum = 0
+		user.Courses[g.Course] = courseopt
+		user.StickToSystem()
+	}
+
+	return g.store.Erase(strconv.Itoa(g.ID))
+}
+
 func GetGroupStore(org string) *diskv.Diskv {
 	return diskv.New(diskv.Options{
 		BasePath:     global.Basepath + "diskv/groups/" + org + "/",
