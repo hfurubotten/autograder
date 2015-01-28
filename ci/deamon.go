@@ -219,14 +219,22 @@ func logOutput(s string, l *Result, opt DaemonOptions) {
 	s = strings.TrimSpace(s)
 
 	var score Score
-	// TODO: must be a better way of detecting JSON data!
-	err := json.Unmarshal([]byte(s), &score)
-	if err == nil {
-		if score.Secret == opt.Secret {
-			score.Secret = "Sanitized"
-			l.TestScores = append(l.TestScores, score)
+	if strings.Contains(s, opt.Secret) {
+		// TODO: must be a better way of detecting JSON data!
+		err := json.Unmarshal([]byte(s), &score)
+		if err == nil {
+			if score.Secret == opt.Secret {
+				score.Secret = "Sanitized"
+				l.TestScores = append(l.TestScores, score)
+			}
+			return
+		} else {
+			s = strings.Replace(s, opt.Secret, "Sanitized", -1)
 		}
-		return
+	}
+
+	if strings.Contains(s, opt.AdminToken) {
+		s = strings.Replace(s, opt.AdminToken, "Sanitized", -1)
 	}
 
 	l.Log = append(l.Log, strings.TrimSpace(s))
