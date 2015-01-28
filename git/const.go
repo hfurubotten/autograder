@@ -2,7 +2,7 @@ package git
 
 const (
 	STANDARD_REPO_NAME  = "labs"
-	GROUPS_REPO_NAME    = "groups"
+	GROUPS_REPO_NAME    = "glabs"
 	COURSE_INFO_NAME    = "course-info"
 	TEST_REPO_NAME      = "labs-test"
 	GROUPTEST_REPO_NAME = "groups-test"
