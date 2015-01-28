@@ -30,10 +30,13 @@ func manualcihandler(w http.ResponseWriter, r *http.Request) {
 	org := git.NewOrganization(course)
 
 	var repo string
+	var destfolder string
 	if _, ok := org.Members[user]; ok {
 		repo = user + "-" + git.STANDARD_REPO_NAME
+		destfolder = git.STANDARD_REPO_NAME
 	} else if _, ok := org.Groups[user]; ok {
 		repo = user
+		destfolder = git.GROUPS_REPO_NAME
 	} else {
 		http.Error(w, "Unknown user", 404)
 		return
@@ -52,15 +55,15 @@ func manualcihandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	opt := ci.DaemonOptions{
-		Org:          org.Name,
-		User:         user,
-		Repo:         repo,
-		BaseFolder:   org.CI.Basepath,
-		LabFolder:    lab,
-		AdminToken:   org.AdminToken,
-		MimicLabRepo: true,
-		Secret:       org.CI.Secret,
-		IsPush:       false,
+		Org:        org.Name,
+		User:       user,
+		Repo:       repo,
+		BaseFolder: org.CI.Basepath,
+		LabFolder:  lab,
+		AdminToken: org.AdminToken,
+		DestFolder: destfolder,
+		Secret:     org.CI.Secret,
+		IsPush:     false,
 	}
 
 	log.Println(opt)

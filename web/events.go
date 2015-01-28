@@ -32,6 +32,7 @@ func webhookeventhandler(w http.ResponseWriter, r *http.Request) {
 	isgroup := !strings.Contains(load.Repo, "-"+git.STANDARD_REPO_NAME)
 
 	var labfolder string
+	var destfolder string
 	var labnum int
 	var username string
 	if isgroup {
@@ -50,22 +51,24 @@ func webhookeventhandler(w http.ResponseWriter, r *http.Request) {
 		labnum = group.CurrentLabNum
 		labfolder = org.GroupLabFolders[labnum]
 		username = load.Repo
+		destfolder = git.GROUPS_REPO_NAME
 	} else {
 		labnum = user.Courses[org.Name].CurrentLabNum
 		labfolder = org.IndividualLabFolders[labnum]
 		username = strings.TrimRight(load.Repo, "-"+git.STANDARD_REPO_NAME)
+		destfolder = git.STANDARD_REPO_NAME
 	}
 
 	opt := ci.DaemonOptions{
-		Org:          org.Name,
-		User:         username,
-		Repo:         load.Repo,
-		BaseFolder:   org.CI.Basepath,
-		LabFolder:    labfolder,
-		AdminToken:   org.AdminToken,
-		MimicLabRepo: true,
-		IsPush:       true,
-		Secret:       org.CI.Secret,
+		Org:        org.Name,
+		User:       username,
+		Repo:       load.Repo,
+		BaseFolder: org.CI.Basepath,
+		LabFolder:  labfolder,
+		AdminToken: org.AdminToken,
+		DestFolder: destfolder,
+		IsPush:     true,
+		Secret:     org.CI.Secret,
 	}
 
 	go ci.StartTesterDaemon(opt)

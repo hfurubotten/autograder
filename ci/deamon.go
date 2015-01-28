@@ -23,15 +23,15 @@ func init() {
 }
 
 type DaemonOptions struct {
-	Org          string
-	User         string
-	Repo         string
-	BaseFolder   string
-	LabFolder    string
-	AdminToken   string
-	MimicLabRepo bool
-	Secret       string
-	IsPush       bool
+	Org        string
+	User       string
+	Repo       string
+	BaseFolder string
+	LabFolder  string
+	AdminToken string
+	DestFolder string
+	Secret     string
+	IsPush     bool
 }
 
 func StartTesterDaemon(opt DaemonOptions) {
@@ -61,13 +61,6 @@ func StartTesterDaemon(opt DaemonOptions) {
 	// cleanup
 	defer env.RemoveContainer()
 
-	var destfolder string
-	if opt.MimicLabRepo {
-		destfolder = git.STANDARD_REPO_NAME
-	} else {
-		destfolder = opt.Repo
-	}
-
 	// mkdir /testground/github.com/
 	// git clone user-labs
 	// git clone test-labs
@@ -80,14 +73,14 @@ func StartTesterDaemon(opt DaemonOptions) {
 		Breakable bool
 	}{
 		{"mkdir -p " + opt.BaseFolder, true},
-		{"git clone https://" + opt.AdminToken + ":x-oauth-basic@github.com/" + opt.Org + "/" + opt.Repo + ".git" + " " + opt.BaseFolder + destfolder + "/", true},
+		{"git clone https://" + opt.AdminToken + ":x-oauth-basic@github.com/" + opt.Org + "/" + opt.Repo + ".git" + " " + opt.BaseFolder + opt.DestFolder + "/", true},
 		{"git clone https://" + opt.AdminToken + ":x-oauth-basic@github.com/" + opt.Org + "/" + git.TEST_REPO_NAME + ".git" + " " + opt.BaseFolder + git.TEST_REPO_NAME + "/", true},
-		{"/bin/bash -c \"cp -rf \"" + opt.BaseFolder + git.TEST_REPO_NAME + "/*\" \"" + opt.BaseFolder + destfolder + "/\" \"", true},
+		{"/bin/bash -c \"cp -rf \"" + opt.BaseFolder + git.TEST_REPO_NAME + "/*\" \"" + opt.BaseFolder + opt.DestFolder + "/\" \"", true},
 
-		{"chmod 777 " + opt.BaseFolder + destfolder + "/dependencies.sh", true},
-		{"/bin/sh -c \"(cd \"" + opt.BaseFolder + destfolder + "/\" && ./dependencies.sh)\"", true},
-		{"chmod 777 " + opt.BaseFolder + destfolder + "/" + opt.LabFolder + "/test.sh", true},
-		{"/bin/sh -c \"(cd \"" + opt.BaseFolder + destfolder + "/" + opt.LabFolder + "/\" && ./test.sh)\"", false},
+		{"chmod 777 " + opt.BaseFolder + opt.DestFolder + "/dependencies.sh", true},
+		{"/bin/sh -c \"(cd \"" + opt.BaseFolder + opt.DestFolder + "/\" && ./dependencies.sh)\"", true},
+		{"chmod 777 " + opt.BaseFolder + opt.DestFolder + "/" + opt.LabFolder + "/test.sh", true},
+		{"/bin/sh -c \"(cd \"" + opt.BaseFolder + opt.DestFolder + "/" + opt.LabFolder + "/\" && ./test.sh)\"", false},
 	}
 
 	r := Result{
