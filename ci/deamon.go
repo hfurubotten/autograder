@@ -102,10 +102,13 @@ func StartTesterDaemon(opt DaemonOptions) {
 
 	for _, cmd := range cmds {
 		err = execute(&env, cmd.Cmd, &r, opt)
-		if err != nil && cmd.Breakable {
-			logOutput("Unexpected end of integration.", &r, opt)
+		if err != nil {
+			logOutput(err.Error(), &r, opt)
 			log.Println(err)
-			break
+			if cmd.Breakable {
+				logOutput("Unexpected end of integration.", &r, opt)
+				break
+			}
 		}
 	}
 

@@ -5,6 +5,7 @@ import (
 	"io"
 	"os/exec"
 	"sync"
+	"time"
 
 	docker "github.com/fsouza/go-dockerclient"
 )
@@ -138,7 +139,7 @@ func (v *Virtual) ExecuteCommand(commands string, stdin io.Reader, stdout, stder
 		return errors.New("Does not have any container started up yet.")
 	}
 
-	err = v.Client.StartContainer(v.Container.ID, nil)
+	err = v.Client.StartContainer(v.Container.ID, &docker.HostConfig{})
 	if _, ok := err.(*docker.ContainerAlreadyRunning); err != nil && !ok {
 		return
 	}
@@ -149,8 +150,24 @@ func (v *Virtual) ExecuteCommand(commands string, stdin io.Reader, stdout, stder
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
 
-	err = cmd.Run()
+	err = cmd.Start()
 	if err != nil {
+		return
+	}
+
+	done := make(chan error, 1)
+	go func() {
+		done <- cmd.Wait()
+	}()
+
+	select {
+	case <-time.After(7 * time.Second):
+		if err := cmd.Process.Kill(); err != nil {
+			return err
+		}
+		<-done // allow goroutine to exit
+		return errors.New("Process killed on timeout after 5 min.")
+	case err = <-done:
 		return
 	}
 
