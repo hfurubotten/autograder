@@ -47,6 +47,21 @@ func NewGroup(org string, groupnum int) (g Group, err error) {
 	return
 }
 
+func (g *Group) Activate() {
+	g.Active = true
+
+	for username, _ := range g.Members {
+		user := NewMemberFromUsername(username)
+		opt := user.Courses[g.Course]
+		if !opt.IsGroupMember {
+			opt.IsGroupMember = true
+			opt.GroupNum = g.ID
+			user.Courses[g.Course] = opt
+			user.StickToSystem()
+		}
+	}
+}
+
 func (g *Group) AddMember(user string) {
 	g.Members[user] = nil
 }
