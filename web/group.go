@@ -5,9 +5,14 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"sync"
 
 	"github.com/hfurubotten/autograder/git"
 	"github.com/hfurubotten/autograder/web/pages"
+)
+
+var (
+	newgrouplock sync.Mutex
 )
 
 func requestrandomgrouphandler(w http.ResponseWriter, r *http.Request) {
@@ -39,6 +44,9 @@ func newgrouphandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	newgrouplock.Lock()
+	defer newgrouplock.Unlock()
+
 	course := r.FormValue("course")
 
 	if _, ok := member.Courses[course]; !ok {
@@ -65,11 +73,13 @@ func newgrouphandler(w http.ResponseWriter, r *http.Request) {
 	for _, username := range members {
 		user = git.NewMemberFromUsername(username)
 		opt = user.Courses[course]
-		opt.IsGroupMember = true
-		opt.GroupNum = org.GroupCount
-		user.Courses[course] = opt
-		user.StickToSystem()
-		group.AddMember(username)
+		if !opt.IsGroupMember {
+			opt.IsGroupMember = true
+			opt.GroupNum = org.GroupCount
+			user.Courses[course] = opt
+			user.StickToSystem()
+			group.AddMember(username)
+		}
 
 		if _, ok := org.PendingRandomGroup[username]; ok {
 			delete(org.PendingRandomGroup, username)
@@ -202,7 +212,7 @@ func approvegrouphandler(w http.ResponseWriter, r *http.Request) {
 	org.AddGroup(group)
 	org.StickToSystem()
 
-	group.Active = true
+	group.Activate()
 	group.StickToSystem()
 
 	view.Error = false
