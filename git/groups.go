@@ -59,10 +59,12 @@ func (g *Group) Delete() error {
 	for username, _ := range g.Members {
 		user := NewMemberFromUsername(username)
 		courseopt := user.Courses[g.Course]
-		courseopt.IsGroupMember = false
-		courseopt.GroupNum = 0
-		user.Courses[g.Course] = courseopt
-		user.StickToSystem()
+		if courseopt.GroupNum == g.ID {
+			courseopt.IsGroupMember = false
+			courseopt.GroupNum = 0
+			user.Courses[g.Course] = courseopt
+			user.StickToSystem()
+		}
 	}
 
 	return g.store.Erase(strconv.Itoa(g.ID))
