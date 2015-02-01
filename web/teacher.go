@@ -55,9 +55,8 @@ func teacherspanelhandler(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	users := org.PendingUser
-
 	// gets pending users
+	users := org.PendingUser
 	var status string
 	for username, _ := range users {
 		// check status up against Github
@@ -98,6 +97,17 @@ func teacherspanelhandler(w http.ResponseWriter, r *http.Request) {
 			group.Members[key] = groupmember
 		}
 		pendinggroups[groupID] = group
+	}
+
+	// get groups
+	for groupname, _ := range org.Groups {
+		groupID, _ := strconv.Atoi(groupname[5:])
+		group, _ = git.NewGroup(org.Name, groupID)
+		for key, _ := range group.Members {
+			groupmember = git.NewMemberFromUsername(key)
+			group.Members[key] = groupmember
+		}
+		org.Groups[groupname] = group
 	}
 
 	view := teacherspanelview{

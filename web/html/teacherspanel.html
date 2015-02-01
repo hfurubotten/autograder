@@ -188,13 +188,14 @@
               </form>
 
               <h3>Results</h3>
-              <p>Build and test results from the students. Click in on a student to see complete build log.</p>
+              <p>Build and test results from the students. Click in on a group to see complete build log.</p>
 
               <div  class="table-responsive">
               <table class="table table-striped" id="groupresults">
                 <thead>
                   <tr>
-                    <th>Username</th>
+                    <th>Group</th>
+                    <th>Members</th>
                     {{range $index, $element := .Org.GroupLabFolders}}
                     <th>{{$element}}</th>
                     {{end}}
@@ -205,6 +206,11 @@
                   {{range $index, $element := .Org.Groups}}
                   <tr id="{{$index}}">
                     <td>{{$index}}</td>
+                    <td>
+                      {{range $username, $obj := $element.Members}}
+                      {{$obj.Name}}<br />
+                      {{end}}
+                    </td>
                     {{range $element := $org.GroupLabFolders}}
                     <td class="{{$element}}">0%</td>
                     {{end}}
