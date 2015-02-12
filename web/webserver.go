@@ -125,7 +125,7 @@ func catchallhandler(w http.ResponseWriter, r *http.Request) {
 		//err :=indextemplate.Execute(w, nil)
 		_, err = io.Copy(w, index)
 		if err != nil {
-			log.Fatal(err)
+			log.Println("Error sending frontpage:", err)
 		}
 
 	} else {
