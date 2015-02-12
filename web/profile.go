@@ -3,6 +3,7 @@ package web
 import (
 	"log"
 	"net/http"
+	"net/mail"
 	"strconv"
 
 	"github.com/hfurubotten/autograder/auth"
@@ -15,6 +16,10 @@ type profileview struct {
 	Member git.Member
 }
 
+var ProfileURL string = "/profile"
+
+// profilehandler is a http handler which writes back a page about the
+// users profile settings. The page can also be used to edit profile data.
 func profilehandler(w http.ResponseWriter, r *http.Request) {
 	if !auth.IsApprovedUser(r) {
 		http.Redirect(w, r, pages.FRONTPAGE, 307)
@@ -33,10 +38,13 @@ func profilehandler(w http.ResponseWriter, r *http.Request) {
 	execTemplate("profile.html", w, view)
 }
 
+var UpdateMemberURL string = "/updatemember"
+
+//  updatememberhandler is a http handler for updating a users profile data.
 func updatememberhandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
-		if r.FormValue("name") == "" || r.FormValue("studentid") == "" {
-			//pages.RedirectTo(w, r, pages.REGISTER_REDIRECT, 307)
+		if r.FormValue("name") == "" || r.FormValue("studentid") == "" || r.FormValue("email") == "" {
+			http.Redirect(w, r, pages.REGISTER_REDIRECT, 307)
 			return
 		}
 
@@ -62,6 +70,15 @@ func updatememberhandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		member.StudentID = studentid
+
+		email, err := mail.ParseAddress(r.FormValue("email"))
+		if err != nil {
+			log.Println("Parsing email error: ", err)
+			http.Redirect(w, r, pages.REGISTER_REDIRECT, 307)
+			return
+		}
+		member.Email = email
+
 		member.StickToSystem()
 
 		http.Redirect(w, r, pages.HOMEPAGE, 307)
