@@ -45,6 +45,7 @@
                       <div class="btn-group">
                         <button type="button" onclick="approveuser('{{.Username}}')" class="btn btn-default"><span class="glyphicon glyphicon-ok"></span></button>
                         <button type="button" class="btn btn-default" onclick="removependinguser({{.Username}})"><span class="glyphicon glyphicon-remove"></span></button>
+                        {{if .Email}}<a class="btn btn-default" href="mailto:{{.Email.Address}}" target="_blank"><span class="glyphicon glyphicon-envelope"></span></a>{{end}}
                         <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
                           <span class="caret"></span>
                           <span class="sr-only">Toggle Dropdown</span>
@@ -95,6 +96,7 @@
                       <div class="btn-group">
                         <a class="btn btn-default" href="/course/result/{{$org.Name}}?user={{$index}}">See results</a>
                         <a class="btn btn-default" href="https://github.com/{{$org.Name}}/{{$index}}-labs" target="_blank"><img src="/img/GitHub-Mark/PNG/GitHub-Mark-32px.png" alt="Repository" width="18px"></a>
+                        {{if $element.Email}}<a class="btn btn-default" href="mailto:{{$element.Email.Address}}" target="_blank"><span class="glyphicon glyphicon-envelope"></span></a>{{end}}
                         <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
                           <span class="caret"></span>
                           <span class="sr-only">Toggle Dropdown</span>
@@ -148,6 +150,7 @@
                       <div class="btn-group">
                         <button type="button" onclick="approvegroup({{$index}})" class="btn btn-default"><span class="glyphicon glyphicon-ok"></span></button>
                         <button type="button" class="btn btn-default" onclick="removegroup({{$index}})"><span class="glyphicon glyphicon-remove"></span></button>
+                        <a class="btn btn-default" href="mailto:{{range .Members}}{{if .Email}}{{.Email.Address}},{{end}}{{end}}" target="_blank"><span class="glyphicon glyphicon-envelope"></span></a>
                       </div>
                     </td>
                     {{end}}
@@ -218,6 +221,7 @@
                       <div class="btn-group">
                         <a class="btn btn-default" href="/course/result/{{$org.Name}}?user={{$index}}">See results</a>
                         <a class="btn btn-default" href="https://github.com/{{$org.Name}}/{{$index}}" target="_blank"><img src="/img/GitHub-Mark/PNG/GitHub-Mark-32px.png" alt="Repository" width="18px"></a>
+                        <a class="btn btn-default" href="mailto:{{range $element.Members}}{{if .Email}}{{.Email.Address}},{{end}}{{end}}" target="_blank"><span class="glyphicon glyphicon-envelope"></span></a>
                         <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
                           <span class="caret"></span>
                           <span class="sr-only">Toggle Dropdown</span>
