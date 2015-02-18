@@ -6,7 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
 	"strconv"
+	"strings"
+	"sync"
 	"time"
 
 	"code.google.com/p/goauth2/oauth"
@@ -17,7 +20,23 @@ import (
 
 func init() {
 	gob.Register(Organization{})
+	gob.Register(CodeReview{})
+	lockers = make(map[string]*sync.Mutex)
 }
+
+type CodeReview struct {
+	Title string
+	Ext   string
+	Desc  string
+	Code  string
+	User  string
+
+	// Data from Github
+	URL string
+}
+
+var lockers map[string]*sync.Mutex
+var orglock sync.Mutex
 
 type Organization struct {
 	Name                  string
@@ -25,8 +44,11 @@ type Organization struct {
 	GroupAssignments      int
 	IndividualAssignments int
 
+	// Lab assignment info. TODO: collect this into one struct!
 	IndividualLabFolders map[int]string
 	GroupLabFolders      map[int]string
+	IndividualDeadlines  map[int]time.Time
+	GroupDeadlines       map[int]time.Time
 
 	StudentTeamID int
 	OwnerTeamID   int
@@ -40,12 +62,17 @@ type Organization struct {
 	Members            map[string]interface{}
 	Teachers           map[string]interface{}
 
+	CodeReview     bool
+	CodeReviewlist []CodeReview
+
 	AdminToken  string
 	githubadmin *github.Client
 
 	CI CIOptions
 }
 
+// NewOrganization tries to fetch a organization from storage on disk or memory.
+// If non exists with given name, it creates a new organization.
 func NewOrganization(name string) Organization {
 	if GetOrgstore().Has(name) {
 		var org Organization
@@ -59,6 +86,7 @@ func NewOrganization(name string) Organization {
 
 		return org
 	}
+
 	return Organization{
 		Name:                 name,
 		IndividualLabFolders: make(map[int]string),
@@ -69,6 +97,9 @@ func NewOrganization(name string) Organization {
 		PendingUser:          make(map[string]interface{}),
 		Members:              make(map[string]interface{}),
 		Teachers:             make(map[string]interface{}),
+		IndividualDeadlines:  make(map[int]time.Time),
+		GroupDeadlines:       make(map[int]time.Time),
+		CodeReviewlist:       make([]CodeReview, 0),
 		CI: CIOptions{
 			Basepath: "/testground/src/github.com/" + name + "/",
 			Secret:   fmt.Sprintf("%x", md5.Sum([]byte(name+time.Now().String()))),
@@ -76,6 +107,7 @@ func NewOrganization(name string) Organization {
 	}
 }
 
+// connectAdminToGithub will create a github client. This client will be used to talk with githubs api.
 func (o *Organization) connectAdminToGithub() error {
 	if o.githubadmin != nil {
 		return nil
@@ -92,91 +124,13 @@ func (o *Organization) connectAdminToGithub() error {
 	return nil
 }
 
-func (o *Organization) AddMembership(member Member) (err error) {
-	err = o.connectAdminToGithub()
-	if err != nil {
-		return
-	}
-
-	_, _, err = o.githubadmin.Organizations.AddTeamMembership(o.StudentTeamID, member.Username)
-	if err != nil {
-		return
-	}
-
-	//member.AddOrganization(*o)
-	//err = member.StickToSystem()
-	if o.PendingUser == nil {
-		o.PendingUser = make(map[string]interface{})
-	}
-
-	if _, ok := o.PendingUser[member.Username]; !ok {
-		o.PendingUser[member.Username] = nil
-	}
-
-	return
-}
-
-func (o *Organization) AddTeacher(member Member) (err error) {
-	err = o.connectAdminToGithub()
-	if err != nil {
-		return
-	}
-
-	o.Teachers[member.Username] = nil
-
-	var teams map[string]Team
-	if o.OwnerTeamID == 0 {
-		teams, err = o.ListTeams()
-		owners, ok := teams["Owners"]
-		if !ok {
-			return errors.New("Couldn't find the owners team.")
-		}
-		o.OwnerTeamID = owners.ID
-	}
-
-	_, _, err = o.githubadmin.Organizations.AddTeamMembership(o.OwnerTeamID, member.Username)
-	return
-}
-
-func (o Organization) IsTeacher(member Member) bool {
-	_, ok := o.Teachers[member.Username]
-	return ok
-}
-
-func (o *Organization) AddGroup(g Group) {
-	if o.Groups == nil {
-		o.Groups = make(map[string]interface{})
-	}
-
-	if _, ok := o.PendingGroup[g.ID]; ok {
-		delete(o.PendingGroup, g.ID)
-	}
-	o.Groups["group"+strconv.Itoa(g.ID)] = nil
-}
-
-func (o *Organization) GetMembership(member Member) (status string, err error) {
-	err = o.connectAdminToGithub()
-	if err != nil {
-		return
-	}
-
-	memship, _, err := o.githubadmin.Organizations.GetTeamMembership(o.StudentTeamID, member.Username)
-	if err != nil {
-		return
-	}
-
-	if memship.State == nil {
-		err = errors.New("Couldn't find any role on the username " + member.Username)
-		return
-	}
-
-	status = *memship.State
-
-	return
-
-}
-
+// StickToSystem will store the organization to cached memory and disk.
 func (o *Organization) StickToSystem() (err error) {
+	if _, ok := lockers[o.Name]; ok {
+		l := lockers[o.Name]
+		defer l.Unlock()
+	}
+
 	if o.IndividualLabFolders == nil {
 		o.IndividualLabFolders = make(map[int]string)
 	}
@@ -210,9 +164,221 @@ func (o *Organization) StickToSystem() (err error) {
 		o.GroupLabFolders = newfoldernames
 	}
 
+	if o.CodeReviewlist == nil {
+		o.CodeReviewlist = make([]CodeReview, 0)
+	}
+
 	return GetOrgstore().WriteGob(o.Name, o)
 }
 
+// Lock will lock the organization name from being written to by
+// other instances of the same organization. This has to be used
+// when new info is written, to prevent race conditions. Unlock
+// occures when data is finished written to storage.
+func (o *Organization) Lock() {
+	orglock.Lock()
+	defer orglock.Unlock()
+
+	if _, ok := lockers[o.Name]; !ok {
+		lockers[o.Name] = new(sync.Mutex)
+	}
+
+	l := lockers[o.Name]
+	l.Lock()
+}
+
+// AddCodeReview will add a new code review. This method will
+// upload the codereview to github and append it to the list over
+// code reviews in this organization.
+//
+// Filename format committed to github: 'CR-ID'-'Title'-'Username'.'file_ext'
+// Commit message: 'CR-ID' 'Username': 'Title'
+//
+// This method needs locking
+func (o *Organization) AddCodeReview(cr *CodeReview) (err error) {
+	err = o.connectAdminToGithub()
+	if err != nil {
+		return
+	}
+
+	_, labname, _ := o.FindCurrentLab()
+
+	var path string
+	if labname != "" {
+		path = fmt.Sprintf("%s/%d-%s-%s.%s", labname, len(o.CodeReviewlist)+1, strings.Replace(cr.Title, " ", "", -1), cr.User, cr.Ext)
+	} else {
+		path = fmt.Sprintf("%d-%s-%s.%s", len(o.CodeReviewlist)+1, strings.Replace(cr.Title, " ", "", -1), cr.User, cr.Ext)
+	}
+	commitmsg := fmt.Sprintf("%d %s: %s", len(o.CodeReviewlist)+1, cr.User, cr.Title)
+
+	// Creates the review file
+	SHA, err := o.CreateFile(CODEREVIEW_REPO_NAME, path, cr.Code+"\n", commitmsg)
+	if err != nil {
+		return
+	}
+
+	commentmsg := fmt.Sprintf("Code Review %d: %s\n\n%s\n\nHey, could someone look through this and give me some feedback conserning this? \nSincerely @%s\n\n---------\n@%s, follow this tread for feedback.\n",
+		len(o.CodeReviewlist)+1, cr.Title, cr.Desc, cr.User, cr.User)
+
+	// Makes a comment on the commit.
+	comment := new(github.RepositoryComment)
+	comment.Body = github.String(commentmsg)
+
+	_, _, err = o.githubadmin.Repositories.CreateComment(o.Name, CODEREVIEW_REPO_NAME, SHA, comment)
+	if err != nil {
+		return
+	}
+
+	cr.URL = fmt.Sprintf("https://github.com/%s/%s/commit/%s", o.Name, CODEREVIEW_REPO_NAME, SHA)
+
+	o.CodeReviewlist = append(o.CodeReviewlist, *cr)
+	return nil
+}
+
+// FindCurrentLab will find out which lab has the nearest deadline.
+func (o *Organization) FindCurrentLab() (labnum int, labname string, labtype int) {
+	var lowesttimediff int64 = math.MaxInt64
+	for i, t := range o.IndividualDeadlines {
+		if time.Now().After(t) {
+			continue
+		}
+
+		diff := t.Unix() - time.Now().Unix()
+		if diff < lowesttimediff {
+			labnum = i
+			labname = o.IndividualLabFolders[i]
+			labtype = INDIVIDUAL
+			lowesttimediff = diff
+		}
+	}
+
+	for i, t := range o.GroupDeadlines {
+		if time.Now().After(t) {
+			continue
+		}
+
+		diff := t.Unix() - time.Now().Unix()
+		if diff < lowesttimediff {
+			labnum = i
+			labname = o.GroupLabFolders[i]
+			labtype = GROUP
+			lowesttimediff = diff
+		}
+	}
+	return
+}
+
+// AddMembership will add a user as a pending student to this
+// organization. A pending student is a student which still has
+// to be approved by the teaching staff. This method will also
+// add the user to the student team on github.
+//
+// This method needs locking
+func (o *Organization) AddMembership(member Member) (err error) {
+	err = o.connectAdminToGithub()
+	if err != nil {
+		return
+	}
+
+	_, _, err = o.githubadmin.Organizations.AddTeamMembership(o.StudentTeamID, member.Username)
+	if err != nil {
+		return
+	}
+
+	//member.AddOrganization(*o)
+	//err = member.StickToSystem()
+	if o.PendingUser == nil {
+		o.PendingUser = make(map[string]interface{})
+	}
+
+	if _, ok := o.PendingUser[member.Username]; !ok {
+		o.PendingUser[member.Username] = nil
+	}
+
+	return
+}
+
+// AddTeacher will add a teacher to the teaching staff. This
+// method also adds the user to the owners team on github.
+//
+// TODO: Owners team is no longer a spesial admin team over the
+// organization on github. This method needs to be rewritten
+// to suppert the new admin API.
+//
+// This method needs locking
+func (o *Organization) AddTeacher(member Member) (err error) {
+	err = o.connectAdminToGithub()
+	if err != nil {
+		return
+	}
+
+	o.Teachers[member.Username] = nil
+
+	var teams map[string]Team
+	if o.OwnerTeamID == 0 {
+		teams, err = o.ListTeams()
+		owners, ok := teams["Owners"]
+		if !ok {
+			return errors.New("Couldn't find the owners team.")
+		}
+		o.OwnerTeamID = owners.ID
+	}
+
+	_, _, err = o.githubadmin.Organizations.AddTeamMembership(o.OwnerTeamID, member.Username)
+	return
+}
+
+// IsTeacher returns whether if a user is a teacher or not.
+func (o Organization) IsTeacher(member Member) bool {
+	_, ok := o.Teachers[member.Username]
+	return ok
+}
+
+// AddGroup will add a group to the list of groups in the
+// organization and also in the pending group list. The
+// pending group list will have to be approved by the teaching
+// staff.
+//
+// This method needs locking
+func (o *Organization) AddGroup(g Group) {
+	if o.Groups == nil {
+		o.Groups = make(map[string]interface{})
+	}
+
+	if _, ok := o.PendingGroup[g.ID]; ok {
+		delete(o.PendingGroup, g.ID)
+	}
+	o.Groups["group"+strconv.Itoa(g.ID)] = nil
+}
+
+// GetMembership will return the status of a membership to the
+// student team on github. The states possible is active or
+// pending. Returns error if user is never invited.
+func (o *Organization) GetMembership(member Member) (status string, err error) {
+	err = o.connectAdminToGithub()
+	if err != nil {
+		return
+	}
+
+	memship, _, err := o.githubadmin.Organizations.GetTeamMembership(o.StudentTeamID, member.Username)
+	if err != nil {
+		return
+	}
+
+	if memship.State == nil {
+		err = errors.New("Couldn't find any role on the username " + member.Username)
+		return
+	}
+
+	status = *memship.State
+
+	return
+
+}
+
+// Fork will fork a different repository into the organization on
+// github. The fork call is async. Only communication errors will
+// be reported back, no errors in the forking process.
 func (o *Organization) Fork(owner, repo string) (err error) {
 	err = o.connectAdminToGithub()
 	if err != nil {
@@ -224,6 +390,10 @@ func (o *Organization) Fork(owner, repo string) (err error) {
 	return
 }
 
+// CreateRepo will create a new repository in the organization on github.
+//
+// TODO: When the hook option is activated, it can only create a push hook.
+// Extend this to include a optional event hook.
 func (o *Organization) CreateRepo(opt RepositoryOptions) (err error) {
 	err = o.connectAdminToGithub()
 	if err != nil {
@@ -262,6 +432,7 @@ func (o *Organization) CreateRepo(opt RepositoryOptions) (err error) {
 	return
 }
 
+// CreateTeam will create a new team in the organization on github.
 func (o *Organization) CreateTeam(opt TeamOptions) (teamID int, err error) {
 	err = o.connectAdminToGithub()
 	if err != nil {
@@ -290,6 +461,7 @@ func (o *Organization) CreateTeam(opt TeamOptions) (teamID int, err error) {
 	return *team.ID, nil
 }
 
+// LinkRepoToTeam will link a repo to a team on github.
 func (o *Organization) LinkRepoToTeam(teamID int, repo string) (err error) {
 	err = o.connectAdminToGithub()
 	if err != nil {
@@ -300,6 +472,7 @@ func (o *Organization) LinkRepoToTeam(teamID int, repo string) (err error) {
 	return
 }
 
+// AddMemberToTeam will add a user to a team on github.
 func (o *Organization) AddMemberToTeam(teamID int, user string) (err error) {
 	err = o.connectAdminToGithub()
 	if err != nil {
@@ -310,6 +483,7 @@ func (o *Organization) AddMemberToTeam(teamID int, user string) (err error) {
 	return
 }
 
+// ListTeams will list all the teams within the organization on github.
 func (o *Organization) ListTeams() (teams map[string]Team, err error) {
 	err = o.connectAdminToGithub()
 	if err != nil {
@@ -348,6 +522,7 @@ func (o *Organization) ListTeams() (teams map[string]Team, err error) {
 	return
 }
 
+// ListRepos lists all the repositories in the organization on github.
 func (o *Organization) ListRepos() (repos map[string]Repo, err error) {
 	err = o.connectAdminToGithub()
 	if err != nil {
@@ -383,9 +558,11 @@ func (o *Organization) ListRepos() (repos map[string]Repo, err error) {
 	return
 }
 
-func (o *Organization) CreateFile(repo, path, content, commitmsg string) (err error) {
+// CreateFile will commit a new file to a repository in the organization on github.
+func (o *Organization) CreateFile(repo, path, content, commitmsg string) (commitcode string, err error) {
 	if repo == "" || path == "" || content == "" || commitmsg == "" {
-		return errors.New("Missing one of the arguments to create a file.")
+		err = errors.New("Missing one of the arguments to create a file.")
+		return
 	}
 
 	err = o.connectAdminToGithub()
@@ -397,10 +574,15 @@ func (o *Organization) CreateFile(repo, path, content, commitmsg string) (err er
 		Message: github.String(commitmsg),
 		Content: []byte(content),
 	}
-	_, _, err = o.githubadmin.Repositories.CreateFile(o.Name, repo, path, &contentopt)
-	return
+	commit, _, err := o.githubadmin.Repositories.CreateFile(o.Name, repo, path, &contentopt)
+	if err != nil {
+		return
+	}
+
+	return *commit.SHA, nil
 }
 
+// ListRegisteredOrganizations will list all the organizations registered in autograder.
 func ListRegisteredOrganizations() (out []Organization) {
 	out = make([]Organization, 0)
 	keys := GetOrgstore().Keys()
@@ -414,12 +596,14 @@ func ListRegisteredOrganizations() (out []Organization) {
 	return
 }
 
+// HasOrganization checks if the organization is already registered in autograder.
 func HasOrganization(name string) bool {
 	return GetOrgstore().Has(name)
 }
 
 var orgstore *diskv.Diskv
 
+// GetOrgstore returns a diskv object used to store the organization object to memory and disk.
 func GetOrgstore() *diskv.Diskv {
 	if orgstore == nil {
 		orgstore = diskv.New(diskv.Options{
