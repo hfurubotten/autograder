@@ -141,11 +141,11 @@ func saveorghandler(w http.ResponseWriter, r *http.Request) {
 			path := "lab" + strconv.Itoa(i+1) + "/README.md"
 			commitmessage := "Adding readme file for lab assignment " + strconv.Itoa(i+1)
 			content := "# Lab assignment " + strconv.Itoa(i+1)
-			err = org.CreateFile(git.STANDARD_REPO_NAME, path, content, commitmessage)
+			_, err = org.CreateFile(git.STANDARD_REPO_NAME, path, content, commitmessage)
 			if err != nil {
 				log.Println(err)
 			}
-			err = org.CreateFile(git.TEST_REPO_NAME, path, content, commitmessage)
+			_, err = org.CreateFile(git.TEST_REPO_NAME, path, content, commitmessage)
 			content = "# Lab assignment " + strconv.Itoa(i+1) + " test"
 			if err != nil {
 				log.Println(err)
@@ -174,12 +174,12 @@ func saveorghandler(w http.ResponseWriter, r *http.Request) {
 				path := "lab" + strconv.Itoa(i+1) + "/README.md"
 				commitmessage := "Adding readme file for lab assignment " + strconv.Itoa(i+1)
 				content := "# Group assignment " + strconv.Itoa(i+1)
-				err = org.CreateFile(git.GROUPS_REPO_NAME, path, content, commitmessage)
+				_, err = org.CreateFile(git.GROUPS_REPO_NAME, path, content, commitmessage)
 				if err != nil {
 					log.Println(err)
 				}
 				content = "# Group assignment " + strconv.Itoa(i+1) + " tests"
-				err = org.CreateFile(git.GROUPTEST_REPO_NAME, path, content, commitmessage)
+				_, err = org.CreateFile(git.GROUPTEST_REPO_NAME, path, content, commitmessage)
 				if err != nil {
 					log.Println(err)
 				}
@@ -224,7 +224,7 @@ func saveorghandler(w http.ResponseWriter, r *http.Request) {
 				path := "lab" + strconv.Itoa(i+1) + "/README.md"
 				commitmessage := "Adding readme file for lab assignment " + strconv.Itoa(i+1)
 				content := "# Lab assignment " + strconv.Itoa(i+1)
-				err = org.CreateFile(git.STANDARD_REPO_NAME, path, content, commitmessage)
+				_, err = org.CreateFile(git.STANDARD_REPO_NAME, path, content, commitmessage)
 				if err != nil {
 					log.Println(err)
 				}
@@ -250,7 +250,7 @@ func saveorghandler(w http.ResponseWriter, r *http.Request) {
 				path := "lab" + strconv.Itoa(i+1) + "/README.md"
 				commitmessage := "Adding readme file for lab assignment " + strconv.Itoa(i+1)
 				content := "# Lab assignment " + strconv.Itoa(i+1)
-				err = org.CreateFile(git.TEST_REPO_NAME, path, content, commitmessage)
+				_, err = org.CreateFile(git.TEST_REPO_NAME, path, content, commitmessage)
 				if err != nil {
 					log.Println(err)
 				}
@@ -276,7 +276,7 @@ func saveorghandler(w http.ResponseWriter, r *http.Request) {
 					path := "lab" + strconv.Itoa(i+1) + "/README.md"
 					commitmessage := "Adding readme file for lab assignment " + strconv.Itoa(i+1)
 					content := "# Group lab assignment " + strconv.Itoa(i+1)
-					err = org.CreateFile(git.GROUPS_REPO_NAME, path, content, commitmessage)
+					_, err = org.CreateFile(git.GROUPS_REPO_NAME, path, content, commitmessage)
 					if err != nil {
 						log.Println(err)
 					}
@@ -301,7 +301,7 @@ func saveorghandler(w http.ResponseWriter, r *http.Request) {
 					path := "lab" + strconv.Itoa(i+1) + "/README.md"
 					commitmessage := "Adding readme file for lab assignment " + strconv.Itoa(i+1)
 					content := "# Group lab assignment " + strconv.Itoa(i+1)
-					err = org.CreateFile(git.GROUPTEST_REPO_NAME, path, content, commitmessage)
+					_, err = org.CreateFile(git.GROUPTEST_REPO_NAME, path, content, commitmessage)
 					if err != nil {
 						log.Println(err)
 					}
@@ -542,7 +542,7 @@ type maincourseview struct {
 }
 
 func maincoursepagehandler(w http.ResponseWriter, r *http.Request) {
-	// Checks if the user is signed in and a teacher.
+	// Checks if the user is signed in.
 	member, err := checkMemberApproval(w, r, true)
 	if err != nil {
 		log.Println(err)
