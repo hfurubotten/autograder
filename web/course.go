@@ -11,13 +11,18 @@ import (
 	"github.com/hfurubotten/autograder/web/pages"
 )
 
+var NewCourseInfoURL string = "/course/new"
+var NewCourseURL string = "/course/new/org"
+
 type courseview struct {
 	Member *git.Member
 	Org    string
 	Orgs   []string
 }
 
-func newcoursehandler(w http.ResponseWriter, r *http.Request) {
+// newcoursehandler is a http hander giving a information page for
+// teachers when they want to create a new course in autograder.
+func NewCourseHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
 	member, err := checkTeacherApproval(w, r, true)
 	if err != nil {
@@ -46,7 +51,11 @@ func newcoursehandler(w http.ResponseWriter, r *http.Request) {
 	execTemplate(page, w, view)
 }
 
-func selectorghandler(w http.ResponseWriter, r *http.Request) {
+var SelectOrgURL string = "/course/new/org/"
+
+// selectorghandler is a http hander giving a page for selecting
+// the organization to use for the new course.
+func SelectOrgHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
 	member, err := checkTeacherApproval(w, r, true)
 	if err != nil {
@@ -74,7 +83,15 @@ func selectorghandler(w http.ResponseWriter, r *http.Request) {
 	execTemplate("newcourse-register.html", w, view)
 }
 
-func saveorghandler(w http.ResponseWriter, r *http.Request) {
+var CreateOrgURL string = "/course/create"
+
+// saveorghandler is a http handler which will link a new course
+// to a github organization. This function will make a new course
+// in autograder and then create all needed repositories on github.
+//
+// Expected input: org, desc, groups, indv
+// Optional input: private, template
+func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
 	member, err := checkTeacherApproval(w, r, true)
 	if err != nil {
@@ -83,6 +100,7 @@ func saveorghandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	org := git.NewOrganization(r.FormValue("org"))
+	org.Lock()
 	org.AdminToken = member.GetToken()
 	org.Private = r.FormValue("private") == "on"
 	org.Description = r.FormValue("desc")
@@ -346,13 +364,17 @@ func saveorghandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, pages.FRONTPAGE, 307)
 }
 
+var NewCourseMemberURL string = "/course/register"
+
 type newmemberview struct {
 	Member *git.Member
 	Orgs   []git.Organization
 	Org    string
 }
 
-func newcoursememberhandler(w http.ResponseWriter, r *http.Request) {
+// newcoursememberhandler is a http handler which gives a page where
+// students can sign up for a course in autograder.
+func NewCourseMemberHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in.
 	member, err := checkMemberApproval(w, r, true)
 	if err != nil {
@@ -367,7 +389,13 @@ func newcoursememberhandler(w http.ResponseWriter, r *http.Request) {
 	execTemplate("course-registermember.html", w, view)
 }
 
-func registercoursememberhandler(w http.ResponseWriter, r *http.Request) {
+var RegisterCourseMemberURL string = "/course/register/"
+
+// registercoursememberhandler is a http handler which register new students
+// signing up for a course. After registering the student, this handler
+// gives back a informal page about how to accept the invitation to the
+// organization on github.
+func RegisterCourseMemberHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
 	member, err := checkMemberApproval(w, r, true)
 	if err != nil {
@@ -390,6 +418,7 @@ func registercoursememberhandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	org := git.NewOrganization(orgname)
+	org.Lock()
 
 	if _, ok := org.Members[member.Username]; ok {
 		http.Redirect(w, r, "/course/"+orgname, 307)
@@ -413,6 +442,8 @@ func registercoursememberhandler(w http.ResponseWriter, r *http.Request) {
 	execTemplate("course-registeredmemberinfo.html", w, view)
 }
 
+var ApproveCourseMembershipURL string = "/course/approvemember/"
+
 type approvemembershipview struct {
 	Error    bool
 	ErrorMsg string
@@ -420,7 +451,11 @@ type approvemembershipview struct {
 	User     string
 }
 
-func approvecoursemembershiphandler(w http.ResponseWriter, r *http.Request) {
+// approvecoursemembershiphandler is a http handler used when a teacher wants
+// to accept a student for a course in autograder. This handler will link the
+// student to the course organization on github and also create all the needed
+// repositories on github.
+func ApproveCourseMembershipHandler(w http.ResponseWriter, r *http.Request) {
 	enc := json.NewEncoder(w)
 	view := approvemembershipview{}
 	view.Error = true // default is an error; if its not we anyway set it to false before encoding
@@ -455,6 +490,8 @@ func approvecoursemembershiphandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	org := git.NewOrganization(orgname)
+	org.Lock()
+
 	teams, err := org.ListTeams()
 	if err != nil {
 		log.Println(err)
@@ -533,6 +570,8 @@ func approvecoursemembershiphandler(w http.ResponseWriter, r *http.Request) {
 	enc.Encode(view)
 }
 
+var UserCoursePageURL string = "/course/"
+
 type maincourseview struct {
 	Member      *git.Member
 	Group       *git.Group
@@ -541,7 +580,11 @@ type maincourseview struct {
 	Org         *git.Organization
 }
 
-func maincoursepagehandler(w http.ResponseWriter, r *http.Request) {
+// maincoursepagehandler is a http handler giving back the main user
+// page for a course. This page gived information about all the labs
+// and results for a user. A user can also submit code reviews from
+// this page.
+func UserCoursePageHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in.
 	member, err := checkMemberApproval(w, r, true)
 	if err != nil {
@@ -593,7 +636,10 @@ func maincoursepagehandler(w http.ResponseWriter, r *http.Request) {
 	execTemplate("maincoursepage.html", w, view)
 }
 
-func updatecoursehandler(w http.ResponseWriter, r *http.Request) {
+var UpdateCourseURL string = "/course/update"
+
+// UpdateCourseHandler is a http handler used to update a course.
+func UpdateCourseHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
 	member, err := checkTeacherApproval(w, r, true)
 	if err != nil {
@@ -610,6 +656,7 @@ func updatecoursehandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	org := git.NewOrganization(orgname)
+	org.Lock()
 
 	indv, err := strconv.Atoi(r.FormValue("indv"))
 	if err != nil {
@@ -660,7 +707,10 @@ func updatecoursehandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/course/teacher/"+org.Name, 307)
 }
 
-func removependinguserhandler(w http.ResponseWriter, r *http.Request) {
+var RemovePendingUserURL string = "/course/removepending"
+
+// RemovePendingUserHandler is http handler used to remove users from the list of pending students on a course.
+func RemovePendingUserHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
 	member, err := checkTeacherApproval(w, r, true)
 	if err != nil {
@@ -678,6 +728,7 @@ func removependinguserhandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	org := git.NewOrganization(course)
+	org.Lock()
 
 	if !org.IsTeacher(member) {
 		http.Error(w, "Is not a teacher or assistant for this course.", 404)

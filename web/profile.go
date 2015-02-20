@@ -20,7 +20,7 @@ var ProfileURL string = "/profile"
 
 // profilehandler is a http handler which writes back a page about the
 // users profile settings. The page can also be used to edit profile data.
-func profilehandler(w http.ResponseWriter, r *http.Request) {
+func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 	if !auth.IsApprovedUser(r) {
 		http.Redirect(w, r, pages.FRONTPAGE, 307)
 		return
@@ -41,7 +41,7 @@ func profilehandler(w http.ResponseWriter, r *http.Request) {
 var UpdateMemberURL string = "/updatemember"
 
 //  updatememberhandler is a http handler for updating a users profile data.
-func updatememberhandler(w http.ResponseWriter, r *http.Request) {
+func UpdateMemberHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		if r.FormValue("name") == "" || r.FormValue("studentid") == "" || r.FormValue("email") == "" {
 			http.Redirect(w, r, pages.REGISTER_REDIRECT, 307)
@@ -79,7 +79,10 @@ func updatememberhandler(w http.ResponseWriter, r *http.Request) {
 		}
 		member.Email = email
 
-		member.StickToSystem()
+		err = member.StickToSystem()
+		if err != nil {
+			log.Println("Error storing:", err)
+		}
 
 		http.Redirect(w, r, pages.HOMEPAGE, 307)
 	} else {

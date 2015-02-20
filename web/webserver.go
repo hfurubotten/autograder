@@ -16,44 +16,22 @@ import (
 	"github.com/hfurubotten/autograder/web/sessions"
 )
 
-var htmlBase string = global.Basepath + "web/html/"
+var htmlBase string
 
 type Webserver struct {
 	Port int
 }
 
+// NewWebServer will return a new Webserver object with possibility to listen to given port.
 func NewWebServer(port int) Webserver {
 	return Webserver{port}
 }
 
-// func FakeServer(port int, stopchan <-chan int) {
-// 	tcpAddr, err := net.ResolveTCPAddr("tcp", ":"+strconv.Itoa(port))
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	listener, err := net.ListenTCP("tcp", tcpAddr)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-
-// 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-
-// 	})
-// 	http.HandleFunc("/oauth", func(w http.ResponseWriter, r *http.Request) {
-
-// 	})
-
-// 	err = http.Serve(listener, nil)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-
-// 	<-stopchan
-
-// 	listener.Close()
-// }
-
+// Start will start up a new server listening on ws.Port. This
+// method blocks, and will call os.Exit(1) if server error occures.
 func (ws Webserver) Start() {
+	// setting html base path
+	htmlBase = global.Basepath + "web/html/"
 
 	// OAuth process
 	http.Handle("/login", http.RedirectHandler(global.OAuth_RedirectURL+"?client_id="+global.OAuth_ClientID, 307))
@@ -61,37 +39,39 @@ func (ws Webserver) Start() {
 	http.HandleFunc(pages.SIGNOUT, auth.RemoveApprovalHandler)
 
 	// Page handlers
-	http.HandleFunc("/home", homehandler)
-	http.HandleFunc(pages.REGISTER_REDIRECT, profilehandler)
-	http.HandleFunc("/course/new", newcoursehandler)
-	http.HandleFunc("/course/new/org", newcoursehandler)
-	http.HandleFunc("/course/new/org/", selectorghandler)
-	http.HandleFunc("/course/create", saveorghandler)
-	http.HandleFunc("/course/register", newcoursememberhandler)
-	http.HandleFunc("/course/register/", registercoursememberhandler)
+	http.HandleFunc(HomeURL, HomeHandler)
+	http.HandleFunc(ProfileURL, ProfileHandler)
+	http.HandleFunc(NewCourseInfoURL, NewCourseHandler)
+	http.HandleFunc(NewCourseURL, NewCourseHandler)
+	http.HandleFunc(SelectOrgURL, SelectOrgHandler)
+	http.HandleFunc(CreateOrgURL, CreateOrgHandler)
+	http.HandleFunc(NewCourseMemberURL, NewCourseMemberHandler)
+	http.HandleFunc(RegisterCourseMemberURL, RegisterCourseMemberHandler)
 	http.HandleFunc("/course/teacher/", teacherspanelhandler)
 	http.HandleFunc("/admin", adminhandler)
-	http.HandleFunc("/course/", maincoursepagehandler)
+	http.HandleFunc(UserCoursePageURL, UserCoursePageHandler)
 	http.HandleFunc("/course/result/", showresulthandler)
 	http.HandleFunc("/help/", helphandler)
 
 	// proccessing handlers
-	http.HandleFunc("/updatemember", updatememberhandler)
+	http.HandleFunc(UpdateMemberURL, UpdateMemberHandler)
 	http.HandleFunc("/admin/teacher", setteacherhandler)
 	http.HandleFunc("/admin/user", setadminhandler)
-	http.HandleFunc("/course/approvemember/", approvecoursemembershiphandler)
+	http.HandleFunc(ApproveCourseMembershipURL, ApproveCourseMembershipHandler)
 	http.HandleFunc("/course/approvelab", approvelabhandler)
 	http.HandleFunc("/course/ciresutls", ciresulthandler)
 	http.HandleFunc("/course/cisummary", ciresultsummaryhandler)
-	http.HandleFunc("/course/update", updatecoursehandler)
+	http.HandleFunc(UpdateCourseURL, UpdateCourseHandler)
 	http.HandleFunc("/course/newgroup", newgrouphandler)
 	http.HandleFunc("/course/requestrandomgroup", requestrandomgrouphandler)
 	http.HandleFunc("/course/removegroup", removependinggrouphandler)
 	http.HandleFunc("/course/approvegroup", approvegrouphandler)
 	http.HandleFunc("/course/addassistant", addassistanthandler)
-	http.HandleFunc("/course/removepending", removependinguserhandler)
+	http.HandleFunc(RemovePendingUserURL, RemovePendingUserHandler)
 	http.HandleFunc("/event/hook", webhookeventhandler)
 	http.HandleFunc("/event/manualbuild", manualcihandler)
+	http.HandleFunc(PublishReviewURL, PublishReviewHandler)
+	http.HandleFunc(ListReviewsURL, ListReviewsHandler)
 
 	// static files
 	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("web/js/"))))
@@ -100,16 +80,17 @@ func (ws Webserver) Start() {
 	http.Handle("/fonts/", http.StripPrefix("/fonts/", http.FileServer(http.Dir("web/fonts/"))))
 
 	// catch all not matched wth other patterns
-	http.HandleFunc("/", catchallhandler)
+	http.HandleFunc(CatchAllURL, CatchAllHandler)
 
 	// start the server
 	log.Println("Starts listening")
 	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(ws.Port), nil))
 }
 
-//var indextemplate = template.Must(template.New("index").ParseFiles("web/html/index.html"))
+var CatchAllURL string = "/"
 
-func catchallhandler(w http.ResponseWriter, r *http.Request) {
+// CatchAllHandler is a http handler which is meant to catch empty and non existing pages.
+func CatchAllHandler(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path == "/" || r.URL.Path == "" {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
@@ -140,7 +121,10 @@ type homeview struct {
 	Courses   map[string]git.Organization
 }
 
-func homehandler(w http.ResponseWriter, r *http.Request) {
+var HomeURL string = "/home"
+
+// homehandler is a http handler for the home page for logged in users.
+func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	member, err := checkMemberApproval(w, r, true)
 	if err != nil {
 		return
@@ -171,6 +155,9 @@ func homehandler(w http.ResponseWriter, r *http.Request) {
 	execTemplate("home.html", w, view)
 }
 
+// checkAdminApproval will check the sessions of the user and see if the user is logged in.
+// If the user is not logged in the function will return error. If the redirect is true
+// the function also writes a redirect to the response headers.
 func checkMemberApproval(w http.ResponseWriter, r *http.Request, redirect bool) (member git.Member, err error) {
 	if !auth.IsApprovedUser(r) {
 		if redirect {
@@ -202,6 +189,9 @@ func checkMemberApproval(w http.ResponseWriter, r *http.Request, redirect bool) 
 	return
 }
 
+// checkAdminApproval will check the sessions of the user and see if the user is a teacher.
+// If the user is not a teacher or logged in the function will return error. If the redirect is true
+// the function also writes a redirect to the response headers.
 func checkTeacherApproval(w http.ResponseWriter, r *http.Request, redirect bool) (member git.Member, err error) {
 	member, err = checkMemberApproval(w, r, redirect)
 	if err != nil {
@@ -227,6 +217,9 @@ func checkTeacherApproval(w http.ResponseWriter, r *http.Request, redirect bool)
 	return
 }
 
+// checkAdminApproval will check the sessions of the user and see if the user is a system admin.
+// If the user is not an admin or a user the function will return error. If the redirect is true
+// the function also writes a redirect to the response headers.
 func checkAdminApproval(w http.ResponseWriter, r *http.Request, redirect bool) (member git.Member, err error) {
 	member, err = checkMemberApproval(w, r, redirect)
 	if err != nil {
