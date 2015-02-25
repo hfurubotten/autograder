@@ -1,15 +1,18 @@
 @media(min-width: 1024px){
   #feedback { 
-    height: 104px; 
+    height: 32px; 
     width: 104px; 
     position: fixed; 
     top: 40%; 
     z-index: 999;
     transform: rotate(-90deg);
-    -webkit-transform: rotate(-90deg); 
-    -moz-transform: rotate(-90deg); 
+    -webkit-transform: rotate(-90deg);
+    -moz-transform: rotate(-90deg);
     -o-transform: rotate(-90deg); 
     filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=3);
+    -webkit-transform-origin: 30% 100%; 
+    -ms-transform-origin: 30% 100%;
+    transform-origin: 30% 100%;
   }
 
   #feedback a { 
