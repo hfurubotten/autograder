@@ -10,14 +10,24 @@ import (
 	"github.com/hfurubotten/autograder/web/pages"
 )
 
-type teacherspanelview struct {
-	Member       git.Member
-	Org          git.Organization
-	PendingUser  map[string]interface{}
-	PendingGroup map[int]git.Group
+type TeachersPanelView struct {
+	Member *git.Member
+	Org    *git.Organization
+
+	HasPendingUsers bool
+	PendingUser     map[string]interface{}
+
+	HasPendingRandomGroupAssignees bool
+	HasPendingGroups               bool
+	PendingGroup                   map[int]*git.Group
 }
 
-func teacherspanelhandler(w http.ResponseWriter, r *http.Request) {
+// TeachersPanelURL is the URL used to call TeachersPanelHandler.
+var TeachersPanelURL string = "/course/teacher/"
+
+// TeachersPanelHandler is a http handler serving the Teacher panel.
+// This page shows a summary of all the students and groups.
+func TeachersPanelHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
 	member, err := checkTeacherApproval(w, r, true)
 	if err != nil {
@@ -40,13 +50,20 @@ func teacherspanelhandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	org := git.NewOrganization(orgname)
+	org, err := git.NewOrganization(orgname)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	org.Lock()
+	defer org.Unlock()
 
 	if _, ok := org.Teachers[member.Username]; !ok {
 		// migrate from bug where org does not contain teacher names.
 		if _, ok := member.Teaching[org.Name]; ok {
 			org.AddTeacher(member)
-			org.StickToSystem()
+			org.Save()
 		} else {
 			log.Println("User is not a teacher for this course.")
 			http.Redirect(w, r, pages.HOMEPAGE, 307)
@@ -60,8 +77,12 @@ func teacherspanelhandler(w http.ResponseWriter, r *http.Request) {
 	var status string
 	for username, _ := range users {
 		// check status up against Github
-		users[username] = git.NewMemberFromUsername(username)
-		status, err = org.GetMembership(users[username].(git.Member))
+		users[username], err = git.NewMemberFromUsername(username)
+		if err != nil {
+			continue
+		}
+
+		status, err = org.GetMembership(users[username].(*git.Member))
 		if err != nil {
 			log.Println(err)
 			continue
@@ -80,20 +101,18 @@ func teacherspanelhandler(w http.ResponseWriter, r *http.Request) {
 
 	// gets users
 	for username, _ := range org.Members {
-		org.Members[username] = git.NewMemberFromUsername(username)
+		org.Members[username], _ = git.NewMemberFromUsername(username)
 	}
 
 	// get pending groups
-	var group git.Group
-	var groupmember git.Member
-	pendinggroups := make(map[int]git.Group)
+	pendinggroups := make(map[int]*git.Group)
 	for groupID, _ := range org.PendingGroup {
-		group, err = git.NewGroup(org.Name, groupID)
+		group, err := git.NewGroup(org.Name, groupID)
 		if err != nil {
 			log.Println(err)
 		}
 		for key, _ := range group.Members {
-			groupmember = git.NewMemberFromUsername(key)
+			groupmember, _ := git.NewMemberFromUsername(key)
 			group.Members[key] = groupmember
 		}
 		pendinggroups[groupID] = group
@@ -102,15 +121,15 @@ func teacherspanelhandler(w http.ResponseWriter, r *http.Request) {
 	// get groups
 	for groupname, _ := range org.Groups {
 		groupID, _ := strconv.Atoi(groupname[5:])
-		group, _ = git.NewGroup(org.Name, groupID)
+		group, _ := git.NewGroup(org.Name, groupID)
 		for key, _ := range group.Members {
-			groupmember = git.NewMemberFromUsername(key)
+			groupmember, _ := git.NewMemberFromUsername(key)
 			group.Members[key] = groupmember
 		}
 		org.Groups[groupname] = group
 	}
 
-	view := teacherspanelview{
+	view := TeachersPanelView{
 		Member:       member,
 		PendingUser:  users,
 		Org:          org,
@@ -119,15 +138,20 @@ func teacherspanelhandler(w http.ResponseWriter, r *http.Request) {
 	execTemplate("teacherspanel.html", w, view)
 }
 
-type showresultview struct {
-	Member   git.Member
-	Org      git.Organization
+type ShowResultView struct {
+	Member   *git.Member
+	Org      *git.Organization
 	Username string
 	Labnum   int
 	IsGroup  bool
 }
 
-func showresulthandler(w http.ResponseWriter, r *http.Request) {
+// ShowResultURL is the URL used to call ShowResultHandler.
+var ShowResultURL string = "/course/result/"
+
+// ShowResultHandler is a http handler for showing a page detailing
+// lab resutls for a single user or group.
+func ShowResultHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
 	member, err := checkTeacherApproval(w, r, true)
 	if err != nil {
@@ -159,7 +183,10 @@ func showresulthandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	org := git.NewOrganization(orgname)
+	org, err := git.NewOrganization(orgname)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+	}
 
 	isgroup := false
 	labnum := 0
@@ -186,7 +213,11 @@ func showresulthandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		user := git.NewMemberFromUsername(username)
+		user, err := git.NewMemberFromUsername(username)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+		}
+
 		nr := user.Courses[org.Name].CurrentLabNum
 		if nr >= org.IndividualAssignments {
 			labnum = org.IndividualAssignments - 1
@@ -195,7 +226,7 @@ func showresulthandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	view := showresultview{
+	view := ShowResultView{
 		Member:   member,
 		Org:      org,
 		Username: username,
@@ -205,7 +236,11 @@ func showresulthandler(w http.ResponseWriter, r *http.Request) {
 	execTemplate("teacherresultpage.html", w, view)
 }
 
-func addassistanthandler(w http.ResponseWriter, r *http.Request) {
+// AddAssistantURL is the URL used to call AddAssistantHandler.
+var AddAssistantURL string = "/course/addassistant"
+
+// AddAssistantHandler is a http handler used to add users as assistants on a course.
+func AddAssistantHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
 	member, err := checkTeacherApproval(w, r, true)
 	if err != nil {
@@ -220,25 +255,40 @@ func addassistanthandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, ok := member.Teaching[course]; !ok {
-		http.Error(w, "User is not the teacher for this course.", 404)
-		return
-	}
-
 	if username == member.Username {
 		return
 	}
 
-	assistant := git.NewMemberFromUsername(username)
-	org := git.NewOrganization(course)
+	assistant, err := git.NewMemberFromUsername(username)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	assistant.Lock()
+	defer assistant.Unlock()
+
+	org, err := git.NewOrganization(course)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	org.Lock()
+	defer org.Unlock()
+
+	if !org.IsTeacher(member) {
+		http.Error(w, "User is not the teacher for this course.", 404)
+		return
+	}
 
 	assistant.AddAssistingOrganization(org)
-	assistant.StickToSystem()
+	assistant.Save()
 
 	org.AddTeacher(assistant)
 	if _, ok := org.PendingUser[username]; ok {
 		delete(org.PendingUser, username)
 	}
-	org.StickToSystem()
+	org.Save()
 
 }

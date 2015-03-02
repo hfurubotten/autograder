@@ -9,7 +9,11 @@ import (
 	"github.com/hfurubotten/autograder/git"
 )
 
-func manualcihandler(w http.ResponseWriter, r *http.Request) {
+// ManualCITriggerURL is the URL used to call ManualCITriggerHandler.
+var ManualCITriggerURL string = "/event/manualbuild"
+
+// ManualCITriggerHandler is a http handler for manually triggering test builds.
+func ManualCITriggerHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
 	member, err := checkMemberApproval(w, r, false)
 	if err != nil {
@@ -27,7 +31,11 @@ func manualcihandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	org := git.NewOrganization(course)
+	org, err := git.NewOrganization(course)
+	if err != nil {
+		http.Error(w, "Organization Error", 404)
+		return
+	}
 
 	var repo string
 	var destfolder string
@@ -71,7 +79,12 @@ func manualcihandler(w http.ResponseWriter, r *http.Request) {
 	ci.StartTesterDaemon(opt)
 }
 
-func ciresulthandler(w http.ResponseWriter, r *http.Request) {
+// CIResultURL is the URL used to call CIResultURL.
+var CIResultURL string = "/course/ciresutls"
+
+// CIResultHandler is a http handeler for getting results from
+// a build. This handler writes back the results as JSON data.
+func CIResultHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
 	_, err := checkMemberApproval(w, r, false)
 	if err != nil {
@@ -100,13 +113,20 @@ func ciresulthandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-type summaryview struct {
+// SummaryView is the struct used to store date for JSON writeback in CIResultSummaryHandler.
+type SummaryView struct {
 	Course  string
 	User    string
 	Summary map[string]ci.Result
 }
 
-func ciresultsummaryhandler(w http.ResponseWriter, r *http.Request) {
+// CIResultSummaryURL is the URL used to call CIResultSummaryURL.
+var CIResultSummaryURL string = "/course/cisummary"
+
+// CIResultSummaryHandler is a http handler used to get a build summary
+// of the build for a user or group. This handler writes back the summary
+// as JSON data.
+func CIResultSummaryHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
 	_, err := checkTeacherApproval(w, r, false)
 	if err != nil {
@@ -130,7 +150,7 @@ func ciresultsummaryhandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	view := summaryview{
+	view := SummaryView{
 		Course:  orgname,
 		User:    username,
 		Summary: res,

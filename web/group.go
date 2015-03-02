@@ -15,7 +15,9 @@ var (
 	newgrouplock sync.Mutex
 )
 
-func requestrandomgrouphandler(w http.ResponseWriter, r *http.Request) {
+var RequestRandomGroupURL string = "/course/requestrandomgroup"
+
+func RequestRandomGroupHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
 	member, err := checkMemberApproval(w, r, false)
 	if err != nil {
@@ -29,14 +31,22 @@ func requestrandomgrouphandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Does not have organization.", 404)
 	}
 
-	org := git.NewOrganization(orgname)
+	org, err := git.NewOrganization(orgname)
+	if err != nil {
+		http.Error(w, "Does not have organization.", 404)
+	}
+
+	org.Lock()
+	defer org.Unlock()
 
 	org.PendingRandomGroup[member.Username] = nil
-	org.StickToSystem()
+	org.Save()
 }
 
-func newgrouphandler(w http.ResponseWriter, r *http.Request) {
-	// Checks if the user is signed in and a teacher.
+var NewGroupURL string = "/course/newgroup"
+
+func NewGroupHandler(w http.ResponseWriter, r *http.Request) {
+	// Checks if the user is signed in.
 	member, err := checkMemberApproval(w, r, false)
 	if err != nil {
 		http.Error(w, err.Error(), 404)
@@ -55,7 +65,16 @@ func newgrouphandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	org := git.NewOrganization(course)
+	org, err := git.NewOrganization(course)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		log.Println(err)
+		return
+	}
+
+	org.Lock()
+	defer org.Unlock()
+
 	org.GroupCount = org.GroupCount + 1
 
 	group, err := git.NewGroup(course, org.GroupCount)
@@ -65,21 +84,31 @@ func newgrouphandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	group.Lock()
+	defer group.Unlock()
+
 	r.ParseForm()
 	members := r.PostForm["member"]
 
-	var user git.Member
 	var opt git.CourseOptions
 	for _, username := range members {
-		user = git.NewMemberFromUsername(username)
+		user, err := git.NewMemberFromUsername(username)
+		if err != nil {
+			continue
+		}
+
+		user.Lock()
+
 		opt = user.Courses[course]
 		if !opt.IsGroupMember {
 			opt.IsGroupMember = true
 			opt.GroupNum = org.GroupCount
 			user.Courses[course] = opt
-			user.StickToSystem()
+			user.Save()
 			group.AddMember(username)
 		}
+
+		user.Unlock()
 
 		if _, ok := org.PendingRandomGroup[username]; ok {
 			delete(org.PendingRandomGroup, username)
@@ -87,8 +116,8 @@ func newgrouphandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	org.PendingGroup[org.GroupCount] = nil
-	org.StickToSystem()
-	group.StickToSystem()
+	org.Save()
+	group.Save()
 
 	if member.IsTeacher {
 		http.Redirect(w, r, "/course/teacher/"+org.Name+"#groups", 307)
@@ -97,16 +126,18 @@ func newgrouphandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type approvegroupview struct {
-	ErrorMsg string
-	Error    bool
+type ApproveGroupView struct {
+	JSONErrorMsg
 	Approved bool
 	ID       int
 }
 
-func approvegrouphandler(w http.ResponseWriter, r *http.Request) {
+var ApproveGroupUrl string = "/course/approvegroup"
+
+func ApproveGroupHandler(w http.ResponseWriter, r *http.Request) {
 	enc := json.NewEncoder(w)
-	view := approvegroupview{Error: true}
+	view := ApproveGroupView{}
+	view.Error = true
 	// Checks if the user is signed in and a teacher.
 	member, err := checkTeacherApproval(w, r, false)
 	if err != nil {
@@ -136,6 +167,9 @@ func approvegrouphandler(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+
+	group.Lock()
+	defer group.Unlock()
 
 	if group.Active {
 		view.ErrorMsg = "This group is already active."
@@ -167,7 +201,18 @@ func approvegrouphandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	org := git.NewOrganization(orgname)
+	org, err := git.NewOrganization(orgname)
+	if err != nil {
+		view.ErrorMsg = "Could not retrieve stored organization."
+		err = enc.Encode(view)
+		if err != nil {
+			log.Println(err)
+		}
+		return
+	}
+
+	org.Lock()
+	defer org.Unlock()
 
 	if org.GroupAssignments > 0 {
 		repo := git.RepositoryOptions{
@@ -210,10 +255,10 @@ func approvegrouphandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	org.AddGroup(group)
-	org.StickToSystem()
+	org.Save()
 
 	group.Activate()
-	group.StickToSystem()
+	group.Save()
 
 	view.Error = false
 	view.Approved = true
@@ -224,7 +269,9 @@ func approvegrouphandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func removependinggrouphandler(w http.ResponseWriter, r *http.Request) {
+var RemovePendingGroupURL string = "/course/removegroup"
+
+func RemovePendingGroupHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
 	member, err := checkTeacherApproval(w, r, true)
 	if err != nil {
@@ -245,7 +292,14 @@ func removependinggrouphandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	org := git.NewOrganization(course)
+	org, err := git.NewOrganization(course)
+	if err != nil {
+		http.Error(w, "Unknown course.", 404)
+		return
+	}
+
+	org.Lock()
+	defer org.Unlock()
 
 	if !org.IsTeacher(member) {
 		http.Error(w, "Is not a teacher or assistant for this course.", 404)
@@ -259,13 +313,11 @@ func removependinggrouphandler(w http.ResponseWriter, r *http.Request) {
 
 	if _, ok := org.PendingGroup[groupid]; ok {
 		delete(org.PendingGroup, groupid)
-		org.StickToSystem()
 	}
 
 	groupname := "group" + strconv.Itoa(groupid)
 	if _, ok := org.Groups[groupname]; ok {
 		delete(org.Groups, groupname)
-		org.StickToSystem()
 	}
 
 	group, err := git.NewGroup(org.Name, groupid)
@@ -275,4 +327,5 @@ func removependinggrouphandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	group.Delete()
+	org.Save()
 }

@@ -84,9 +84,18 @@ func github_oauthhandler(w http.ResponseWriter, r *http.Request) {
 		scope := q.Get("scope")
 
 		if scope != "" {
-			m := git.NewMember(access_token)
+			m, err := git.NewMember(access_token)
+			if err != nil {
+				log.Println("Could not open Member object.")
+				http.Redirect(w, r, pages.FRONTPAGE, 307)
+				return
+			}
+
+			m.Lock()
+			defer m.Unlock()
+
 			m.Scope = scope
-			m.StickToSystem()
+			m.Save()
 		}
 
 		sessions.SetSessions(w, r, sessions.AUTHSESSION, sessions.APPROVEDSESSIONKEY, approved)

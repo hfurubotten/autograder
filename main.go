@@ -122,9 +122,16 @@ func main() {
 	// checks for an admin username
 	if *admin != "" {
 		log.Println("New admin added to the system: ", *admin)
-		m := git.NewMemberFromUsername(*admin)
+		m, err := git.NewMemberFromUsername(*admin)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		m.Lock()
+		defer m.Unlock()
+
 		m.IsAdmin = true
-		err = m.StickToSystem()
+		err = m.Save()
 		if err != nil {
 			log.Println("Couldn't store admin user in system:", err)
 		}

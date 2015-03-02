@@ -13,12 +13,13 @@ import (
 )
 
 type profileview struct {
-	Member git.Member
+	Member *git.Member
 }
 
+// ProfileURL is the URL used to call ProfileHandler.
 var ProfileURL string = "/profile"
 
-// profilehandler is a http handler which writes back a page about the
+// ProfileHandler is a http handler which writes back a page about the
 // users profile settings. The page can also be used to edit profile data.
 func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 	if !auth.IsApprovedUser(r) {
@@ -33,14 +34,22 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	m, err := git.NewMember(value.(string))
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
 	view := profileview{}
-	view.Member = git.NewMember(value.(string))
+	view.Member = m
 	execTemplate("profile.html", w, view)
 }
 
+// UpdateMemberURL is the URL used to call UpdateMemberHandler.
 var UpdateMemberURL string = "/updatemember"
 
-//  updatememberhandler is a http handler for updating a users profile data.
+//  UpdateMemberHandler is a http handler for updating a users profile data.
 func UpdateMemberHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		if r.FormValue("name") == "" || r.FormValue("studentid") == "" || r.FormValue("email") == "" {
@@ -60,7 +69,16 @@ func UpdateMemberHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		member := git.NewMember(value.(string))
+		member, err := git.NewMember(value.(string))
+		if err != nil {
+			log.Println(err.Error())
+			http.Error(w, err.Error(), 500)
+			return
+		}
+
+		member.Lock()
+		defer member.Unlock()
+
 		member.Name = r.FormValue("name")
 		studentid, err := strconv.Atoi(r.FormValue("studentid"))
 		if err != nil {
@@ -79,7 +97,7 @@ func UpdateMemberHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		member.Email = email
 
-		err = member.StickToSystem()
+		err = member.Save()
 		if err != nil {
 			log.Println("Error storing:", err)
 		}

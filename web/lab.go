@@ -10,9 +10,11 @@ import (
 	"github.com/hfurubotten/autograder/git"
 )
 
-func approvelabhandler(w http.ResponseWriter, r *http.Request) {
+var ApproveLabURL string = "/course/approvelab"
+
+func ApproveLabHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
-	_, err := checkTeacherApproval(w, r, true)
+	member, err := checkTeacherApproval(w, r, true)
 	if err != nil {
 		log.Println(err)
 		return
@@ -40,7 +42,18 @@ func approvelabhandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	org := git.NewOrganization(course)
+	org, err := git.NewOrganization(course)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), 404)
+		return
+	}
+
+	if !org.IsTeacher(member) {
+		log.Println(member.Name + " is not a teacher of " + org.Name)
+		http.Error(w, "Not a teacher of this course.", 404)
+		return
+	}
 
 	var isgroup bool
 	if git.HasMember(username) {
@@ -69,20 +82,33 @@ func approvelabhandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		group.Lock()
+		defer group.Unlock()
+
 		if group.CurrentLabNum <= labnum {
 			group.CurrentLabNum = labnum + 1
-			group.StickToSystem()
+			group.Save()
 		}
 
 		labfolder = org.GroupLabFolders[labnum]
 	} else {
-		user := git.NewMemberFromUsername(username)
+		user, err := git.NewMemberFromUsername(username)
+		if err != nil {
+			log.Println(err.Error())
+			http.Error(w, err.Error(), 500)
+			return
+		}
+
+		user.Lock()
+		defer user.Unlock()
+
 		copt := user.Courses[course]
 		if copt.CurrentLabNum <= labnum {
 			copt.CurrentLabNum = labnum + 1
 			user.Courses[course] = copt
-			user.StickToSystem()
+			user.Save()
 		}
+
 		labfolder = org.IndividualLabFolders[labnum]
 	}
 

@@ -47,29 +47,30 @@ func (ws Webserver) Start() {
 	http.HandleFunc(CreateOrgURL, CreateOrgHandler)
 	http.HandleFunc(NewCourseMemberURL, NewCourseMemberHandler)
 	http.HandleFunc(RegisterCourseMemberURL, RegisterCourseMemberHandler)
-	http.HandleFunc("/course/teacher/", teacherspanelhandler)
-	http.HandleFunc("/admin", adminhandler)
+	http.HandleFunc(TeachersPanelURL, TeachersPanelHandler)
+	http.HandleFunc(AdminURL, AdminHandler)
 	http.HandleFunc(UserCoursePageURL, UserCoursePageHandler)
-	http.HandleFunc("/course/result/", showresulthandler)
-	http.HandleFunc("/help/", helphandler)
+	http.HandleFunc(ShowResultURL, ShowResultHandler)
+	http.HandleFunc(HelpURL, HelpHandler)
+	http.HandleFunc(ScoreboardURL, ScoreboardHandler)
 
 	// proccessing handlers
 	http.HandleFunc(UpdateMemberURL, UpdateMemberHandler)
-	http.HandleFunc("/admin/teacher", setteacherhandler)
-	http.HandleFunc("/admin/user", setadminhandler)
+	http.HandleFunc(SetTeacherURL, SetTeacherHandler)
+	http.HandleFunc(SetAdminURL, SetAdminHandler)
 	http.HandleFunc(ApproveCourseMembershipURL, ApproveCourseMembershipHandler)
-	http.HandleFunc("/course/approvelab", approvelabhandler)
-	http.HandleFunc("/course/ciresutls", ciresulthandler)
-	http.HandleFunc("/course/cisummary", ciresultsummaryhandler)
+	http.HandleFunc(ApproveLabURL, ApproveLabHandler)
+	http.HandleFunc(CIResultURL, CIResultHandler)
+	http.HandleFunc(CIResultSummaryURL, CIResultSummaryHandler)
 	http.HandleFunc(UpdateCourseURL, UpdateCourseHandler)
-	http.HandleFunc("/course/newgroup", newgrouphandler)
-	http.HandleFunc("/course/requestrandomgroup", requestrandomgrouphandler)
-	http.HandleFunc("/course/removegroup", removependinggrouphandler)
-	http.HandleFunc("/course/approvegroup", approvegrouphandler)
-	http.HandleFunc("/course/addassistant", addassistanthandler)
+	http.HandleFunc(NewGroupURL, NewGroupHandler)
+	http.HandleFunc(RequestRandomGroupURL, RequestRandomGroupHandler)
+	http.HandleFunc(RemovePendingGroupURL, RemovePendingGroupHandler)
+	http.HandleFunc(ApproveGroupUrl, ApproveGroupHandler)
+	http.HandleFunc(AddAssistantURL, AddAssistantHandler)
 	http.HandleFunc(RemovePendingUserURL, RemovePendingUserHandler)
-	http.HandleFunc("/event/hook", webhookeventhandler)
-	http.HandleFunc("/event/manualbuild", manualcihandler)
+	http.HandleFunc(WebhookEventURL, WebhookEventHandler)
+	http.HandleFunc(ManualCITriggerURL, ManualCITriggerHandler)
 	http.HandleFunc(PublishReviewURL, PublishReviewHandler)
 	http.HandleFunc(ListReviewsURL, ListReviewsHandler)
 
@@ -114,13 +115,14 @@ func CatchAllHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type homeview struct {
+type HomeView struct {
 	Member    *git.Member
-	Teaching  map[string]git.Organization
-	Assisting map[string]git.Organization
-	Courses   map[string]git.Organization
+	Teaching  map[string]*git.Organization
+	Assisting map[string]*git.Organization
+	Courses   map[string]*git.Organization
 }
 
+// HomeURL is the URL used to call HomeHandler.
 var HomeURL string = "/home"
 
 // homehandler is a http handler for the home page for logged in users.
@@ -130,21 +132,21 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	view := homeview{
-		Member:    &member,
-		Teaching:  make(map[string]git.Organization),
-		Assisting: make(map[string]git.Organization),
-		Courses:   make(map[string]git.Organization),
+	view := HomeView{
+		Member:    member,
+		Teaching:  make(map[string]*git.Organization),
+		Assisting: make(map[string]*git.Organization),
+		Courses:   make(map[string]*git.Organization),
 	}
 
 	for key, _ := range member.Teaching {
-		view.Teaching[key] = git.NewOrganization(key)
+		view.Teaching[key], _ = git.NewOrganization(key)
 	}
 	for key, _ := range member.AssistantCourses {
-		view.Assisting[key] = git.NewOrganization(key)
+		view.Assisting[key], _ = git.NewOrganization(key)
 	}
 	for key, _ := range member.Courses {
-		view.Courses[key] = git.NewOrganization(key)
+		view.Courses[key], _ = git.NewOrganization(key)
 	}
 
 	if !member.IsComplete() {
@@ -158,7 +160,7 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 // checkAdminApproval will check the sessions of the user and see if the user is logged in.
 // If the user is not logged in the function will return error. If the redirect is true
 // the function also writes a redirect to the response headers.
-func checkMemberApproval(w http.ResponseWriter, r *http.Request, redirect bool) (member git.Member, err error) {
+func checkMemberApproval(w http.ResponseWriter, r *http.Request, redirect bool) (member *git.Member, err error) {
 	if !auth.IsApprovedUser(r) {
 		if redirect {
 			http.Redirect(w, r, pages.FRONTPAGE, 307)
@@ -176,7 +178,10 @@ func checkMemberApproval(w http.ResponseWriter, r *http.Request, redirect bool) 
 		return
 	}
 
-	member = git.NewMember(value.(string))
+	member, err = git.NewMember(value.(string))
+	if err != nil {
+		return nil, err
+	}
 
 	if !member.IsComplete() {
 		if redirect {
@@ -192,7 +197,7 @@ func checkMemberApproval(w http.ResponseWriter, r *http.Request, redirect bool) 
 // checkAdminApproval will check the sessions of the user and see if the user is a teacher.
 // If the user is not a teacher or logged in the function will return error. If the redirect is true
 // the function also writes a redirect to the response headers.
-func checkTeacherApproval(w http.ResponseWriter, r *http.Request, redirect bool) (member git.Member, err error) {
+func checkTeacherApproval(w http.ResponseWriter, r *http.Request, redirect bool) (member *git.Member, err error) {
 	member, err = checkMemberApproval(w, r, redirect)
 	if err != nil {
 		return
@@ -220,7 +225,7 @@ func checkTeacherApproval(w http.ResponseWriter, r *http.Request, redirect bool)
 // checkAdminApproval will check the sessions of the user and see if the user is a system admin.
 // If the user is not an admin or a user the function will return error. If the redirect is true
 // the function also writes a redirect to the response headers.
-func checkAdminApproval(w http.ResponseWriter, r *http.Request, redirect bool) (member git.Member, err error) {
+func checkAdminApproval(w http.ResponseWriter, r *http.Request, redirect bool) (member *git.Member, err error) {
 	member, err = checkMemberApproval(w, r, redirect)
 	if err != nil {
 		return

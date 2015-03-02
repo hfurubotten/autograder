@@ -6,17 +6,17 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/hfurubotten/autograder/auth"
 	"github.com/hfurubotten/autograder/git"
-	"github.com/hfurubotten/autograder/web/sessions"
 )
 
 type adminview struct {
 	Member  *git.Member
-	Members []git.Member
+	Members []*git.Member
 }
 
-func adminhandler(w http.ResponseWriter, r *http.Request) {
+var AdminURL string = "/admin"
+
+func AdminHandler(w http.ResponseWriter, r *http.Request) {
 	member, err := checkAdminApproval(w, r, true)
 	if err != nil {
 		log.Println(err)
@@ -24,29 +24,24 @@ func adminhandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	view := adminview{}
-	view.Member = &member
+	view.Member = member
 	view.Members = git.ListAllMembers()
 	execTemplate("admin.html", w, view)
 }
 
-func setadminhandler(w http.ResponseWriter, r *http.Request) {
-	var err error
+type SetAdminView struct {
+	JSONErrorMsg
+	User  string `json:User`
+	Admin bool   `json:Admin`
+}
+
+var SetAdminURL string = "/admin/user"
+
+func SetAdminHandler(w http.ResponseWriter, r *http.Request) {
 	enc := json.NewEncoder(w)
-	if !auth.IsApprovedUser(r) {
-		err = enc.Encode(ErrSignIn)
-		return
-	}
 
-	value, err := sessions.GetSessions(r, sessions.AUTHSESSION, sessions.ACCESSTOKENSESSIONKEY)
+	_, err := checkAdminApproval(w, r, false)
 	if err != nil {
-		log.Println("Error getting access token from sessions: ", err)
-		err = enc.Encode(ErrAccessToken)
-		return
-	}
-
-	member := git.NewMember(value.(string))
-
-	if !member.IsAdmin {
 		log.Println("Unautorized request of admin page.")
 		err = enc.Encode(ErrNotAdmin)
 		return
@@ -58,48 +53,48 @@ func setadminhandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m := git.NewMemberFromUsername(r.FormValue("user"))
+	m, err := git.NewMemberFromUsername(r.FormValue("user"))
+	if err != nil {
+
+	}
+
+	m.Lock()
+	defer m.Unlock()
+
 	m.IsAdmin, err = strconv.ParseBool(r.FormValue("admin"))
 	if err != nil {
 		err = enc.Encode(ErrInvalidAdminField)
 		return
 	}
 
-	err = m.StickToSystem()
+	err = m.Save()
 	if err != nil {
 		err = enc.Encode(ErrNotStored)
 		return
 	}
 
-	msg := struct {
-		User  string `json:User`
-		Admin bool   `json:Admin`
-	}{
+	msg := SetAdminView{
 		User:  m.Username,
 		Admin: m.IsAdmin,
 	}
+
 	err = enc.Encode(msg)
 	return
 }
 
-func setteacherhandler(w http.ResponseWriter, r *http.Request) {
-	var err error
+type SetTeacherView struct {
+	JSONErrorMsg
+	User    string `json:User`
+	Teacher bool   `json:Teacher`
+}
+
+var SetTeacherURL string = "/admin/teacher"
+
+func SetTeacherHandler(w http.ResponseWriter, r *http.Request) {
 	enc := json.NewEncoder(w)
-	if !auth.IsApprovedUser(r) {
-		err = enc.Encode(ErrSignIn)
-		return
-	}
 
-	value, err := sessions.GetSessions(r, sessions.AUTHSESSION, sessions.ACCESSTOKENSESSIONKEY)
+	_, err := checkAdminApproval(w, r, false)
 	if err != nil {
-		log.Println("Error getting access token from sessions: ", err)
-		err = enc.Encode(ErrAccessToken)
-		return
-	}
-
-	member := git.NewMember(value.(string))
-
-	if !member.IsAdmin {
 		log.Println("Unautorized request of admin page.")
 		err = enc.Encode(ErrNotAdmin)
 		return
@@ -111,24 +106,30 @@ func setteacherhandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m := git.NewMemberFromUsername(r.FormValue("user"))
+	m, err := git.NewMemberFromUsername(r.FormValue("user"))
+	if err != nil {
+		log.Println("Unautorized request of admin page.") // TODO replace this with more appropiate msg.
+		err = enc.Encode(ErrNotAdmin)                     // TODO replace this with more appropiate msg.
+		return
+	}
+
+	m.Lock()
+	defer m.Unlock()
+
 	m.IsTeacher, err = strconv.ParseBool(r.FormValue("teacher"))
 	if err != nil {
 		err = enc.Encode(ErrInvalidTeacherField)
 		return
 	}
 
-	err = m.StickToSystem()
+	err = m.Save()
 	if err != nil {
 		err = enc.Encode(ErrNotStored)
 		return
 	}
 
 	//TODO should this struct also have json tags?
-	msg := struct {
-		User    string
-		Teacher bool
-	}{
+	msg := SetTeacherView{
 		User:    m.Username,
 		Teacher: m.IsTeacher,
 	}

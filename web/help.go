@@ -8,10 +8,12 @@ import (
 )
 
 type helpview struct {
-	Member git.Member
+	Member *git.Member
 }
 
-func helphandler(w http.ResponseWriter, r *http.Request) {
+var HelpURL string = "/help/"
+
+func HelpHandler(w http.ResponseWriter, r *http.Request) {
 	addr := strings.TrimPrefix(r.URL.String(), "/")
 	addr = strings.TrimSuffix(addr, "/")
 	if addr == "help" {

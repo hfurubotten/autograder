@@ -10,6 +10,7 @@ import (
 	"github.com/hfurubotten/autograder/git"
 )
 
+// PublishReviewURL is the URL used to call PublishReviewHandler.
 var PublishReviewURL string = "/review/publish"
 
 type PublishReviewView struct {
@@ -51,7 +52,14 @@ func PublishReviewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, ok := member.Courses[r.FormValue("course")]; !ok {
+	org, err := git.NewOrganization(r.FormValue("course"))
+	if err != nil {
+		view.Errormsg = "Error while getting orgaization data from storage."
+		enc.Encode(view)
+		return
+	}
+
+	if !org.IsMember(member) {
 		view.Errormsg = "Not a member of this course."
 		enc.Encode(view)
 		return
@@ -79,8 +87,8 @@ func PublishReviewHandler(w http.ResponseWriter, r *http.Request) {
 	title = reg.ReplaceAllString(title, "")
 	title = strings.TrimSpace(title)
 
-	org := git.NewOrganization(r.FormValue("course"))
 	org.Lock()
+	defer org.Unlock()
 
 	cr := git.CodeReview{
 		Title: title,
@@ -96,13 +104,14 @@ func PublishReviewHandler(w http.ResponseWriter, r *http.Request) {
 		enc.Encode(view)
 		return
 	}
-	org.StickToSystem()
+	org.Save()
 
 	view.Error = false
 	view.CommitURL = cr.URL
 	enc.Encode(view)
 }
 
+// ListReviewsURL is the URL used to call ListReviewsHandler.
 var ListReviewsURL string = "/review/list"
 
 type ListReviewsView struct {
@@ -141,13 +150,18 @@ func ListReviewsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, ok := member.Courses[r.FormValue("course")]; !ok {
-		view.Errormsg = "Not a member of this course."
+	org, err := git.NewOrganization(r.FormValue("course"))
+	if err != nil {
+		view.Errormsg = "Unknown course."
 		enc.Encode(view)
 		return
 	}
 
-	org := git.NewOrganization(r.FormValue("course"))
+	if !org.IsMember(member) {
+		view.Errormsg = "Not a member of this course."
+		enc.Encode(view)
+		return
+	}
 
 	view.Error = false
 	view.Reviews = org.CodeReviewlist
