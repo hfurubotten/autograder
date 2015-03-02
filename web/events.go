@@ -22,7 +22,15 @@ var (
 	DecodeGithubPayloadErrorMsg string = "Issue not decoded correctly."
 )
 
-func webhookeventhandler(w http.ResponseWriter, r *http.Request) {
+// WebhookEventURL is the URL used to call WebhookEventHandler
+var WebhookEventURL string = "/event/hook"
+
+// WebhookEventHandler is a http handler used to recieve webhooks
+// from github. Upon recieving a payload it will find out if there
+// is a action done on github or a push that triggered the webhook.
+// On push a build will be done.
+// On Github actions the user will be rawarded points.
+func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 	defer events.PanicHandler(true)
 
 	event := events.GetPayloadType(r)
@@ -226,8 +234,8 @@ func webhookeventhandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(body))
 }
 
+// StartTestBuildProcess will use the payload from github to start the ci build.
 func StartTestBuildProcess(load github.PushPayload) (err error) {
-
 	userlogin := *load.Pusher.Name
 	reponame := *load.Repo.Name
 	orgname := *load.Organization.Login
