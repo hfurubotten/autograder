@@ -4,99 +4,124 @@ import (
 	"encoding/gob"
 	"errors"
 	"fmt"
-	"log"
-	"net/mail"
+	"time"
 
 	"code.google.com/p/goauth2/oauth"
 	"github.com/google/go-github/github"
 	"github.com/hfurubotten/autograder/global"
 	"github.com/hfurubotten/diskv"
+	"github.com/hfurubotten/github-gamification/entities"
 )
 
 func init() {
 	gob.Register(Member{})
-	gob.Register(CourseOptions{})
 }
 
-type CourseOptions struct {
-	Course        string
-	CurrentLabNum int
-	IsGroupMember bool
-	GroupNum      int
-}
-
+//
 type Member struct {
-	githubclient *github.Client
-	Username     string
-	Name         string
-	Email        *mail.Address
-	StudentID    int
-	IsTeacher    bool
-	IsAssistant  bool
-	IsAdmin      bool
+	entities.User
+
+	StudentID   int
+	IsTeacher   bool
+	IsAssistant bool
+	IsAdmin     bool
 
 	Teaching         map[string]interface{}
 	Courses          map[string]CourseOptions
 	AssistantCourses map[string]interface{}
 
-	accessToken token
-	Scope       string
+	accessToken  token
+	githubclient *github.Client
 }
 
 // NewMember tries to use the given oauth token to find the
 // user stored on disk/memory. If not found it will load user
 // data from github and make a new user.
-func NewMember(oauthtoken string) (m Member) {
-	m = Member{
+func NewMember(oauthtoken string) (m *Member, err error) {
+	m = &Member{
 		accessToken:      NewToken(oauthtoken),
 		Teaching:         make(map[string]interface{}),
 		Courses:          make(map[string]CourseOptions),
 		AssistantCourses: make(map[string]interface{}),
 	}
 
-	var err error
 	if m.accessToken.HasTokenInStore() {
 		m.Username, err = m.accessToken.GetUsernameFromTokenInStore()
 		if err != nil {
-			log.Println(err)
-			return
+			return nil, err
 		}
 	} else {
 		err = m.loadDataFromGithub()
 		if err != nil {
-			log.Println(err)
-			return
+			return nil, err
 		}
 	}
 
-	err = m.loadData()
+	err = m.loadStoredData()
 	if err != nil {
-		log.Println(err)
-		return
+		return nil, err
 	}
 
 	if m.IsTeacher {
-		var org Organization
+		var org *Organization
 		for k, _ := range m.Teaching {
-			org = NewOrganization(k)
+			org, err = NewOrganization(k)
+			if err != nil {
+				continue
+			}
+
 			if org.AdminToken != oauthtoken {
 				org.AdminToken = oauthtoken
-				org.StickToSystem()
+				org.Save()
 			}
 		}
+	}
+
+	if m.WeeklyScore == nil {
+		m.WeeklyScore = make(map[int]int64)
+	}
+
+	if m.MonthlyScore == nil {
+		m.MonthlyScore = make(map[time.Month]int64)
 	}
 
 	return
 }
 
+// NewWithGithubData creates a new User object from a
+// github User object. It will copy all information from
+// the given GitHub data to the new User object.
+func NewUserWithGithubData(gu *github.User) (u *Member, err error) {
+	if gu == nil {
+		return nil, errors.New("Cannot parse nil github.User object.")
+	}
+
+	u, err = NewMemberFromUsername(*gu.Login)
+	if err != nil {
+		return nil, err
+	}
+
+	u.ImportGithubData(gu)
+
+	return
+}
+
 // NewMemberFromUsername loads a user from storage with the given username.
-func NewMemberFromUsername(username string) (m Member) {
-	m = Member{}
+func NewMemberFromUsername(username string) (m *Member, err error) {
+	m = new(Member)
 	m.Username = username
 
-	err := m.loadData()
+	err = m.loadStoredData()
 	if err != nil {
-		log.Println(err)
+		return nil, err
+	}
+
+	if m.WeeklyScore == nil {
+		m.WeeklyScore = make(map[int]int64)
+	}
+
+	if m.MonthlyScore == nil {
+		m.MonthlyScore = make(map[time.Month]int64)
 	}
 
 	return
@@ -125,7 +150,7 @@ func (m *Member) loadDataFromGithub() (err error) {
 }
 
 // loadData loads data from storage if it exists.
-func (m *Member) loadData() (err error) {
+func (m *Member) loadStoredData() (err error) {
 	if getUserstore().Has(m.Username) {
 
 		err = getUserstore().ReadGob(m.Username, m, false)
@@ -142,11 +167,12 @@ func (m *Member) loadData() (err error) {
 }
 
 // StickToSystem stores the user to disk and caches it in memory.
-func (m Member) StickToSystem() (err error) {
+func (m *Member) Save() (err error) {
 	return getUserstore().WriteGob(m.Username, m)
 }
 
-func (m Member) IsComplete() bool {
+// IsComplete checks if all the required fields about the user has content.
+func (m *Member) IsComplete() bool {
 	if m.Name == "" || m.StudentID == 0 || m.Username == "" || m.Email == nil {
 		return false
 	}
@@ -190,23 +216,20 @@ func (m *Member) ListOrgs() (ls []string, err error) {
 }
 
 // AddOrganization will add a new github organization to attending courses.
-func (m *Member) AddOrganization(org Organization) (err error) {
+func (m *Member) AddOrganization(org *Organization) (err error) {
 	if m.Courses == nil {
 		m.Courses = make(map[string]CourseOptions)
 	}
 
 	if _, ok := m.Courses[org.Name]; !ok {
-		m.Courses[org.Name] = CourseOptions{
-			Course:        org.Name,
-			CurrentLabNum: 1,
-		}
+		m.Courses[org.Name] = NewCourseOptions(org.Name)
 	}
 
 	return
 }
 
 // AddTeachingOrganization will add a new github organization to courses the user are teaching.
-func (m *Member) AddTeachingOrganization(org Organization) (err error) {
+func (m *Member) AddTeachingOrganization(org *Organization) (err error) {
 	if m.Teaching == nil {
 		m.Teaching = make(map[string]interface{})
 	}
@@ -218,7 +241,7 @@ func (m *Member) AddTeachingOrganization(org Organization) (err error) {
 }
 
 // AddAssistingOrganization will add a new github organization to courses the user are teaching assistant of.
-func (m *Member) AddAssistingOrganization(org Organization) (err error) {
+func (m *Member) AddAssistingOrganization(org *Organization) (err error) {
 	if m.AssistantCourses == nil {
 		m.AssistantCourses = make(map[string]interface{})
 	}
@@ -234,19 +257,22 @@ func (m Member) GetToken() (token string) {
 	return m.accessToken.GetToken()
 }
 
-// String will make a stringify the member.
+// String will stringify the member.
 func (m Member) String() string {
-	return fmt.Sprintf("Student: %s <%s>, Student ID: %d, Github: %s", m.Name, m.Email, m.StudentID, m.Username)
+	return fmt.Sprintf("Student: %s %s, Student ID: %d, Github: %s", m.Name, m.Email, m.StudentID, m.Username)
 }
 
 // ListAllMembers lists all members stored in the system.
-func ListAllMembers() (out []Member) {
-	out = make([]Member, 0)
+func ListAllMembers() (out []*Member) {
+	out = make([]*Member, 0)
 	keys := getUserstore().Keys()
-	var m Member
 
 	for key := range keys {
-		m = NewMemberFromUsername(key)
+		m, err := NewMemberFromUsername(key)
+		if err != nil {
+			continue
+		}
+
 		out = append(out, m)
 	}
 

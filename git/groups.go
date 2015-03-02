@@ -22,12 +22,13 @@ type Group struct {
 	store *diskv.Diskv
 }
 
-func NewGroup(org string, groupnum int) (g Group, err error) {
+func NewGroup(org string, groupnum int) (g *Group, err error) {
 	store := GetGroupStore(org)
 	num := strconv.Itoa(groupnum)
+	g = new(Group)
 
 	if store.Has(num) {
-		err = store.ReadGob(num, &g, false)
+		err = store.ReadGob(num, g, false)
 		if err != nil {
 			return
 		}
@@ -35,7 +36,7 @@ func NewGroup(org string, groupnum int) (g Group, err error) {
 		return
 	}
 
-	g = Group{
+	g = &Group{
 		ID:            groupnum,
 		Active:        false,
 		Course:        org,
@@ -51,13 +52,17 @@ func (g *Group) Activate() {
 	g.Active = true
 
 	for username, _ := range g.Members {
-		user := NewMemberFromUsername(username)
+		user, err := NewMemberFromUsername(username)
+		if err != nil {
+			continue
+		}
+
 		opt := user.Courses[g.Course]
 		if !opt.IsGroupMember {
 			opt.IsGroupMember = true
 			opt.GroupNum = g.ID
 			user.Courses[g.Course] = opt
-			user.StickToSystem()
+			user.Save()
 		}
 	}
 }
@@ -66,19 +71,31 @@ func (g *Group) AddMember(user string) {
 	g.Members[user] = nil
 }
 
-func (g Group) StickToSystem() error {
+func (g *Group) Lock() {
+	// TODO: implement locking
+}
+
+func (g *Group) Unlock() {
+	// TODO: implement locking
+}
+
+func (g Group) Save() error {
 	return g.store.WriteGob(strconv.Itoa(g.ID), g)
 }
 
 func (g *Group) Delete() error {
 	for username, _ := range g.Members {
-		user := NewMemberFromUsername(username)
+		user, err := NewMemberFromUsername(username)
+		if err != nil {
+			continue
+		}
+
 		courseopt := user.Courses[g.Course]
 		if courseopt.GroupNum == g.ID {
 			courseopt.IsGroupMember = false
 			courseopt.GroupNum = 0
 			user.Courses[g.Course] = courseopt
-			user.StickToSystem()
+			user.Save()
 		}
 	}
 

@@ -9,19 +9,18 @@ import (
 	"math"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"code.google.com/p/goauth2/oauth"
 	"github.com/google/go-github/github"
 	"github.com/hfurubotten/autograder/global"
 	"github.com/hfurubotten/diskv"
+	"github.com/hfurubotten/github-gamification/entities"
 )
 
 func init() {
 	gob.Register(Organization{})
 	gob.Register(CodeReview{})
-	lockers = make(map[string]*sync.Mutex)
 }
 
 type CodeReview struct {
@@ -35,12 +34,9 @@ type CodeReview struct {
 	URL string
 }
 
-var lockers map[string]*sync.Mutex
-var orglock sync.Mutex
-
 type Organization struct {
-	Name                  string
-	Description           string
+	entities.Organization
+
 	GroupAssignments      int
 	IndividualAssignments int
 
@@ -73,22 +69,30 @@ type Organization struct {
 
 // NewOrganization tries to fetch a organization from storage on disk or memory.
 // If non exists with given name, it creates a new organization.
-func NewOrganization(name string) Organization {
-	if GetOrgstore().Has(name) {
-		var org Organization
-		GetOrgstore().ReadGob(name, &org, false)
+func NewOrganization(name string) (org *Organization, err error) {
+	org = new(Organization)
+	if GetOrganizationStore().Has(name) {
+		err = GetOrganizationStore().ReadGob(name, org, false)
+		if err != nil {
+			return nil, err
+		}
 
 		// migrating to use of CI.Secret
 		if org.CI.Secret == "" {
 			org.CI.Secret = fmt.Sprintf("%x", md5.Sum([]byte(name+time.Now().String())))
-			org.StickToSystem()
+			org.Save()
 		}
 
-		return org
+		return org, nil
 	}
 
-	return Organization{
-		Name:                 name,
+	o, err := entities.NewOrganization(name)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Organization{
+		Organization:         *o,
 		IndividualLabFolders: make(map[int]string),
 		GroupLabFolders:      make(map[int]string),
 		PendingGroup:         make(map[int]interface{}),
@@ -104,7 +108,21 @@ func NewOrganization(name string) Organization {
 			Basepath: "/testground/src/github.com/" + name + "/",
 			Secret:   fmt.Sprintf("%x", md5.Sum([]byte(name+time.Now().String()))),
 		},
+	}, nil
+}
+
+func NewOrganizationWithGithubData(gorg *github.Organization) (org *Organization, err error) {
+	if gorg == nil {
+		return nil, errors.New("Cannot use nil github.Organization object")
 	}
+
+	org, err = NewOrganization(*gorg.Login)
+	if err != nil {
+		return nil, err
+	}
+
+	org.ImportGithubData(gorg)
+	return
 }
 
 // connectAdminToGithub will create a github client. This client will be used to talk with githubs api.
@@ -124,13 +142,21 @@ func (o *Organization) connectAdminToGithub() error {
 	return nil
 }
 
-// StickToSystem will store the organization to cached memory and disk.
-func (o *Organization) StickToSystem() (err error) {
-	if _, ok := lockers[o.Name]; ok {
-		l := lockers[o.Name]
-		defer l.Unlock()
+// LoadStoredData fetches the organization data stored on disk or in cached memory.
+func (o *Organization) LoadStoredData() (err error) {
+	if GetOrganizationStore().Has(o.Name) {
+
+		err = GetOrganizationStore().ReadGob(o.Name, o, false)
+		if err != nil {
+			return
+		}
 	}
 
+	return
+}
+
+// StickToSystem will store the organization to cached memory and disk.
+func (o *Organization) Save() (err error) {
 	if o.IndividualLabFolders == nil {
 		o.IndividualLabFolders = make(map[int]string)
 	}
@@ -168,23 +194,7 @@ func (o *Organization) StickToSystem() (err error) {
 		o.CodeReviewlist = make([]CodeReview, 0)
 	}
 
-	return GetOrgstore().WriteGob(o.Name, o)
-}
-
-// Lock will lock the organization name from being written to by
-// other instances of the same organization. This has to be used
-// when new info is written, to prevent race conditions. Unlock
-// occures when data is finished written to storage.
-func (o *Organization) Lock() {
-	orglock.Lock()
-	defer orglock.Unlock()
-
-	if _, ok := lockers[o.Name]; !ok {
-		lockers[o.Name] = new(sync.Mutex)
-	}
-
-	l := lockers[o.Name]
-	l.Lock()
+	return GetOrganizationStore().WriteGob(o.Name, o)
 }
 
 // AddCodeReview will add a new code review. This method will
@@ -236,6 +246,7 @@ func (o *Organization) AddCodeReview(cr *CodeReview) (err error) {
 }
 
 // FindCurrentLab will find out which lab has the nearest deadline.
+// If no lab has been found the labnum return value will be zero.
 func (o *Organization) FindCurrentLab() (labnum int, labname string, labtype int) {
 	var lowesttimediff int64 = math.MaxInt64
 	for i, t := range o.IndividualDeadlines {
@@ -274,7 +285,7 @@ func (o *Organization) FindCurrentLab() (labnum int, labname string, labtype int
 // add the user to the student team on github.
 //
 // This method needs locking
-func (o *Organization) AddMembership(member Member) (err error) {
+func (o *Organization) AddMembership(member *Member) (err error) {
 	err = o.connectAdminToGithub()
 	if err != nil {
 		return
@@ -306,7 +317,7 @@ func (o *Organization) AddMembership(member Member) (err error) {
 // to suppert the new admin API.
 //
 // This method needs locking
-func (o *Organization) AddTeacher(member Member) (err error) {
+func (o *Organization) AddTeacher(member *Member) (err error) {
 	err = o.connectAdminToGithub()
 	if err != nil {
 		return
@@ -329,9 +340,32 @@ func (o *Organization) AddTeacher(member Member) (err error) {
 }
 
 // IsTeacher returns whether if a user is a teacher or not.
-func (o Organization) IsTeacher(member Member) bool {
-	_, ok := o.Teachers[member.Username]
-	return ok
+func (o *Organization) IsTeacher(member *Member) bool {
+	_, orgok := o.Teachers[member.Username]
+	_, mok := member.Teaching[o.Name]
+
+	if orgok && !mok {
+		member.Teaching[o.Name] = nil
+		member.Save() // This line is not tread safe!
+	} else if !orgok && mok {
+		o.Teachers[member.Username] = nil
+	}
+
+	return orgok || mok
+}
+
+// IsMember return whether if the user is a member or not.
+func (o *Organization) IsMember(member *Member) bool {
+	_, orgok := o.Members[member.Username]
+	_, mok := member.Courses[o.Name]
+
+	if orgok && !mok {
+		member.Courses[o.Name] = NewCourseOptions(o.Name)
+	} else if !orgok && mok {
+		o.Members[member.Username] = nil
+	}
+
+	return orgok || mok
 }
 
 // AddGroup will add a group to the list of groups in the
@@ -340,7 +374,7 @@ func (o Organization) IsTeacher(member Member) bool {
 // staff.
 //
 // This method needs locking
-func (o *Organization) AddGroup(g Group) {
+func (o *Organization) AddGroup(g *Group) {
 	if o.Groups == nil {
 		o.Groups = make(map[string]interface{})
 	}
@@ -354,7 +388,7 @@ func (o *Organization) AddGroup(g Group) {
 // GetMembership will return the status of a membership to the
 // student team on github. The states possible is active or
 // pending. Returns error if user is never invited.
-func (o *Organization) GetMembership(member Member) (status string, err error) {
+func (o *Organization) GetMembership(member *Member) (status string, err error) {
 	err = o.connectAdminToGithub()
 	if err != nil {
 		return
@@ -583,13 +617,17 @@ func (o *Organization) CreateFile(repo, path, content, commitmsg string) (commit
 }
 
 // ListRegisteredOrganizations will list all the organizations registered in autograder.
-func ListRegisteredOrganizations() (out []Organization) {
-	out = make([]Organization, 0)
-	keys := GetOrgstore().Keys()
-	var org Organization
+func ListRegisteredOrganizations() (out []*Organization) {
+	out = make([]*Organization, 0)
+	keys := GetOrganizationStore().Keys()
 
 	for key := range keys {
-		org = NewOrganization(key)
+		org, err := NewOrganization(key)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+
 		out = append(out, org)
 	}
 
@@ -598,13 +636,13 @@ func ListRegisteredOrganizations() (out []Organization) {
 
 // HasOrganization checks if the organization is already registered in autograder.
 func HasOrganization(name string) bool {
-	return GetOrgstore().Has(name)
+	return GetOrganizationStore().Has(name)
 }
 
 var orgstore *diskv.Diskv
 
-// GetOrgstore returns a diskv object used to store the organization object to memory and disk.
-func GetOrgstore() *diskv.Diskv {
+// GetOrganizationStore returns a diskv object used to store the organization object to memory and disk.
+func GetOrganizationStore() *diskv.Diskv {
 	if orgstore == nil {
 		orgstore = diskv.New(diskv.Options{
 			BasePath:     global.Basepath + "diskv/orgs/",
