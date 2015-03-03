@@ -1,0 +1,240 @@
+{{define "title"}} UIS Autograder {{end}}
+{{define "body"}}
+
+<div class="jumbotron">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        <h1>{{.Org.Name}}</h1>
+        <p><i>{{.Org.Description}}</i></p>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="container">
+  <div class="row">
+    <div class="col-md-3">
+      <h1><!-- Something something --></h1>
+  	  <div class="list-group">
+        <a class="list-group-item disabled">Scoreboards</a>
+        <a class="list-group-item active" href="#alltime">All time <span class="pull-right glyphicon glyphicon-chevron-right" aria-hidden="true"></span></a>
+        <a class="list-group-item" href="#month">This month <span class="pull-right glyphicon glyphicon-chevron-right" aria-hidden="true"></span></a>
+        <a class="list-group-item" href="#week">This week <span class="pull-right glyphicon glyphicon-chevron-right" aria-hidden="true"></span></a>
+        <!--<a class="list-group-item disabled">History</a>-->
+        <!--<a class="list-group-item">Add calender</a>-->
+        <a class="list-group-item" href="/course/{{.Org.Name}}"><span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span><span class="pull-right">Back to lab page</span></a>
+      </div>
+    </div>
+    <div class="col-md-9">
+      <h1>Top 10 Students <span class="period">in total</span></h1>
+      <div class="row">
+        <div class="col-md-11">
+          <p class="lead" id="userposition"><span class="text-muted">You are #<span id="userplace"></span> on the scoreboard <span class="period">in total</span> with <span id="userpoints">0</span> points!</span></p>
+          <p class="lead" id="nonscoreboard" style="disply: none;">What? No one on the list? Go and start a discution on GitHub and you will soon be on the top!</p>
+          <div class="alert alert-danger" role="alert" style="disply: none;">...</div>
+        </div>
+      </div>
+
+      <div class="row scorerow" place="0" style="display: none;">
+        <div class="col-xs-2 col-sm-1 col-md-1 col-lg-1">
+          <p>
+            <img class="media-object" src="/img/flaticon/number0.png" alt="1" width="48px" style="display: block; margin-left: auto; margin-right: auto;">
+          <p>
+        </div>
+        <div class="col-xs-10 col-sm-11 col-md-11 col-lg-11">
+          <h3 style="margin-top: 10px;"><span class="username" place="0">u</span> <span class="text-muted">with</span> <span class="points" place="0">0</span> points!</h3>
+        </div>
+      </div>
+
+      <div class="row scorerow" place="1" style="display: none;">
+        <div class="col-xs-2 col-sm-1 col-md-1 col-lg-1">
+          <p>
+            <img class="media-object" src="/img/flaticon/number1.png" alt="2" width="48px" style="display: block; margin-left: auto; margin-right: auto;">
+          </p>
+        </div>
+        <div class="col-xs-10 col-sm-11 col-md-11 col-lg-11">
+          <h3 style="margin-top: 10px;"><span class="username" place="1">u</span> <span class="text-muted">with</span> <span class="points" place="1">0</span> points!</h3>
+        </div>
+      </div>
+
+      <div class="row scorerow" place="2" style="display: none;">
+        <div class="col-xs-2 col-sm-1 col-md-1 col-lg-1">
+          <p>
+            <img class="media-object" src="/img/flaticon/number2.png" alt="3" width="48px" style="display: block; margin-left: auto; margin-right: auto;">
+          </p>
+        </div>
+        <div class="col-xs-10 col-sm-11 col-md-11 col-lg-11">
+          <h3 style="margin-top: 10px;"><span class="username" place="2">u</span> <span class="text-muted">with</span> <span class="points" place="2">0</span> points!</h3>
+        </div>
+      </div>
+
+      <div class="row scorerow" place="3" style="display: none;">
+        <div class="col-xs-2 col-sm-1 col-md-1 col-lg-1">
+          <p>
+            <img class="media-object" src="/img/flaticon/number3.png" alt="4" width="32px" style="display: block; margin-left: auto; margin-right: auto;">
+          </p>
+        </div>
+        <div class="col-xs-10 col-sm-11 col-md-11 col-lg-11">
+          <h3 style="margin-top: 2px;"><span class="username" place="3">u</span> <span class="text-muted">with</span> <span class="points" place="3">0</span> points!</h3>
+        </div>
+      </div>
+
+      <div class="row scorerow" place="4" style="display: none;">
+        <div class="col-xs-2 col-sm-1 col-md-1 col-lg-1">
+          <p>
+            <img class="media-object" src="/img/flaticon/number4.png" alt="5" width="32px" style="display: block; margin-left: auto; margin-right: auto;">
+          </p>
+        </div>
+        <div class="col-xs-10 col-sm-11 col-md-11 col-lg-11">
+          <h3 style="margin-top: 2px;"><span class="username" place="4">u</span> <span class="text-muted">with</span> <span class="points" place="4">0</span> points!</h3>
+        </div>
+      </div>
+
+      <div class="row scorerow" place="5" style="display: none;">
+        <div class="col-xs-2 col-sm-1 col-md-1 col-lg-1">
+          <p>
+            <img class="media-object" src="/img/flaticon/number5.png" alt="6" width="32px" style="display: block; margin-left: auto; margin-right: auto;">
+          </p>
+        </div>
+        <div class="col-xs-10 col-sm-11 col-md-11 col-lg-11">
+          <h3 style="margin-top: 2px;"><span class="username" place="5">u</span> <span class="text-muted">with</span> <span class="points" place="5">0</span> points!</h3>
+        </div>
+      </div>
+
+      <div class="row scorerow" place="6" style="display: none;">
+        <div class="col-xs-2 col-sm-1 col-md-1 col-lg-1">
+          <p>
+            <img class="media-object" src="/img/flaticon/number6.png" alt="7" width="32px" style="display: block; margin-left: auto; margin-right: auto;">
+          </p>
+        </div>
+        <div class="col-xs-10 col-sm-11 col-md-11 col-lg-11">
+          <h3 style="margin-top: 2px;"><span class="username" place="6">u</span> <span class="text-muted">with</span> <span class="points" place="6">0</span> points!</h3>
+        </div>
+      </div>
+
+      <div class="row scorerow" place="7" style="display: none;">
+        <div class="col-xs-2 col-sm-1 col-md-1 col-lg-1">
+          <p>
+            <img class="media-object" src="/img/flaticon/number7.png" alt="8" width="32px" style="display: block; margin-left: auto; margin-right: auto;">
+          </p>
+        </div>
+        <div class="col-xs-10 col-sm-11 col-md-11 col-lg-11">
+          <h3 style="margin-top: 2px;"><span class="username" place="7">u</span> <span class="text-muted">with</span> <span class="points" place="7">0</span> points!</h3>
+        </div>
+      </div>
+
+      <div class="row scorerow" place="8" style="display: none;">
+        <div class="col-xs-2 col-sm-1 col-md-1 col-lg-1">
+          <p>
+            <img class="media-object" src="/img/flaticon/number8.png" alt="9" width="32px" style="display: block; margin-left: auto; margin-right: auto;">
+          </p>
+        </div>
+        <div class="col-xs-10 col-sm-11 col-md-11 col-lg-11">
+          <h3 style="margin-top: 2px;"><span class="username" place="8">u</span> <span class="text-muted">with</span> <span class="points" place="8">0</span> points!</h3>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript">
+  var course = "{{.Org.Name}}"
+  var user = "{{.Member.Username}}"
+  // TODO: get json score data from server and update score info
+
+
+  var TOTALSCORE = 0
+  var MONTHLYSCORE = 1
+  var WEEKLYSCORE = 2
+
+  var loadLeadboard = function(period, week, month){
+    hideleaderboard();
+    $.getJSON("/leaderboard", {"course": course, "period": period, "week": week, "month": month}, function(data){
+      if(data.Error){
+        $('div.alert').text(data.ErrorMsg).show();
+        return
+      } else {
+        $('div.alert').hide();
+      }
+
+      if(data.Leaderboard.length == 0){
+        $('#userposition').hide();
+        $('#nonscoreboard').show();
+        return
+      } else {
+        $('#nonscoreboard').hide();
+        $('#userposition').show();
+      }
+
+      var found = false
+      data.Leaderboard.forEach(function(u, i) {
+        if(i <= 10){
+          $('.username[place='+i+']').text(u);
+          var p = data.Scores[u];
+          $('.points[place='+i+']').text(p);
+          $('.scorerow').promise().done(function(){
+            $('.scorerow[place='+i+']').fadeIn(500 * (1+i));
+          });
+        }
+
+        if(u == user){
+          found = true
+          if(i>10){
+            $('#userposition').show();
+            $("span#userplace").text(i+1)
+            $("span#userpoints").text(data.Scores[u])
+          } else {            
+            $('#userposition').hide();
+          }
+        }
+      });
+
+      if(!found) {
+        $('#userposition').show();
+        $("span#userplace").text(data.Leaderboard.length+1)
+        $("span#userpoints").text(0)
+      }
+    }).fail(function(){
+      $('div.alert').text("Could not contact the server to get the scoreboard.").show();
+    });
+  }
+
+  var hideleaderboard = function(){
+    $('.scorerow').each(function(i){
+      i = 10-i
+      $(this).fadeOut((100 * (1+i)) - (i*10))
+    });
+  }
+
+  $(function(){
+    loadLeadboard(TOTALSCORE, "", "");
+  });
+
+  $('a[href=#week]').click(function(){
+    loadLeadboard(WEEKLYSCORE, "", "");
+    $("span.period").text("this week");
+
+    $('a.list-group-item').removeClass('active');
+    $('a[href=#week]').addClass('active')
+  });
+
+  $('a[href=#month]').click(function(){
+    loadLeadboard(MONTHLYSCORE, "", "");
+    $("span.period").text("this month");
+
+    $('a.list-group-item').removeClass('active');
+    $('a[href=#month]').addClass('active')
+  });
+
+  $('a[href=#alltime]').click(function(){
+    loadLeadboard(TOTALSCORE, "", "");
+    $("span.period").text("in total");
+
+    $('a.list-group-item').removeClass('active');
+    $('a[href=#alltime]').addClass('active')
+  });
+
+</script>
+
+{{end}}
