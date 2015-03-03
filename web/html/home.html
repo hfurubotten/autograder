@@ -1,10 +1,17 @@
 {{define "title"}}UIS Autograder{{end}}
 {{define "body"}}
   {{$member := .Member}}
-  <div class="container">
-	<div class="page-header">
-      <h1>Hi, {{.Member.Name}}. <small>Welcome to Autograder</small></h1>
+  <div class="jumbotron">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12">
+          <h1>Hi, {{.Member.Name}}.</h1>
+          <p><i>Welcome to Autograder</i></p>
+        </div>
+      </div>
     </div>
+  </div>
+  <div class="container">
     <div class="row">
       <div class="col-lg-7">
       {{if .Member.IsTeacher}}
