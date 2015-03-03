@@ -356,6 +356,10 @@ func (o *Organization) IsTeacher(member *Member) bool {
 
 // IsMember return whether if the user is a member or not.
 func (o *Organization) IsMember(member *Member) bool {
+	if o.IsTeacher(member) {
+		return true
+	}
+
 	_, orgok := o.Members[member.Username]
 	_, mok := member.Courses[o.Name]
 
