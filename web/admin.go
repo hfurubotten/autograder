@@ -128,7 +128,6 @@ func SetTeacherHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//TODO should this struct also have json tags?
 	msg := SetTeacherView{
 		User:    m.Username,
 		Teacher: m.IsTeacher,
