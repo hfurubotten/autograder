@@ -150,9 +150,8 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 	case events.PING:
-		// go events.HandlePing(b)
-		body = "At some point this will add repos to the system."
-		statuscode = 501
+		body = "Pong"
+		statuscode = 200
 
 	case events.PUSH:
 		// go events.HandlePush(b)
