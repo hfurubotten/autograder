@@ -1,23 +1,26 @@
 {{define "title"}} UIS Autograder {{end}}
 {{define "body"}}
-
+<!-- Header -->
+<div class="jumbotron">
   <div class="container">
-    <!-- Header -->
     <div class="row">
       <div class="col-md-12">
-        <div class="page-header">
-          <h1>{{.Org.Name}}</h1>
-          <p><i>{{.Org.Description}}</i></p>
-          <!-- <p>From your repository there will be triggered a build each time you push new code up. This code will be tested agains what the teacher is expecting the solution to be. Check out how far you have gotten below.</p> -->
-        </div>
+        <h1>{{.Org.Name}}</h1>
+        <p><i>{{.Org.Description}}</i></p>
       </div>
     </div>
+  </div>
+</div>
+
+  <div class="container">
     <!-- Nav and Content -->
     <div class="row">
       <!-- Nav -->
       <div class="col-md-3">
         <h3><!-- Something something --></h3>
         <div class="list-group">
+          <a class="list-group-item disabled">Course</a>
+          <a class="list-group-item" href="/scoreboard/{{.Org.Name}}">Scoreboard <span class="pull-right glyphicon glyphicon-chevron-right"></span></a>
           <a class="list-group-item disabled">Individual labs</a>
           <a class="list-group-item" href="https://github.com/{{.Org.Name}}/{{.Member.Username}}-labs" target="_blank">Github Repository <span class="pull-right glyphicon glyphicon-link"></span></a>
           {{range .Org.IndividualLabFolders}}
@@ -28,10 +31,14 @@
           {{if gt .Org.GroupAssignments 0}}
             <a class="list-group-item disabled">Group labs {{with .Group}}(group{{.ID}}){{end}}</a>
             {{if .Group}}
-              <a class="list-group-item" href="https://github.com/{{.Org.Name}}/group{{.Group.ID}}" target="_blank">Github Repository <span class="pull-right glyphicon glyphicon-link"></span></a>
-              <a class="list-group-item" id="groupinfotab" href="#group">Group info</a>
-              {{range .Org.GroupLabFolders}}
-                <a class="list-group-item grouplabtab" href="#result" lab="{{.}}">{{.}} <span class="pull-right glyphicon glyphicon-chevron-right" aria-hidden="true"></span></a>
+              {{if .Group.Active}}
+                <a class="list-group-item" href="https://github.com/{{.Org.Name}}/group{{.Group.ID}}" target="_blank">Github Repository <span class="pull-right glyphicon glyphicon-link"></span></a>
+              {{end}}
+              <a class="list-group-item" id="groupinfotab" href="#group">Group info <span class="pull-right glyphicon glyphicon-chevron-right" aria-hidden="true"></span></a>
+              {{if .Group.Active}}
+                {{range .Org.GroupLabFolders}}
+                  <a class="list-group-item grouplabtab" href="#result" lab="{{.}}">{{.}} <span class="pull-right glyphicon glyphicon-chevron-right" aria-hidden="true"></span></a>
+                {{end}}
               {{end}}
             {{else}}
               <a class="list-group-item" id="groupregtab" href="#group">Register group <span class="pull-right glyphicon glyphicon-chevron-right" aria-hidden="true"></span></a>
@@ -40,7 +47,7 @@
           {{if not .Org.CodeReview}}
             <a class="list-group-item disabled">Code Review</a>
             <a class="list-group-item" href="https://github.com/{{.Org.Name}}/code-reviews" target="_blank">Browse on Github <span class="pull-right glyphicon glyphicon-link"></span></a>
-            <a class="list-group-item" id="reviewpubtab" href="#codereview">Publish review <span class="pull-right glyphicon glyphicon-chevron-right" aria-hidden="true"></span></a>
+            <a class="list-group-item reviewpubtab" href="#codereview">Publish review <span class="pull-right glyphicon glyphicon-chevron-right" aria-hidden="true"></span></a>
             <a class="list-group-item" id="reviewlisttab" href="#codereview">List reviews <span class="pull-right glyphicon glyphicon-chevron-right" aria-hidden="true"></span></a>
           {{end}}
         </div>
@@ -51,7 +58,8 @@
           <section id="result">
           <div class="row">
             <div class="col-lg-12">
-              <h3>Current progress - <span id="lab-headline"></span></h3>
+              <h1>Lab progress</h1>
+              <p class="lead">Your progress on <strong><span id="lab-headline"></span></strong></p>
               <div class="progress">
                 <div class="progress-bar" role="progressbar" aria-valuenow="2" aria-valuemin="0" aria-valuemax="100" style="width: 0%;">
                   0%
@@ -67,7 +75,7 @@
           </div>
           <div class="row">
             <div class="col-lg-12">
-              <table  id="testresultlist" class="table table-striped">
+              <table id="testresultlist" class="table table-striped">
                 <thead>
                   <tr>
                     <th>#</th>
@@ -93,13 +101,13 @@
           <!-- Build logs --> 
           <div class="row">
             <div class="col-lg-8">
-              <h3>Latest build</h3>
+              <h2>Latest build</h2>
               <p id="passes">Number of passed tests: ?</p>
               <p id="fails">Number of failed tests: ?</p>
               <p id="timedate">Build time: No build yet</p>
             </div>
             <div class="col-lg-4">
-              <h3>Actions</h3>
+              <h2>Actions</h2>
               <div class="row">
                 <div class="col-lg-12">
                   <p>
@@ -123,10 +131,10 @@
           {{with .Group}}
             <div class="result-content" id="groupsummaryview" style="display: none">
               {{if .Active}}
-                <h3>Group Active</h3>
+                <h1>Group Active</h1>
                 <p>You are a member of group {{.ID}}.</p>
               {{else}}
-                <h3>Group pending</h3>
+                <h1>Group pending</h1>
                 <p>You are a member of group {{.ID}}. The teacher or a teaching assistant need to approve your group. </p>
               {{end}}
               <p>Group members:</p>
@@ -139,7 +147,7 @@
           {{else}}
 
             <div class="result-content" id="groupsignupview" style="display: none">
-              <h3>Group registation</h3>
+              <h1>Group registation</h1>
               <p></p>
               <div class="row">
                 <div class="col-lg-4 col-lg-offset-1 text-center">
@@ -179,9 +187,11 @@
         {{/*if not .Org.CodeReview*/}}
           <section id="codereview">
             <div class="result-content" id="publishreviewview" style="display: none">
-              <h3>Publish Code Review</h3>
-              <p>Fill out the the form and put in the code you want to get reviewed below. </p>
-              <p>Fields maked with * needs to be filled out!</p>
+              <h1>Publish Code Review</h1>
+              <p class="lead">
+                Complete the form, including the code that you want to have reviewed. <br>
+                All fields required.
+              </p>
               <div class="alert alert-success" role="alert" style="display: none">Howdy there! I should be hiding now!</div>
               <form action="/review/publish" method="post" accept-charset="utf-8" class="form-horizontal" id="publishreviewform">
                 <input type="hidden" name="course" value="{{.Org.Name}}">
@@ -194,9 +204,9 @@
                 </div>
                 <!-- CR File extention -->
                 <div class="form-group">
-                  <label for="cr-fileext" class="col-sm-2 control-label">File extention *</label>
+                  <label for="cr-fileext" class="col-sm-2 control-label">File type *</label>
                   <div class="col-sm-10">
-                    <input type="text" class="form-control" id="cr-fileext" placeholder="File extention" name="fileext">
+                    <input type="text" class="form-control" id="cr-fileext" placeholder="go, java or similar" name="fileext">
                   </div>
                 </div>
                 <!-- CR Description -->
@@ -222,11 +232,20 @@
             </div>
 
             <div class="result-content" id="listreviewsview" style="display: none">
-              <h3>Current Code Reviews</h3>
+              <h1>Available Code Reviews</h1>
+              <p class="lead">Click on one of the reviews to open it on GitHub.</p>
               <table id="reviewlisttable" class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Title</th>
+                    <th>Description</th>
+                    <th></th>
+                  </tr>
+                </thead>
                 <tbody>
                   <tr>
-                    <td colspan="4">Thats all the code reviews. <a id="reviewpubtab" href="#codereview">Now go and make our own Code Review!</a></td>
+                    <td colspan="4">Thats all the code reviews. <a class="reviewpubtab" href="#codereview">Now go and make our own Code Review!</a></td>
                   </tr>
                 </tbody>
               </table>
@@ -252,12 +271,13 @@
           $('div.result-content').hide();
           $('div#resultview').show();
 
-          curlab = groupname;
+          curuser = groupname;
           curlab = lab;
 
           // nav active marking
           $('a.list-group-item').removeClass("active");
           $(this).addClass("active");
+          $("div.alert").hide();
         });
       });
     {{end}}

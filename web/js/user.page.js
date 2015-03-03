@@ -11,7 +11,7 @@ var loadLabResult = function(user, lab){
         
     // updates code
     $("code#logs").text("");
-    data.Log.forEach(function(t) {
+    data.Log.forEach(function(t, i) {
       $("code#logs").append(" # ").append($(document.createTextNode(t))).append("<br>");
     });
 
@@ -29,7 +29,7 @@ var loadLabResult = function(user, lab){
       if(data.TotalScore < 40 && data.TotalScore >= 6){
         pbar.addClass("progress-bar-danger");
       } else if(data.TotalScore < 6) {
-        pbar.addClass("progress-bar-warning");
+        pbar.addClass("progress-bar-danger");
         pbar.attr("aria-valuenow", 6).css("width", "6%")
       } else {
         pbar.addClass("progress-bar-warning");
@@ -87,6 +87,10 @@ $(function(){
     return false
   });
 
+  $("button#groupsubmit").click(function(){
+    $("form#groupselection").submit();
+  });
+
   $("#rebuild").click(function(event){
     var lab = curlab;
     var user = curuser;
@@ -115,6 +119,7 @@ $(function(){
     // nav active marking
     $('a.list-group-item').removeClass("active");
     $(this).addClass("active");
+    $("div.alert").hide();
   });
 
   $('a#groupinfotab').click(function(){
@@ -135,13 +140,13 @@ $(function(){
     $(this).addClass("active");
   });
 
-  $('a#reviewpubtab').click(function(){
+  $('a.reviewpubtab').click(function(){
     $('div.result-content').hide();
     $('div#publishreviewview').show();
 
     // nav active marking
     $('a.list-group-item').removeClass("active");
-    $('#reviewpubtab').addClass("active");
+    $('.reviewpubtab').addClass("active");
   });
 
   $('a#reviewlisttab').click(function(){
@@ -156,12 +161,12 @@ $(function(){
       def = $('#reviewlisttable > tbody > tr').last();
       $('#reviewlisttable > tbody').html(def);
       data.Reviews.forEach(function(r, i) {
-        if (r.desc.lenght > 75) {
-          desc = r.desc.substring(0, 75) + "...";
+        if (r.Desc.length > 75) {
+          desc = r.Desc.substring(0, 75) + "...";
         } else {
-          desc = r.desc;
+          desc = r.Desc;
         }
-        $('#reviewlisttable > tbody > tr').first().before("<tr onclick=\"tablerowlink('" + r.URL + "', '_blank')\"><td>" + (i + 1) + "</td><td>" + r.Title + "</td><td><i>" + desc + " ...</i></td><td>Go to review</td></tr>");
+        $('#reviewlisttable > tbody > tr').first().before("<tr onclick=\"tablerowlink('" + r.URL + "', '_blank')\"><td>" + (i + 1) + "</td><td>" + r.Title + "</td><td><i>" + desc + "</i></td><td><a href=\"#\">Go to review</a></td></tr>");
       });
     });
   });
