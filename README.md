@@ -2,6 +2,18 @@ Autograder
 ==========
 Autograder is an automatic feedback system for the students. It is integrated with GitHub and manages courses and students within GitHubs git management system. When students push code to their repositories, the push triggers a continuous integration process. Results form this integration process is then given to the students on their personal web pages. Teachers can then access this integration log, thus have a valuabel tool in the grading of lab assignments. 
 
+##Features##
+Listed below is some of the features in autograder
+
+###Training in industrial grade tools###
+The teaching enviorment of autograder is infact GitHub itself, thus training the students in using version controll systems to have controll over their code and assignments. Integrated in autograder is also a custom made continous integration tools. Versjon controlling and continous integration is tools widely used by the industry. Training the students in tools like git, GitHub and CI makes the students more equipt when making the transition to working life.
+
+###Automatic assignment testing###
+
+###Code reviewing###
+
+###Awardsystem for online discussions###
+
 ##Installation##
 
 While setting up this system everything is contained within the binary file compiled from this source code. Fastest way to get the source code is to run this command: 
