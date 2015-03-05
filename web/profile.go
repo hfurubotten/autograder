@@ -10,10 +10,17 @@ import (
 	"github.com/hfurubotten/autograder/git"
 	"github.com/hfurubotten/autograder/web/pages"
 	"github.com/hfurubotten/autograder/web/sessions"
+	"github.com/hfurubotten/github-gamification/levels"
 )
 
 type profileview struct {
-	Member *git.Member
+	Member             *git.Member
+	PointsToNextLvl    int64
+	PercentLvlComplete int
+
+	MissingName      bool
+	MissingStudentID bool
+	MissingEmail     bool
 }
 
 // ProfileURL is the URL used to call ProfileHandler.
@@ -41,8 +48,27 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	view := profileview{}
-	view.Member = m
+	// Level calculations
+	lvlPoint := levels.RequiredForLevel(m.Level - 1)
+	nextLvlPoint := levels.RequiredForLevel(m.Level)
+	diffPointsNextLvl := nextLvlPoint - lvlPoint
+	diffUser := diffPointsNextLvl - (m.TotalScore - lvlPoint)
+	percentDone := 100 - int(float64(diffUser)/float64(diffPointsNextLvl)*100)
+
+	if percentDone > 100 {
+		percentDone = 100
+	} else if percentDone < 0 {
+		percentDone = 0
+	}
+
+	view := profileview{
+		Member:             m,
+		PointsToNextLvl:    diffUser,
+		PercentLvlComplete: percentDone,
+		MissingName:        m.Name == "",
+		MissingStudentID:   m.StudentID == 0,
+		MissingEmail:       m.Email == nil,
+	}
 	execTemplate("profile.html", w, view)
 }
 

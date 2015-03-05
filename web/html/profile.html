@@ -1,47 +1,148 @@
 {{define "title"}}UIS Autograder{{end}}
 {{define "body"}}
+  {{$ptstonext := .PointsToNextLvl}}
+  {{$prcompleted := .PercentLvlComplete}}
+  {{$missingname := .MissingName}}
+  {{$missingstudid := .MissingStudentID}}
+  {{$missingemail := .MissingEmail}}
   {{with .Member}}
-    <div class="container">
-			<div class="row">
-        <div class="col-md-12">
-          <h1>Hi, {{.Username}}!</h1>
-          <p>Please tell us about yourself. There is some informasjon that we need to know to get you rolling in our system. Some information have been collected already, but not all. We will need some additional information.</p>
-          <p>Fields marked with * is required.</p>
-
-          <!-- input form -->
-          <form class="form-horizontal" role="form" action="/updatemember" method="POST">
-            <div class="form-group">
-              <label for="username" class="col-sm-3 control-label">Github username *</label>
-              <div class="col-sm-9">
-                <input type="text" class="form-control" id="username" placeholder="Username" value="{{.Username}}" readonly>
+    <div class="jumbotron">
+      <div class="container">
+        <div class="row">
+          {{if .AvatarURL}}
+            <div class="col-sm-3 col-md-3 col-lg-2">
+              <img src="{{.AvatarURL}}" alt="Profile picture" class="img-responsive img-thumbnail">
+            </div>
+          {{end}}
+          <div class="col-md-9 col-lg-10">
+            <h1>{{.Username}} <br class="rwd-break"><small>lvl {{.Level}} - {{.TotalScore}} points</small></h1>
+            <p>Only {{$ptstonext}} points to next level! </p>
+            <div class="progress">
+              <div class="progress-bar progress-bar-success progress-bar-striped" role="progressbar" aria-valuenow="{{$prcompleted}}" aria-valuemin="0" aria-valuemax="100" style="width: {{$prcompleted}}%">
+                {{$prcompleted}}% Complete
               </div>
             </div>
-            <div class="form-group">
-              <label for="name" class="col-sm-3 control-label">Full name *</label>
-              <div class="col-sm-9">
-                <input type="text" class="form-control" id="name" name="name" placeholder="Full Name" value="{{.Name}}">
-              </div>
-            </div>
-            <div class="form-group">
-              <label for="studentid" class="col-sm-3 control-label">Student ID *</label>
-              <div class="col-sm-9">
-                <input type="number" class="form-control" id="studentid" name="studentid" placeholder="Student ID" value="{{if .StudentID}}{{.StudentID}}{{end}}">
-              </div>
-            </div>
-            <div class="form-group">
-              <label for="email" class="col-sm-3 control-label">E-mail address *</label>
-              <div class="col-sm-9">
-                <input type="email" class="form-control" id="email" name="email" placeholder="you@domain.com" value="{{if .Email}}{{.Email.Address}}{{end}}">
-              </div>
-            </div>
-            <div class="form-group">
-              <div class="col-sm-offset-3 col-sm-9">
-                <button type="submit" class="btn btn-default">Update</button>
-              </div>
-            </div>
-          </form>
+          </div>
         </div>
       </div>
+    </div>
+    <div class="container">
+			<div class="row">
+        <div class="col-md-3 well">
+          <section id="info">
+            <h3>Your information</h3>
+
+            <form class="form-horizontal" role="form" action="/updatemember" method="POST">
+
+              <b>Name</b>
+              <p id="nameblock">
+                {{.Name}}
+                <a href="#info" class="edit" id="editname">
+                  <span class="pull-right glyphicon glyphicon-edit" aria-hidden="true">
+                    <span class="sr-only">Edit</span>
+                  </span>
+                </a>
+              </p>
+
+              <p{{if $missingname}} class="has-error"{{end}}>
+                <input type="hidden" class="form-control" id="name" name="name" placeholder="Full Name" value="{{.Name}}">
+              </p>
+
+              <b>Student ID</b>
+              <p id="studidblock">
+                {{if .StudentID}}{{.StudentID}}{{end}}
+                <a href="#info" class="edit" id="editstudid">
+                  <span class="pull-right glyphicon glyphicon-edit" aria-hidden="true">
+                    <span class="sr-only">Edit</span>
+                  </span>
+                </a>
+              </p>
+
+              <p{{if $missingstudid}} class="has-error"{{end}}>
+                <input type="hidden" class="form-control" id="studentid" name="studentid" placeholder="Student ID" value="{{if .StudentID}}{{.StudentID}}{{end}}">
+              </p>
+
+              <b>E-mail address</b>
+              <p id="emailblock">
+                {{if .Email}}{{.Email.Address}}{{end}}
+                <a href="#info" class="edit" id="editemail">
+                  <span class="pull-right glyphicon glyphicon-edit" aria-hidden="true">
+                    <span class="sr-only">Edit</span>
+                  </span>
+                </a>
+              </p>
+
+              <p{{if $missingemail}} class="has-error"{{end}}>
+                <input type="hidden" class="form-control" id="email" name="email" placeholder="you@domain.com" value="{{if .Email}}{{.Email.Address}}{{end}}">
+              </p>
+
+              <p>
+                <button id="updatebutton" type="submit" class="btn btn-default">Update</button>
+              </p>
+            </form>
+          </section>
+        </div>
+
+        <div class="col-md-9">
+          <h1 style="margin-left: 15px;">Your Trophies</h1>
+          {{if .Trophies}}
+            {{range $trophy := .Trophies.Store}}
+              <div class="col-md-3 text-center">
+                {{if gt 3 $trophy.Rank}}
+                  <div class="glyph-icon-lg flaticon-award52 {{$trophy.RankName}}"></div>
+                {{else}}
+                  <div class="glyph-icon-lg flaticon-trophy36 {{$trophy.RankName}}"></div>
+                {{end}}
+                <p>
+                  <span class="lead">{{$trophy.RankName}} {{$trophy.Name}}</span><br>
+                  <b>Progress: {{$trophy.Occurrences}}/{{index $trophy.Steps $trophy.Rank}}</b>
+                </p>
+              </div>
+            {{else}}
+              <p class="lead">No trophies yet, go and create some action on GitHub!</p>
+            {{end}}
+          {{else}}
+            <p class="lead">No trophies yet, go and create some action on GitHub!</p>
+          {{end}}
+        </div>
+
+      </div>
 		</div>
+
+
+    <script type="text/javascript">
+      $(function(){
+        $('.edit').click(function(){
+          $('#updatebutton').show();
+        });
+
+        $('#editname').click(function(){
+          $('#nameblock').hide();
+          $('#name').attr('type', 'text')
+        });
+
+        $('#editstudid').click(function(){
+          $('#studidblock').hide();
+          $('#studentid').attr('type', 'number')
+        });
+
+        $('#editemail').click(function(){
+          $('#emailblock').hide();
+          $('#email').attr('type', 'email')
+        });
+
+        $('#updatebutton').hide();
+
+        {{if $missingname}}
+          $('#editname').click();
+        {{end}}
+        {{if $missingstudid}}
+          $('#editstudid').click();
+        {{end}}
+        {{if $missingemail}}
+          $('#editemail').click();
+        {{end}}
+      })
+    </script>
   {{end}}
 {{end}}
