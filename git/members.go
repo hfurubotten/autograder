@@ -142,9 +142,7 @@ func (m *Member) loadDataFromGithub() (err error) {
 		m.Username = *user.Login
 	}
 
-	if user.Name != nil {
-		m.Name = *user.Name
-	}
+	m.ImportGithubData(user)
 
 	return
 }
