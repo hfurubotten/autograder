@@ -144,14 +144,24 @@
         $('div.alert').hide();
       }
 
+      if(data.Leaderboard == null){
+        $('#userposition').hide();
+        $('#nonscoreboard').show();
+        $('table').hide();
+        return
+      }
+
       if(data.Leaderboard.length == 0){
         $('#userposition').hide();
         $('#nonscoreboard').show();
+        $('table').hide();
         return
       } else {
         $('#nonscoreboard').hide();
         $('#userposition').show();
       }
+
+      $('table').show();
 
       var found = false
       data.Leaderboard.forEach(function(u, i) {
