@@ -31,7 +31,7 @@ var loadLabResult = function(user, lab){
       } else if(data.TotalScore < 6) {
         pbar.addClass("progress-bar-danger");
         pbar.attr("aria-valuenow", 6).css("width", "6%")
-      } else {
+      } else if(data.TotalScore >= 40 && data.TotalScore < 60){
         pbar.addClass("progress-bar-warning");
       }
     } else {
