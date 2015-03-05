@@ -13,6 +13,7 @@ import (
 	"github.com/hfurubotten/github-gamification/events"
 	github "github.com/hfurubotten/github-gamification/githubobjects"
 	"github.com/hfurubotten/github-gamification/points"
+	"github.com/hfurubotten/github-gamification/trophies"
 )
 
 var (
@@ -62,16 +63,16 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 
 		if org.IsTeacher(user) {
 			body = TeacherActionMsg
-			break
+			user.IncScoreBy(points.COMMENT)
+		} else {
+			err = events.DistributeScores(points.COMMENT, user, nil, org)
+			if err != nil {
+				statuscode = 500
+				body = ScoreDistributionErrorMsg
+				break
+			}
 		}
-
-		err = events.DistributeScores(points.COMMENT, user, nil, org)
-		if err != nil {
-			statuscode = 500
-			body = ScoreDistributionErrorMsg
-			break
-		}
-		err = events.RegisterAction(events.COMMMIT_COMMENT, user)
+		err = events.RegisterAction(trophies.TALKACTION, user)
 		if err != nil {
 			statuscode = 500
 			body = RegisterActionErrorMsg
@@ -94,16 +95,16 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 
 		if org.IsTeacher(user) {
 			body = TeacherActionMsg
-			break
+			user.IncScoreBy(points.COMMENT)
+		} else {
+			err = events.DistributeScores(points.COMMENT, user, nil, org)
+			if err != nil {
+				statuscode = 500
+				body = ScoreDistributionErrorMsg
+				break
+			}
 		}
-
-		err = events.DistributeScores(points.COMMENT, user, nil, org)
-		if err != nil {
-			statuscode = 500
-			body = ScoreDistributionErrorMsg
-			break
-		}
-		err = events.RegisterAction(events.ISSUE_COMMENT, user)
+		err = events.RegisterAction(trophies.TALKACTION, user)
 		if err != nil {
 			statuscode = 500
 			body = RegisterActionErrorMsg
@@ -124,12 +125,7 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 		user, _ := git.NewUserWithGithubData(payload.Sender)
 		org, _ := git.NewOrganizationWithGithubData(payload.Organization)
 
-		if org.IsTeacher(user) {
-			body = TeacherActionMsg
-			break
-		}
-
-		p, err := events.FindIssuesPoints(payload)
+		p, ta, err := events.FindIssuesPointsAndTrophyAction(payload)
 		if err != nil {
 			log.Println("Issue event error:", err)
 			statuscode = 500
@@ -137,13 +133,18 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		err = events.DistributeScores(p, user, nil, org)
-		if err != nil {
-			statuscode = 500
-			body = ScoreDistributionErrorMsg
-			break
+		if org.IsTeacher(user) {
+			body = TeacherActionMsg
+			user.IncScoreBy(p)
+		} else {
+			err = events.DistributeScores(p, user, nil, org)
+			if err != nil {
+				statuscode = 500
+				body = ScoreDistributionErrorMsg
+				break
+			}
 		}
-		err = events.RegisterAction(events.ISSUES, user)
+		err = events.RegisterAction(ta, user)
 		if err != nil {
 			statuscode = 500
 			body = RegisterActionErrorMsg
@@ -194,16 +195,16 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 
 		if org.IsTeacher(user) {
 			body = TeacherActionMsg
-			break
+			user.IncScoreBy(points.COMMENT)
+		} else {
+			err = events.DistributeScores(points.COMMENT, user, nil, org)
+			if err != nil {
+				statuscode = 500
+				body = ScoreDistributionErrorMsg
+				break
+			}
 		}
-
-		err = events.DistributeScores(points.COMMENT, user, nil, org)
-		if err != nil {
-			statuscode = 500
-			body = ScoreDistributionErrorMsg
-			break
-		}
-		err = events.RegisterAction(events.PULL_REQUEST_COMMENT, user)
+		err = events.RegisterAction(trophies.TALKACTION, user)
 		if err != nil {
 			statuscode = 500
 			body = RegisterActionErrorMsg
