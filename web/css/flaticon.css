@@ -15,33 +15,39 @@
 font-style: normal;
 margin-left: 20px;
 }
-.flaticon-award9:before {
+.flaticon-award52:before {
 	content: "\e000";
 }
-.flaticon-first33:before {
+.flaticon-award9:before {
 	content: "\e001";
 }
-.flaticon-medal16:before {
+.flaticon-first33:before {
 	content: "\e002";
 }
-.flaticon-number32:before {
+.flaticon-medal16:before {
 	content: "\e003";
 }
-.flaticon-number34:before {
+.flaticon-number32:before {
 	content: "\e004";
 }
-.flaticon-number35:before {
+.flaticon-number34:before {
 	content: "\e005";
 }
-.flaticon-number36:before {
+.flaticon-number35:before {
 	content: "\e006";
 }
-.flaticon-number38:before {
+.flaticon-number36:before {
 	content: "\e007";
 }
-.flaticon-number39:before {
+.flaticon-number38:before {
 	content: "\e008";
 }
-.flaticon-star97:before {
+.flaticon-number39:before {
 	content: "\e009";
+}
+.flaticon-star97:before {
+	content: "\e00a";
+}
+.flaticon-trophy36:before {
+	content: "\e00b";
 }
