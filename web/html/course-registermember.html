@@ -1,46 +1,53 @@
 {{define "title"}} UIS Autograder {{end}}
 {{define "body"}}
+  <div class="jumbotron">
     <div class="container">
       <div class="row">
         <div class="col-md-12">
-          <h1>Sign up for a new course</h1>
-          <p>The available courses are listed below.</p>
-          <p> </p>
-          {{range .Orgs}}
-
-            <div class="modal fade bs-example-modal-sm" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true" id="modal{{.Name}}">
-              <div class="modal-dialog modal-sm">
-                <div class="modal-content">
-                  <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title" id="myModalLabel">Terms</h4>
-                  </div>
-                  <div class="modal-body">
-                    <p>By signing up for this course you agree to the terms and regulations from the University. This includes course policy regarding plagiarism.</p>
-                  </div>
-                  <div class="modal-footer">
-                    <a style="padding-bottom: 10;" class="btn btn-primary" href="/course/register/{{.Name}}">Agree</a>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="panel panel-default">
-              <div class="panel-heading">
-                <div class="row">
-                  <div class="col-xs-7 col-sm-7 col-md-8 col-lg-8">
-                    <h4>{{.Name}} </h4>
-                  </div>
-                  <div class="col-xs-5 col-sm-5 col-md-4 col-lg-4">
-                    <button type="button" class="btn btn-primary pull-right" data-toggle="modal" data-target="#modal{{.Name}}">Sign up</button>
-                  </div>
-                </div>
-              </div>
-              <div class="panel-body">
-                {{.Description}}
-              </div>
-            </div>   
-          {{end}}
+          <h1>Join Course</h1>
+          <p><i>Select one below!</i></p>
         </div>
       </div>
     </div>
+  </div>
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        {{range .Orgs}}
+
+          <div class="modal fade bs-example-modal-sm" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true" id="modal{{.Name}}">
+            <div class="modal-dialog modal-sm">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                  <h4 class="modal-title" id="myModalLabel">Terms</h4>
+                </div>
+                <div class="modal-body">
+                  <p>By signing up for this course you agree to the terms and regulations from the University. This includes course policy regarding plagiarism.</p>
+                </div>
+                <div class="modal-footer">
+                  <a style="padding-bottom: 10;" class="btn btn-primary" href="/course/register/{{.Name}}">Agree</a>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="panel panel-default">
+            <div class="panel-heading">
+              <div class="row">
+                <div class="col-xs-7 col-sm-7 col-md-8 col-lg-8">
+                  <h4>{{.Name}} </h4>
+                </div>
+                <div class="col-xs-5 col-sm-5 col-md-4 col-lg-4">
+                  <button type="button" class="btn btn-primary pull-right" data-toggle="modal" data-target="#modal{{.Name}}">Sign up</button>
+                </div>
+              </div>
+            </div>
+            <div class="panel-body">
+              {{.Description}}
+            </div>
+          </div>   
+        {{end}}
+      </div>
+    </div>
+  </div>
 {{end}}
