@@ -76,8 +76,8 @@ func StartTesterDaemon(opt DaemonOptions) {
 	}{
 		{"mkdir -p " + opt.BaseFolder, true},
 		{"git clone https://" + opt.AdminToken + ":x-oauth-basic@github.com/" + opt.Org + "/" + opt.Repo + ".git" + " " + opt.BaseFolder + opt.DestFolder + "/", true},
-		{"git clone https://" + opt.AdminToken + ":x-oauth-basic@github.com/" + opt.Org + "/" + git.TEST_REPO_NAME + ".git" + " " + opt.BaseFolder + git.TEST_REPO_NAME + "/", true},
-		{"/bin/bash -c \"cp -rf \"" + opt.BaseFolder + git.TEST_REPO_NAME + "/*\" \"" + opt.BaseFolder + opt.DestFolder + "/\" \"", true},
+		{"git clone https://" + opt.AdminToken + ":x-oauth-basic@github.com/" + opt.Org + "/" + git.TestRepoName + ".git" + " " + opt.BaseFolder + git.TestRepoName + "/", true},
+		{"/bin/bash -c \"cp -rf \"" + opt.BaseFolder + git.TestRepoName + "/*\" \"" + opt.BaseFolder + opt.DestFolder + "/\" \"", true},
 
 		{"chmod 777 " + opt.BaseFolder + opt.DestFolder + "/dependencies.sh", true},
 		{"/bin/sh -c \"(cd \"" + opt.BaseFolder + opt.DestFolder + "/\" && ./dependencies.sh)\"", true},

@@ -15,8 +15,10 @@ var (
 	newgrouplock sync.Mutex
 )
 
-var RequestRandomGroupURL string = "/course/requestrandomgroup"
+// RequestRandomGroupURL is the URL used to call RequestRandomGroupHandler.
+var RequestRandomGroupURL = "/course/requestrandomgroup"
 
+// RequestRandomGroupHandler is a http handler used by a student to request a random group assignment.
 func RequestRandomGroupHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
 	member, err := checkMemberApproval(w, r, false)
@@ -43,8 +45,10 @@ func RequestRandomGroupHandler(w http.ResponseWriter, r *http.Request) {
 	org.Save()
 }
 
-var NewGroupURL string = "/course/newgroup"
+// NewGroupURL is the URL used to call NewGroupHandler.
+var NewGroupURL = "/course/newgroup"
 
+// NewGroupHandler is a http handler used when submitting a new group for approval.
 func NewGroupHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in.
 	member, err := checkMemberApproval(w, r, false)
@@ -126,14 +130,17 @@ func NewGroupHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// ApproveGroupView is the view used to reply JSON data back when using ApproveGroupHandler.
 type ApproveGroupView struct {
 	JSONErrorMsg
 	Approved bool
 	ID       int
 }
 
-var ApproveGroupUrl string = "/course/approvegroup"
+// ApproveGroupUrl is the URL used to call ApproveGroupHandler.
+var ApproveGroupURL = "/course/approvegroup"
 
+// ApproveGroupHandler is a http handler used by teachers to approve a group and activate it.
 func ApproveGroupHandler(w http.ResponseWriter, r *http.Request) {
 	enc := json.NewEncoder(w)
 	view := ApproveGroupView{}
@@ -231,7 +238,7 @@ func ApproveGroupHandler(w http.ResponseWriter, r *http.Request) {
 
 		newteam := git.TeamOptions{
 			Name:       "group" + r.FormValue("groupid"),
-			Permission: git.PERMISSION_PUSH,
+			Permission: git.PushPermission,
 			RepoNames:  []string{"group" + r.FormValue("groupid")},
 		}
 
@@ -243,7 +250,7 @@ func ApproveGroupHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		for username, _ := range group.Members {
+		for username := range group.Members {
 			err = org.AddMemberToTeam(teamID, username)
 			if err != nil {
 				log.Println(err)
@@ -269,8 +276,10 @@ func ApproveGroupHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-var RemovePendingGroupURL string = "/course/removegroup"
+// RemovePendingGroupURL is the URL used to call RemovePendingGroupHandler.
+var RemovePendingGroupURL = "/course/removegroup"
 
+// RemovePendingGroupHandler is used to remove a group.
 func RemovePendingGroupHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
 	member, err := checkTeacherApproval(w, r, true)

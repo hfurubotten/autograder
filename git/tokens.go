@@ -4,48 +4,63 @@ import (
 	"crypto/sha256"
 	"fmt"
 
-	"github.com/hfurubotten/diskv"
 	"github.com/hfurubotten/autograder/global"
+	"github.com/hfurubotten/diskv"
 )
 
-var tokenstore = diskv.New(diskv.Options{
-	BasePath:     global.Basepath + "diskv/tokens",
-	CacheSizeMax: 1024 * 1024 * 256,
-})
-
-type token struct {
+// Token represents a access token retrieved in the oauth process.
+type Token struct {
 	accessToken string
 }
 
-func NewToken(oauthtoken string) token {
-	return token{oauthtoken}
+// NewToken returns a new token created from a oauth token.
+func NewToken(oauthtoken string) Token {
+	return Token{oauthtoken}
 }
 
-func (m *token) HasTokenInStore() bool {
+// HasTokenInStore checks if the token is in storage.
+func (m *Token) HasTokenInStore() bool {
 	hash := sha256.Sum256([]byte(m.accessToken))
-	return tokenstore.Has(fmt.Sprintf("%x", hash))
+	return getTokenStore().Has(fmt.Sprintf("%x", hash))
 }
 
-func (m *token) GetUsernameFromTokenInStore() (user string, err error) {
+// GetUsernameFromTokenInStore gets the username associated with the token.
+func (m *Token) GetUsernameFromTokenInStore() (user string, err error) {
 	hash := sha256.Sum256([]byte(m.accessToken))
-	err = tokenstore.ReadGob(fmt.Sprintf("%x", hash), &user, false)
+	err = getTokenStore().ReadGob(fmt.Sprintf("%x", hash), &user, false)
 	return user, err
 }
 
-func (m *token) SetUsernameToTokenInStore(username string) (err error) {
+// SetUsernameToTokenInStore sets the username associated with the token.
+func (m *Token) SetUsernameToTokenInStore(username string) (err error) {
 	hash := sha256.Sum256([]byte(m.accessToken))
-	err = tokenstore.WriteGob(fmt.Sprintf("%x", hash), username)
+	err = getTokenStore().WriteGob(fmt.Sprintf("%x", hash), username)
 	return
 }
 
-func (m *token) RemoveTokenInStore() (err error) {
-	return tokenstore.Erase(m.accessToken)
+// RemoveTokenInStore removed the token from storage.
+func (m *Token) RemoveTokenInStore() (err error) {
+	return getTokenStore().Erase(m.accessToken)
 }
 
-func (t token) HasToken() bool {
+// HasToken checks if the token is set.
+func (t *Token) HasToken() bool {
 	return t.accessToken != ""
 }
 
-func (t token) GetToken() string {
+// GetToken returns the plain token string.
+func (t *Token) GetToken() string {
 	return t.accessToken
+}
+
+var tokenstore *diskv.Diskv
+
+func getTokenStore() *diskv.Diskv {
+	if tokenstore == nil {
+		tokenstore = diskv.New(diskv.Options{
+			BasePath:     global.Basepath + "diskv/tokens",
+			CacheSizeMax: 1024 * 1024 * 64,
+		})
+	}
+	return tokenstore
 }

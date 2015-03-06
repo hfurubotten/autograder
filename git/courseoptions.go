@@ -11,6 +11,7 @@ func init() {
 	gob.Register(CourseOptions{})
 }
 
+// CourseOptions represent the course options a user need when signed up for a course.
 type CourseOptions struct {
 	Course        string
 	CurrentLabNum int
@@ -23,6 +24,7 @@ type CourseOptions struct {
 	GroupNum      int
 }
 
+// NewCourseOptions will create a new course option object.
 func NewCourseOptions(course string) CourseOptions {
 	return CourseOptions{
 		Course:        course,

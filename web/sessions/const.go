@@ -1,9 +1,12 @@
 package sessions
 
 const (
+	// AuthSession is the name for the authentication session.
+	AuthSession = "auth_credentials"
 
-	// Authentication of users
-	AUTHSESSION = "auth_credentials"
-	APPROVEDSESSIONKEY = "accepted"
-	ACCESSTOKENSESSIONKEY = "access_token"
+	// ApprovedSessionKey is the name of the session key for the approval boolean.
+	ApprovedSessionKey = "accepted"
+
+	// AccessTokenSessionKey is the name of the session key for the access token.
+	AccessTokenSessionKey = "access_token"
 )

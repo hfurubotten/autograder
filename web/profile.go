@@ -13,7 +13,8 @@ import (
 	"github.com/hfurubotten/github-gamification/levels"
 )
 
-type profileview struct {
+// ProfileView is the view passed to the html template compiler for ProfileHandler.
+type ProfileView struct {
 	Member             *git.Member
 	PointsToNextLvl    int64
 	PercentLvlComplete int
@@ -24,7 +25,7 @@ type profileview struct {
 }
 
 // ProfileURL is the URL used to call ProfileHandler.
-var ProfileURL string = "/profile"
+var ProfileURL = "/profile"
 
 // ProfileHandler is a http handler which writes back a page about the
 // users profile settings. The page can also be used to edit profile data.
@@ -34,7 +35,7 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	value, err := sessions.GetSessions(r, sessions.AUTHSESSION, sessions.ACCESSTOKENSESSIONKEY)
+	value, err := sessions.GetSessions(r, sessions.AuthSession, sessions.AccessTokenSessionKey)
 	if err != nil {
 		log.Println("Error getting access token from sessions: ", err)
 		http.Redirect(w, r, pages.FRONTPAGE, 307)
@@ -61,7 +62,7 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 		percentDone = 0
 	}
 
-	view := profileview{
+	view := ProfileView{
 		Member:             m,
 		PointsToNextLvl:    diffUser,
 		PercentLvlComplete: percentDone,
@@ -73,7 +74,7 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // UpdateMemberURL is the URL used to call UpdateMemberHandler.
-var UpdateMemberURL string = "/updatemember"
+var UpdateMemberURL = "/updatemember"
 
 //  UpdateMemberHandler is a http handler for updating a users profile data.
 func UpdateMemberHandler(w http.ResponseWriter, r *http.Request) {
@@ -88,7 +89,7 @@ func UpdateMemberHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		value, err := sessions.GetSessions(r, sessions.AUTHSESSION, sessions.ACCESSTOKENSESSIONKEY)
+		value, err := sessions.GetSessions(r, sessions.AuthSession, sessions.AccessTokenSessionKey)
 		if err != nil {
 			log.Println("Error getting access token from sessions: ", err)
 			http.Redirect(w, r, pages.FRONTPAGE, 307)

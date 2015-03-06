@@ -98,8 +98,8 @@ func githubOauthHandler(w http.ResponseWriter, r *http.Request) {
 			m.Save()
 		}
 
-		sessions.SetSessions(w, r, sessions.AUTHSESSION, sessions.APPROVEDSESSIONKEY, approved)
-		sessions.SetSessionsAndRedirect(w, r, sessions.AUTHSESSION, sessions.ACCESSTOKENSESSIONKEY, accessToken, pages.HOMEPAGE)
+		sessions.SetSessions(w, r, sessions.AuthSession, sessions.ApprovedSessionKey, approved)
+		sessions.SetSessionsAndRedirect(w, r, sessions.AuthSession, sessions.AccessTokenSessionKey, accessToken, pages.HOMEPAGE)
 	} else {
 		redirect := http.RedirectHandler(pages.FRONTPAGE, 400)
 		redirect.ServeHTTP(w, r)

@@ -67,7 +67,7 @@ func (ws WebServer) Start() {
 	http.HandleFunc(NewGroupURL, NewGroupHandler)
 	http.HandleFunc(RequestRandomGroupURL, RequestRandomGroupHandler)
 	http.HandleFunc(RemovePendingGroupURL, RemovePendingGroupHandler)
-	http.HandleFunc(ApproveGroupUrl, ApproveGroupHandler)
+	http.HandleFunc(ApproveGroupURL, ApproveGroupHandler)
 	http.HandleFunc(AddAssistantURL, AddAssistantHandler)
 	http.HandleFunc(RemovePendingUserURL, RemovePendingUserHandler)
 	http.HandleFunc(WebhookEventURL, WebhookEventHandler)
@@ -91,7 +91,7 @@ func (ws WebServer) Start() {
 }
 
 // CatchAllURL is the URL used to call CatchAllHandler.
-var CatchAllURL string = "/"
+var CatchAllURL = "/"
 
 // CatchAllHandler is a http handler which is meant to catch empty and non existing pages.
 func CatchAllHandler(w http.ResponseWriter, r *http.Request) {
@@ -118,6 +118,7 @@ func CatchAllHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// HomeView is the view passed to the html template compailer in HomeHandler.
 type HomeView struct {
 	Member    *git.Member
 	Teaching  map[string]*git.Organization
@@ -126,9 +127,9 @@ type HomeView struct {
 }
 
 // HomeURL is the URL used to call HomeHandler.
-var HomeURL string = "/home"
+var HomeURL = "/home"
 
-// homehandler is a http handler for the home page for logged in users.
+// HomeHandler is a http handler for the home page for logged in users.
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	member, err := checkMemberApproval(w, r, true)
 	if err != nil {
@@ -172,7 +173,7 @@ func checkMemberApproval(w http.ResponseWriter, r *http.Request, redirect bool) 
 		return
 	}
 
-	value, err := sessions.GetSessions(r, sessions.AUTHSESSION, sessions.ACCESSTOKENSESSIONKEY)
+	value, err := sessions.GetSessions(r, sessions.AuthSession, sessions.AccessTokenSessionKey)
 	if err != nil {
 		err = errors.New("Error getting access token from sessions")
 		if redirect {

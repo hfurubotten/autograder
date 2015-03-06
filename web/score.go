@@ -17,7 +17,7 @@ type ScoreboardView struct {
 }
 
 // ScoreboardURL is the URL used to call ScoreboardHandler.
-var ScoreboardURL string = "/scoreboard/"
+var ScoreboardURL = "/scoreboard/"
 
 // ScoreboardHandler is a http handler to give the user a page
 // showing the scoreboard for a course
@@ -60,20 +60,23 @@ func ScoreboardHandler(w http.ResponseWriter, r *http.Request) {
 	execTemplate("scoreboard.html", w, view)
 }
 
+// LeaderboardDataView represents the view used to format the JSON data returned in LeaderboardDataHandler.
 type LeaderboardDataView struct {
 	JSONErrorMsg
 	Scores      map[string]int64
 	Leaderboard []string
 }
 
-var LeaderboardDataURL string = "/leaderboard"
+// LeaderboardDataURL is the URL used to call LeaderboardDataHandler.
+var LeaderboardDataURL = "/leaderboard"
 
 const (
-	TOTALSCORE int = iota
-	MONTHLYSCORE
-	WEEKLYSCORE
+	TotalScore int = iota
+	MonthlyScore
+	WeeklyScore
 )
 
+// LeaderboardDataHandler is a http handler which return the leaderboard for a course in JSON format.
 func LeaderboardDataHandler(w http.ResponseWriter, r *http.Request) {
 	view := LeaderboardDataView{}
 	view.Error = true
@@ -110,11 +113,11 @@ func LeaderboardDataHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var t time.Time
-	if period == TOTALSCORE {
+	if period == TotalScore {
 		view.Error = false
 		view.Leaderboard = org.GetTotalLeaderboard()
 		view.Scores = org.TotalScore
-	} else if period == MONTHLYSCORE {
+	} else if period == MonthlyScore {
 		t, err = time.Parse("1", r.FormValue("month"))
 		if err != nil {
 			t = time.Now()
@@ -124,7 +127,7 @@ func LeaderboardDataHandler(w http.ResponseWriter, r *http.Request) {
 		view.Error = false
 		view.Leaderboard = org.GetMonthlyLeaderboard(month)
 		view.Scores = org.MonthlyScore[month]
-	} else if period == WEEKLYSCORE {
+	} else if period == WeeklyScore {
 		week, err := strconv.Atoi(r.FormValue("week"))
 		if err != nil {
 			_, week = time.Now().ISOWeek()
@@ -144,8 +147,12 @@ func LeaderboardDataHandler(w http.ResponseWriter, r *http.Request) {
 	enc.Encode(view)
 }
 
-var UserScoreDataURL string = "/score"
+// UserScoreDataURL is the URL used to call UserScoreDataHandler.
+var UserScoreDataURL = "/score"
 
+// UserScoreDataHandler is a http handler where it return the user score for a course in JSON format.
+//
+// Not yet implemented
 func UserScoreDataHandler(rw http.ResponseWriter, req *http.Request) {
 
 }

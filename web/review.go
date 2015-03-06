@@ -13,6 +13,7 @@ import (
 // PublishReviewURL is the URL used to call PublishReviewHandler.
 var PublishReviewURL string = "/review/publish"
 
+// PublishReviewView is the JSON view used in the reply in PublishReviewHandler.
 type PublishReviewView struct {
 	Error     bool
 	Errormsg  string
@@ -114,6 +115,7 @@ func PublishReviewHandler(w http.ResponseWriter, r *http.Request) {
 // ListReviewsURL is the URL used to call ListReviewsHandler.
 var ListReviewsURL string = "/review/list"
 
+// ListReviewsView is the JSON view used to crate a reply in ListReviewsHandler.
 type ListReviewsView struct {
 	Error    bool
 	Errormsg string

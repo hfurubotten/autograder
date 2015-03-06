@@ -10,6 +10,7 @@ import (
 	"github.com/hfurubotten/autograder/web/pages"
 )
 
+// TeachersPanelView is the view passed to the html template compiler in TeachersPanelHandler.
 type TeachersPanelView struct {
 	Member *git.Member
 	Org    *git.Organization
@@ -75,7 +76,7 @@ func TeachersPanelHandler(w http.ResponseWriter, r *http.Request) {
 	// gets pending users
 	users := org.PendingUser
 	var status string
-	for username, _ := range users {
+	for username := range users {
 		// check status up against Github
 		users[username], err = git.NewMemberFromUsername(username)
 		if err != nil {
@@ -100,18 +101,18 @@ func TeachersPanelHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// gets users
-	for username, _ := range org.Members {
+	for username := range org.Members {
 		org.Members[username], _ = git.NewMemberFromUsername(username)
 	}
 
 	// get pending groups
 	pendinggroups := make(map[int]*git.Group)
-	for groupID, _ := range org.PendingGroup {
+	for groupID := range org.PendingGroup {
 		group, err := git.NewGroup(org.Name, groupID)
 		if err != nil {
 			log.Println(err)
 		}
-		for key, _ := range group.Members {
+		for key := range group.Members {
 			groupmember, _ := git.NewMemberFromUsername(key)
 			group.Members[key] = groupmember
 		}
@@ -119,10 +120,10 @@ func TeachersPanelHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// get groups
-	for groupname, _ := range org.Groups {
+	for groupname := range org.Groups {
 		groupID, _ := strconv.Atoi(groupname[5:])
 		group, _ := git.NewGroup(org.Name, groupID)
-		for key, _ := range group.Members {
+		for key := range group.Members {
 			groupmember, _ := git.NewMemberFromUsername(key)
 			group.Members[key] = groupmember
 		}
@@ -138,6 +139,7 @@ func TeachersPanelHandler(w http.ResponseWriter, r *http.Request) {
 	execTemplate("teacherspanel.html", w, view)
 }
 
+// ShowResultView is the view passed to the html template compiler in ShowResultHandler.
 type ShowResultView struct {
 	Member   *git.Member
 	Org      *git.Organization

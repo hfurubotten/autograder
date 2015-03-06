@@ -23,6 +23,7 @@ func init() {
 	gob.Register(CodeReview{})
 }
 
+// CodeReview represent a code review stored in autograder.
 type CodeReview struct {
 	Title string
 	Ext   string
@@ -34,6 +35,7 @@ type CodeReview struct {
 	URL string
 }
 
+// Organization represent a course and a organization on github.
 type Organization struct {
 	entities.Organization
 
@@ -111,6 +113,9 @@ func NewOrganization(name string) (org *Organization, err error) {
 	}, nil
 }
 
+// NewOrganizationWithGithubData will create a new organization object
+// from a github organization data object. It will first attempt to
+// load it from storage, if not found it creates a new one.
 func NewOrganizationWithGithubData(gorg *github.Organization) (org *Organization, err error) {
 	if gorg == nil {
 		return nil, errors.New("Cannot use nil github.Organization object")
@@ -155,7 +160,7 @@ func (o *Organization) LoadStoredData() (err error) {
 	return
 }
 
-// StickToSystem will store the organization to cached memory and disk.
+// Save will store the organization to cached memory and disk.
 func (o *Organization) Save() (err error) {
 	if o.IndividualLabFolders == nil {
 		o.IndividualLabFolders = make(map[int]string)
@@ -222,7 +227,7 @@ func (o *Organization) AddCodeReview(cr *CodeReview) (err error) {
 	commitmsg := fmt.Sprintf("%d %s: %s", len(o.CodeReviewlist)+1, cr.User, cr.Title)
 
 	// Creates the review file
-	SHA, err := o.CreateFile(CODEREVIEW_REPO_NAME, path, cr.Code+"\n", commitmsg)
+	SHA, err := o.CreateFile(CodeReviewRepoName, path, cr.Code+"\n", commitmsg)
 	if err != nil {
 		return
 	}
@@ -234,12 +239,12 @@ func (o *Organization) AddCodeReview(cr *CodeReview) (err error) {
 	comment := new(github.RepositoryComment)
 	comment.Body = github.String(commentmsg)
 
-	_, _, err = o.githubadmin.Repositories.CreateComment(o.Name, CODEREVIEW_REPO_NAME, SHA, comment)
+	_, _, err = o.githubadmin.Repositories.CreateComment(o.Name, CodeReviewRepoName, SHA, comment)
 	if err != nil {
 		return
 	}
 
-	cr.URL = fmt.Sprintf("https://github.com/%s/%s/commit/%s", o.Name, CODEREVIEW_REPO_NAME, SHA)
+	cr.URL = fmt.Sprintf("https://github.com/%s/%s/commit/%s", o.Name, CodeReviewRepoName, SHA)
 
 	o.CodeReviewlist = append(o.CodeReviewlist, *cr)
 	return nil
@@ -258,7 +263,7 @@ func (o *Organization) FindCurrentLab() (labnum int, labname string, labtype int
 		if diff < lowesttimediff {
 			labnum = i
 			labname = o.IndividualLabFolders[i]
-			labtype = INDIVIDUAL
+			labtype = IndividualType
 			lowesttimediff = diff
 		}
 	}
@@ -272,7 +277,7 @@ func (o *Organization) FindCurrentLab() (labnum int, labname string, labtype int
 		if diff < lowesttimediff {
 			labnum = i
 			labname = o.GroupLabFolders[i]
-			labtype = GROUP
+			labtype = GroupType
 			lowesttimediff = diff
 		}
 	}

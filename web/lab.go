@@ -10,8 +10,10 @@ import (
 	"github.com/hfurubotten/autograder/git"
 )
 
-var ApproveLabURL string = "/course/approvelab"
+// ApproveLabURL is the URL used to call ApproveLabHandler.
+var ApproveLabURL = "/course/approvelab"
 
+// ApproveLabHandler is a http handler used by teachers to approve a lab.
 func ApproveLabHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
 	member, err := checkTeacherApproval(w, r, true)

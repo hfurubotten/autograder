@@ -11,16 +11,20 @@ import (
 	"github.com/hfurubotten/autograder/web/pages"
 )
 
-var NewCourseInfoURL string = "/course/new"
-var NewCourseURL string = "/course/new/org"
+// NewCourseInfoURL is the URL used to call the information page of NewCourseHandler.
+var NewCourseInfoURL = "/course/new"
 
-type courseview struct {
+// NewCourseURL is the URL used to call the organization selection page of NewCourseHandler.
+var NewCourseURL = "/course/new/org"
+
+// CourseView is the struct sent to the html template compiler.
+type CourseView struct {
 	Member *git.Member
 	Org    string
 	Orgs   []string
 }
 
-// newcoursehandler is a http hander giving a information page for
+// NewCourseHandler is a http hander giving a information page for
 // teachers when they want to create a new course in autograder.
 func NewCourseHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
@@ -30,7 +34,7 @@ func NewCourseHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	view := courseview{}
+	view := CourseView{}
 
 	view.Member = member
 
@@ -51,9 +55,10 @@ func NewCourseHandler(w http.ResponseWriter, r *http.Request) {
 	execTemplate(page, w, view)
 }
 
-var SelectOrgURL string = "/course/new/org/"
+// SelectOrgURL is the URL used to call SelectOrgHandler.
+var SelectOrgURL = "/course/new/org/"
 
-// selectorghandler is a http hander giving a page for selecting
+// SelectOrgHandler is a http hander giving a page for selecting
 // the organization to use for the new course.
 func SelectOrgHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
@@ -63,7 +68,7 @@ func SelectOrgHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	view := courseview{}
+	view := CourseView{}
 
 	if path := strings.Split(r.URL.Path, "/"); len(path) == 5 {
 		view.Org = path[4]
@@ -83,9 +88,10 @@ func SelectOrgHandler(w http.ResponseWriter, r *http.Request) {
 	execTemplate("newcourse-register.html", w, view)
 }
 
-var CreateOrgURL string = "/course/create"
+// CreateOrgURL is the URL used to call CreateOrgHandler.
+var CreateOrgURL = "/course/create"
 
-// saveorghandler is a http handler which will link a new course
+// CreateOrgHandler is a http handler which will link a new course
 // to a github organization. This function will make a new course
 // in autograder and then create all needed repositories on github.
 //
@@ -130,7 +136,7 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 
 	if r.FormValue("template") == "" {
 		repo := git.RepositoryOptions{
-			Name:     git.COURSE_INFO_NAME,
+			Name:     git.CourseInfoName,
 			Private:  false,
 			AutoInit: true,
 			Hook:     false,
@@ -142,7 +148,7 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		repo = git.RepositoryOptions{
-			Name:     git.STANDARD_REPO_NAME,
+			Name:     git.StandardRepoName,
 			Private:  org.Private,
 			AutoInit: true,
 			Hook:     false,
@@ -154,7 +160,7 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		repo = git.RepositoryOptions{
-			Name:     git.TEST_REPO_NAME,
+			Name:     git.TestRepoName,
 			Private:  org.Private,
 			AutoInit: true,
 			Hook:     false,
@@ -169,11 +175,11 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 			path := "lab" + strconv.Itoa(i+1) + "/README.md"
 			commitmessage := "Adding readme file for lab assignment " + strconv.Itoa(i+1)
 			content := "# Lab assignment " + strconv.Itoa(i+1)
-			_, err = org.CreateFile(git.STANDARD_REPO_NAME, path, content, commitmessage)
+			_, err = org.CreateFile(git.StandardRepoName, path, content, commitmessage)
 			if err != nil {
 				log.Println(err)
 			}
-			_, err = org.CreateFile(git.TEST_REPO_NAME, path, content, commitmessage)
+			_, err = org.CreateFile(git.TestRepoName, path, content, commitmessage)
 			content = "# Lab assignment " + strconv.Itoa(i+1) + " test"
 			if err != nil {
 				log.Println(err)
@@ -181,14 +187,14 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if org.GroupAssignments > 0 {
-			repo.Name = git.GROUPS_REPO_NAME
+			repo.Name = git.GroupsRepoName
 			err = org.CreateRepo(repo)
 			if err != nil {
 				log.Println(err)
 				return
 			}
 			repo = git.RepositoryOptions{
-				Name:     git.GROUPTEST_REPO_NAME,
+				Name:     git.GrouptestRepoName,
 				Private:  org.Private,
 				AutoInit: true,
 			}
@@ -202,12 +208,12 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 				path := "lab" + strconv.Itoa(i+1) + "/README.md"
 				commitmessage := "Adding readme file for lab assignment " + strconv.Itoa(i+1)
 				content := "# Group assignment " + strconv.Itoa(i+1)
-				_, err = org.CreateFile(git.GROUPS_REPO_NAME, path, content, commitmessage)
+				_, err = org.CreateFile(git.GroupsRepoName, path, content, commitmessage)
 				if err != nil {
 					log.Println(err)
 				}
 				content = "# Group assignment " + strconv.Itoa(i+1) + " tests"
-				_, err = org.CreateFile(git.GROUPTEST_REPO_NAME, path, content, commitmessage)
+				_, err = org.CreateFile(git.GrouptestRepoName, path, content, commitmessage)
 				if err != nil {
 					log.Println(err)
 				}
@@ -218,10 +224,10 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 		var repo git.RepositoryOptions
 
 		// Tries to fork the course-info repo, if it fails it will create a blank one.
-		err = org.Fork(r.FormValue("template"), git.COURSE_INFO_NAME)
+		err = org.Fork(r.FormValue("template"), git.CourseInfoName)
 		if err != nil {
 			repo = git.RepositoryOptions{
-				Name:     git.COURSE_INFO_NAME,
+				Name:     git.CourseInfoName,
 				Private:  org.Private,
 				AutoInit: true,
 				Hook:     false,
@@ -234,10 +240,10 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Tries to fork the labs repo, if it fails it will create a blank one.
-		err = org.Fork(r.FormValue("template"), git.STANDARD_REPO_NAME)
+		err = org.Fork(r.FormValue("template"), git.StandardRepoName)
 		if err != nil {
 			repo = git.RepositoryOptions{
-				Name:     git.STANDARD_REPO_NAME,
+				Name:     git.StandardRepoName,
 				Private:  org.Private,
 				AutoInit: true,
 				Hook:     false,
@@ -252,7 +258,7 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 				path := "lab" + strconv.Itoa(i+1) + "/README.md"
 				commitmessage := "Adding readme file for lab assignment " + strconv.Itoa(i+1)
 				content := "# Lab assignment " + strconv.Itoa(i+1)
-				_, err = org.CreateFile(git.STANDARD_REPO_NAME, path, content, commitmessage)
+				_, err = org.CreateFile(git.StandardRepoName, path, content, commitmessage)
 				if err != nil {
 					log.Println(err)
 				}
@@ -260,10 +266,10 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Tries to fork the test-labs repo, if it fails it will create a blank one.
-		err = org.Fork(r.FormValue("template"), git.TEST_REPO_NAME)
+		err = org.Fork(r.FormValue("template"), git.TestRepoName)
 		if err != nil {
 			repo = git.RepositoryOptions{
-				Name:     git.TEST_REPO_NAME,
+				Name:     git.TestRepoName,
 				Private:  org.Private,
 				AutoInit: true,
 				Hook:     false,
@@ -278,7 +284,7 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 				path := "lab" + strconv.Itoa(i+1) + "/README.md"
 				commitmessage := "Adding readme file for lab assignment " + strconv.Itoa(i+1)
 				content := "# Lab assignment " + strconv.Itoa(i+1)
-				_, err = org.CreateFile(git.TEST_REPO_NAME, path, content, commitmessage)
+				_, err = org.CreateFile(git.TestRepoName, path, content, commitmessage)
 				if err != nil {
 					log.Println(err)
 				}
@@ -286,10 +292,10 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if org.GroupAssignments > 0 {
-			err = org.Fork(r.FormValue("template"), git.GROUPS_REPO_NAME)
+			err = org.Fork(r.FormValue("template"), git.GroupsRepoName)
 			if err != nil {
 				repo = git.RepositoryOptions{
-					Name:     git.GROUPS_REPO_NAME,
+					Name:     git.GroupsRepoName,
 					Private:  org.Private,
 					AutoInit: true,
 					Hook:     false,
@@ -304,17 +310,17 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 					path := "lab" + strconv.Itoa(i+1) + "/README.md"
 					commitmessage := "Adding readme file for lab assignment " + strconv.Itoa(i+1)
 					content := "# Group lab assignment " + strconv.Itoa(i+1)
-					_, err = org.CreateFile(git.GROUPS_REPO_NAME, path, content, commitmessage)
+					_, err = org.CreateFile(git.GroupsRepoName, path, content, commitmessage)
 					if err != nil {
 						log.Println(err)
 					}
 				}
 			}
 
-			err = org.Fork(r.FormValue("template"), git.GROUPTEST_REPO_NAME)
+			err = org.Fork(r.FormValue("template"), git.GrouptestRepoName)
 			if err != nil {
 				repo = git.RepositoryOptions{
-					Name:     git.GROUPTEST_REPO_NAME,
+					Name:     git.GrouptestRepoName,
 					Private:  org.Private,
 					AutoInit: true,
 					Hook:     false,
@@ -329,7 +335,7 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 					path := "lab" + strconv.Itoa(i+1) + "/README.md"
 					commitmessage := "Adding readme file for lab assignment " + strconv.Itoa(i+1)
 					content := "# Group lab assignment " + strconv.Itoa(i+1)
-					_, err = org.CreateFile(git.GROUPTEST_REPO_NAME, path, content, commitmessage)
+					_, err = org.CreateFile(git.GrouptestRepoName, path, content, commitmessage)
 					if err != nil {
 						log.Println(err)
 					}
@@ -339,15 +345,15 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Creates the student team
-	repos := make([]string, 0)
-	repos = append(repos, git.STANDARD_REPO_NAME, git.COURSE_INFO_NAME)
+	var repos []string
+	repos = append(repos, git.StandardRepoName, git.CourseInfoName)
 	if org.GroupAssignments > 0 {
-		repos = append(repos, git.GROUPS_REPO_NAME)
+		repos = append(repos, git.GroupsRepoName)
 	}
 
 	team := git.TeamOptions{
 		Name:       "students",
-		Permission: git.PERMISSION_PULL,
+		Permission: git.PullPermission,
 		RepoNames:  repos,
 	}
 	org.StudentTeamID, err = org.CreateTeam(team)
@@ -375,9 +381,10 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // NewCourseMemberURL is the URL used to call NewCourseMemberHandler.
-var NewCourseMemberURL string = "/course/register"
+var NewCourseMemberURL = "/course/register"
 
-type newmemberview struct {
+// NewMemberView is the struct passed to the html template complier in NewCourseMemberHandler and RegisterCourseMemberHandler.
+type NewMemberView struct {
 	Member *git.Member
 	Orgs   []*git.Organization
 	Org    string
@@ -393,14 +400,15 @@ func NewCourseMemberHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	view := newmemberview{
+	view := NewMemberView{
 		Member: member,
 		Orgs:   git.ListRegisteredOrganizations(),
 	}
 	execTemplate("course-registermember.html", w, view)
 }
 
-var RegisterCourseMemberURL string = "/course/register/"
+// RegisterCourseMemberURL is the URL used to call RegisterCourseMemberURL.
+var RegisterCourseMemberURL = "/course/register/"
 
 // RegisterCourseMemberHandler is a http handler which register new students
 // signing up for a course. After registering the student, this handler
@@ -452,29 +460,31 @@ func RegisterCourseMemberHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 	}
 
-	view := newmemberview{
+	view := NewMemberView{
 		Member: member,
 		Org:    orgname,
 	}
 	execTemplate("course-registeredmemberinfo.html", w, view)
 }
 
-var ApproveCourseMembershipURL string = "/course/approvemember/"
+// ApproveCourseMembershipURL is the URL used to call ApproveCourseMembershipHandler.
+var ApproveCourseMembershipURL = "/course/approvemember/"
 
-type approvemembershipview struct {
+// ApproveMembershipView represents the view sent back in the JSON reply in ApproveCourseMembershipHandler.
+type ApproveMembershipView struct {
 	Error    bool
 	ErrorMsg string
 	Approved bool
 	User     string
 }
 
-// approvecoursemembershiphandler is a http handler used when a teacher wants
+// ApproveCourseMembershipHandler is a http handler used when a teacher wants
 // to accept a student for a course in autograder. This handler will link the
 // student to the course organization on github and also create all the needed
 // repositories on github.
 func ApproveCourseMembershipHandler(w http.ResponseWriter, r *http.Request) {
 	enc := json.NewEncoder(w)
-	view := approvemembershipview{}
+	view := ApproveMembershipView{}
 	view.Error = true // default is an error; if its not we anyway set it to false before encoding
 
 	// Checks if the user is signed in and a teacher.
@@ -526,7 +536,7 @@ func ApproveCourseMembershipHandler(w http.ResponseWriter, r *http.Request) {
 
 	if org.IndividualAssignments > 0 {
 		repo := git.RepositoryOptions{
-			Name:     username + "-" + git.STANDARD_REPO_NAME,
+			Name:     username + "-" + git.StandardRepoName,
 			Private:  org.Private,
 			AutoInit: true,
 			Hook:     true,
@@ -542,8 +552,8 @@ func ApproveCourseMembershipHandler(w http.ResponseWriter, r *http.Request) {
 		if t, ok := teams[username]; !ok {
 			newteam := git.TeamOptions{
 				Name:       username,
-				Permission: git.PERMISSION_PUSH,
-				RepoNames:  []string{username + "-" + git.STANDARD_REPO_NAME},
+				Permission: git.PushPermission,
+				RepoNames:  []string{username + "-" + git.StandardRepoName},
 			}
 
 			teamID, err := org.CreateTeam(newteam)
@@ -562,7 +572,7 @@ func ApproveCourseMembershipHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		} else {
-			err = org.LinkRepoToTeam(t.ID, username+"-"+git.STANDARD_REPO_NAME)
+			err = org.LinkRepoToTeam(t.ID, username+"-"+git.StandardRepoName)
 			if err != nil {
 				log.Println(err)
 				view.ErrorMsg = "Error communicating with Github. Can't link repo to team."
@@ -603,9 +613,11 @@ func ApproveCourseMembershipHandler(w http.ResponseWriter, r *http.Request) {
 	enc.Encode(view)
 }
 
-var UserCoursePageURL string = "/course/"
+// UserCoursePageURL is the URL used to call UserCoursePageHandler
+var UserCoursePageURL = "/course/"
 
-type maincourseview struct {
+// MainCourseView is the struct sent to the html template compiler in UserCoursePageHandler.
+type MainCourseView struct {
 	Member      *git.Member
 	Group       *git.Group
 	Labnum      int
@@ -613,7 +625,7 @@ type maincourseview struct {
 	Org         *git.Organization
 }
 
-// maincoursepagehandler is a http handler giving back the main user
+// UserCoursePageHandler is a http handler giving back the main user
 // page for a course. This page gived information about all the labs
 // and results for a user. A user can also submit code reviews from
 // this page.
@@ -645,7 +657,7 @@ func UserCoursePageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	view := maincourseview{
+	view := MainCourseView{
 		Member: member,
 		Org:    org,
 	}
@@ -674,7 +686,8 @@ func UserCoursePageHandler(w http.ResponseWriter, r *http.Request) {
 	execTemplate("maincoursepage.html", w, view)
 }
 
-var UpdateCourseURL string = "/course/update"
+// UpdateCourseURL is the URL used to call UpdateCourseHandler.
+var UpdateCourseURL = "/course/update"
 
 // UpdateCourseHandler is a http handler used to update course information.
 func UpdateCourseHandler(w http.ResponseWriter, r *http.Request) {
@@ -751,6 +764,7 @@ func UpdateCourseHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/course/teacher/"+org.Name, 307)
 }
 
+// RemovePendingUserURL is the URL used to call RemovePendingUserHandler.
 var RemovePendingUserURL string = "/course/removepending"
 
 // RemovePendingUserHandler is http handler used to remove users from the list of pending students on a course.

@@ -17,7 +17,7 @@ func init() {
 	gob.Register(Member{})
 }
 
-//
+// Member represent a student in autograder.
 type Member struct {
 	entities.User
 
@@ -30,7 +30,7 @@ type Member struct {
 	Courses          map[string]CourseOptions
 	AssistantCourses map[string]interface{}
 
-	accessToken  token
+	accessToken  Token
 	githubclient *github.Client
 }
 
@@ -64,7 +64,7 @@ func NewMember(oauthtoken string) (m *Member, err error) {
 
 	if m.IsTeacher {
 		var org *Organization
-		for k, _ := range m.Teaching {
+		for k := range m.Teaching {
 			org, err = NewOrganization(k)
 			if err != nil {
 				continue
@@ -88,7 +88,7 @@ func NewMember(oauthtoken string) (m *Member, err error) {
 	return
 }
 
-// NewWithGithubData creates a new User object from a
+// NewUserWithGithubData creates a new User object from a
 // github User object. It will copy all information from
 // the given GitHub data to the new User object.
 func NewUserWithGithubData(gu *github.User) (u *Member, err error) {
@@ -164,7 +164,7 @@ func (m *Member) loadStoredData() (err error) {
 	return
 }
 
-// StickToSystem stores the user to disk and caches it in memory.
+// Save stores the user to disk and caches it in memory.
 func (m *Member) Save() (err error) {
 	return getUserstore().WriteGob(m.Username, m)
 }

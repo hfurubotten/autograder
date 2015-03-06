@@ -10,7 +10,7 @@ import (
 )
 
 // ManualCITriggerURL is the URL used to call ManualCITriggerHandler.
-var ManualCITriggerURL string = "/event/manualbuild"
+var ManualCITriggerURL = "/event/manualbuild"
 
 // ManualCITriggerHandler is a http handler for manually triggering test builds.
 func ManualCITriggerHandler(w http.ResponseWriter, r *http.Request) {
@@ -40,11 +40,11 @@ func ManualCITriggerHandler(w http.ResponseWriter, r *http.Request) {
 	var repo string
 	var destfolder string
 	if _, ok := org.Members[user]; ok {
-		repo = user + "-" + git.STANDARD_REPO_NAME
-		destfolder = git.STANDARD_REPO_NAME
+		repo = user + "-" + git.StandardRepoName
+		destfolder = git.StandardRepoName
 	} else if _, ok := org.Groups[user]; ok {
 		repo = user
-		destfolder = git.GROUPS_REPO_NAME
+		destfolder = git.GroupsRepoName
 	} else {
 		http.Error(w, "Unknown user", 404)
 		return
@@ -80,7 +80,7 @@ func ManualCITriggerHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // CIResultURL is the URL used to call CIResultURL.
-var CIResultURL string = "/course/ciresutls"
+var CIResultURL = "/course/ciresutls"
 
 // CIResultHandler is a http handeler for getting results from
 // a build. This handler writes back the results as JSON data.
@@ -121,7 +121,7 @@ type SummaryView struct {
 }
 
 // CIResultSummaryURL is the URL used to call CIResultSummaryURL.
-var CIResultSummaryURL string = "/course/cisummary"
+var CIResultSummaryURL = "/course/cisummary"
 
 // CIResultSummaryHandler is a http handler used to get a build summary
 // of the build for a user or group. This handler writes back the summary

@@ -17,14 +17,21 @@ import (
 )
 
 var (
-	ScoreDistributionErrorMsg   string = "Could not distribute the scores, try to resend the payload."
-	RegisterActionErrorMsg      string = "Could not register the action made."
-	TeacherActionMsg            string = "Event triggered by teacher. No action done in autograder."
-	DecodeGithubPayloadErrorMsg string = "Issue not decoded correctly."
+	// ScoreDistributionErrorMsg is the error message sent back to github when the scores wont update.
+	ScoreDistributionErrorMsg = "Could not distribute the scores, try to resend the payload."
+
+	// RegisterActionErrorMsg is the error message sent back to github when the trophy action wont update.
+	RegisterActionErrorMsg = "Could not register the action made."
+
+	// TeacherActionMsg is the error message sent back to github when the action comes from a teacher.
+	TeacherActionMsg = "Event triggered by teacher. No action done in autograder."
+
+	// DecodeGithubPayloadErrorMsg is the error message sent back to github when a issue payload wont decode.
+	DecodeGithubPayloadErrorMsg = "Issue not decoded correctly."
 )
 
 // WebhookEventURL is the URL used to call WebhookEventHandler
-var WebhookEventURL string = "/event/hook"
+var WebhookEventURL = "/event/hook"
 
 // WebhookEventHandler is a http handler used to recieve webhooks
 // from github. Upon recieving a payload it will find out if there
@@ -42,8 +49,8 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var statuscode int = 503
-	var body string = "Wow, you actually got to see this msg. That shouldn't have happened."
+	var statuscode = 503
+	var body = "Wow, you actually got to see this msg. That shouldn't have happened."
 
 	switch event {
 	case events.COMMMIT_COMMENT:
@@ -253,7 +260,7 @@ func StartTestBuildProcess(load github.PushPayload) (err error) {
 	org, err := git.NewOrganization(orgname)
 	user, err := git.NewMemberFromUsername(userlogin)
 
-	isgroup := !strings.Contains(reponame, "-"+git.STANDARD_REPO_NAME)
+	isgroup := !strings.Contains(reponame, "-"+git.StandardRepoName)
 
 	var labfolder string
 	var destfolder string
@@ -278,15 +285,15 @@ func StartTestBuildProcess(load github.PushPayload) (err error) {
 		}
 		labfolder = org.GroupLabFolders[labnum]
 		username = reponame
-		destfolder = git.GROUPS_REPO_NAME
+		destfolder = git.GroupsRepoName
 	} else {
 		labnum = user.Courses[org.Name].CurrentLabNum
 		if labnum > org.IndividualAssignments {
 			labnum = org.IndividualAssignments
 		}
 		labfolder = org.IndividualLabFolders[labnum]
-		username = strings.TrimRight(reponame, "-"+git.STANDARD_REPO_NAME)
-		destfolder = git.STANDARD_REPO_NAME
+		username = strings.TrimRight(reponame, "-"+git.StandardRepoName)
+		destfolder = git.StandardRepoName
 	}
 
 	opt := ci.DaemonOptions{
