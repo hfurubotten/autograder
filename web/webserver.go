@@ -18,24 +18,25 @@ import (
 
 var htmlBase string
 
-type Webserver struct {
+// WebServer represent a webserver serving the autograder web pages.
+type WebServer struct {
 	Port int
 }
 
 // NewWebServer will return a new Webserver object with possibility to listen to given port.
-func NewWebServer(port int) Webserver {
-	return Webserver{port}
+func NewWebServer(port int) WebServer {
+	return WebServer{port}
 }
 
 // Start will start up a new server listening on ws.Port. This
 // method blocks, and will call os.Exit(1) if server error occures.
-func (ws Webserver) Start() {
+func (ws WebServer) Start() {
 	// setting html base path
 	htmlBase = global.Basepath + "web/html/"
 
 	// OAuth process
-	http.Handle("/login", http.RedirectHandler(global.OAuth_RedirectURL+"?client_id="+global.OAuth_ClientID, 307))
-	http.HandleFunc("/oauth", global.OAuth_Handler)
+	http.Handle("/login", http.RedirectHandler(global.OAuthRedirectURL+"?client_id="+global.OAuthClientID, 307))
+	http.HandleFunc("/oauth", global.OAuthHandler)
 	http.HandleFunc(pages.SIGNOUT, auth.RemoveApprovalHandler)
 
 	// Page handlers
@@ -89,6 +90,7 @@ func (ws Webserver) Start() {
 	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(ws.Port), nil))
 }
 
+// CatchAllURL is the URL used to call CatchAllHandler.
 var CatchAllURL string = "/"
 
 // CatchAllHandler is a http handler which is meant to catch empty and non existing pages.
@@ -140,13 +142,13 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 		Courses:   make(map[string]*git.Organization),
 	}
 
-	for key, _ := range member.Teaching {
+	for key := range member.Teaching {
 		view.Teaching[key], _ = git.NewOrganization(key)
 	}
-	for key, _ := range member.AssistantCourses {
+	for key := range member.AssistantCourses {
 		view.Assisting[key], _ = git.NewOrganization(key)
 	}
-	for key, _ := range member.Courses {
+	for key := range member.Courses {
 		view.Courses[key], _ = git.NewOrganization(key)
 	}
 
@@ -215,7 +217,7 @@ func checkTeacherApproval(w http.ResponseWriter, r *http.Request, redirect bool)
 	if member.Scope == "" && member.IsTeacher {
 		err = errors.New("Teacher need to renew scope.")
 		if redirect {
-			http.Redirect(w, r, global.OAuth_RedirectURL+"?client_id="+global.OAuth_ClientID+"&scope="+global.OAuth_Scope, 307)
+			http.Redirect(w, r, global.OAuthRedirectURL+"?client_id="+global.OAuthClientID+"&scope="+global.OAuthScope, 307)
 		}
 		return
 	}

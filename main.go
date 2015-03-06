@@ -72,8 +72,8 @@ func main() {
 	if *clientID != "" && *clientSecret != "" {
 		optionstore.WriteGob("OAuthID", *clientID)
 		optionstore.WriteGob("OAuthSecret", *clientSecret)
-		global.OAuth_ClientID = *clientID
-		global.OAuth_ClientSecret = *clientSecret
+		global.OAuthClientID = *clientID
+		global.OAuthClientSecret = *clientSecret
 	} else {
 		if !optionstore.Has("OAuthID") && !optionstore.Has("OAuthSecret") {
 			log.Println("Missing OAuth details, set this the first time you start the system.")
@@ -115,8 +115,8 @@ func main() {
 			log.Fatal(err)
 		}
 
-		global.OAuth_ClientID = id
-		global.OAuth_ClientSecret = secret
+		global.OAuthClientID = id
+		global.OAuthClientSecret = secret
 	}
 
 	// checks for an admin username

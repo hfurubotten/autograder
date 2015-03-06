@@ -15,16 +15,16 @@ import (
 
 // sets up the github as the oauth provider. To get the variables and functions loaded into the standard that is used, use the init method. This will set this as soon as the package is loaded the first time. Replace or comment out the init method to use another oath provider.
 func init() {
-	global.OAuth_Scope = "admin:org,repo,admin:repo_hook"
-	global.OAuth_RedirectURL = "https://github.com/login/oauth/authorize"
+	global.OAuthScope = "admin:org,repo,admin:repo_hook"
+	global.OAuthRedirectURL = "https://github.com/login/oauth/authorize"
 
-	global.OAuth_Handler = github_oauthhandler
+	global.OAuthHandler = githubOauthHandler
 }
 
-func github_oauthhandler(w http.ResponseWriter, r *http.Request) {
+func githubOauthHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
-		Clientid := global.OAuth_ClientID
-		clientsecret := global.OAuth_ClientSecret
+		Clientid := global.OAuthClientID
+		clientsecret := global.OAuthClientSecret
 
 		getvalues := r.URL.Query()
 
@@ -69,7 +69,7 @@ func github_oauthhandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		access_token := q.Get("access_token")
+		accessToken := q.Get("access_token")
 		errstr = q.Get("error")
 		approved := false
 
@@ -77,14 +77,14 @@ func github_oauthhandler(w http.ResponseWriter, r *http.Request) {
 			log.Println("Access token error: " + errstr)
 			http.Redirect(w, r, pages.FRONTPAGE, 307)
 			return
-		} else {
-			approved = true
 		}
+
+		approved = true
 
 		scope := q.Get("scope")
 
 		if scope != "" {
-			m, err := git.NewMember(access_token)
+			m, err := git.NewMember(accessToken)
 			if err != nil {
 				log.Println("Could not open Member object.")
 				http.Redirect(w, r, pages.FRONTPAGE, 307)
@@ -99,7 +99,7 @@ func github_oauthhandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		sessions.SetSessions(w, r, sessions.AUTHSESSION, sessions.APPROVEDSESSIONKEY, approved)
-		sessions.SetSessionsAndRedirect(w, r, sessions.AUTHSESSION, sessions.ACCESSTOKENSESSIONKEY, access_token, pages.HOMEPAGE)
+		sessions.SetSessionsAndRedirect(w, r, sessions.AUTHSESSION, sessions.ACCESSTOKENSESSIONKEY, accessToken, pages.HOMEPAGE)
 	} else {
 		redirect := http.RedirectHandler(pages.FRONTPAGE, 400)
 		redirect.ServeHTTP(w, r)

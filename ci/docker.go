@@ -11,16 +11,18 @@ import (
 )
 
 var (
-	endpoint string = "unix:///var/run/docker.sock"
+	endpoint = "unix:///var/run/docker.sock"
 	cmdlock  sync.Mutex
 )
 
+// Virtual represents a virtual docker enviorment where commands can be executed.
 type Virtual struct {
 	Client    *docker.Client
 	Imagename string
 	Container *docker.Container
 }
 
+// NewVirtual will give a new Virtual object.
 func NewVirtual() (v Virtual, err error) {
 	c, err := docker.NewClient(endpoint)
 	if err != nil {
@@ -34,6 +36,7 @@ func NewVirtual() (v Virtual, err error) {
 	return
 }
 
+// NewContainer creates a new container from a image name.
 func (v *Virtual) NewContainer(imagename string) (err error) {
 	if v.Container != nil {
 		v.RemoveContainer()
@@ -61,6 +64,7 @@ func (v *Virtual) NewContainer(imagename string) (err error) {
 	return
 }
 
+// KillContainer will kill a running container.
 func (v *Virtual) KillContainer() (err error) {
 	if v.Container == nil {
 		return
@@ -77,6 +81,7 @@ func (v *Virtual) KillContainer() (err error) {
 	return
 }
 
+// RemoveContainer will force a removal of a container in the docker system.
 func (v *Virtual) RemoveContainer() (err error) {
 	if v.Container == nil {
 		return
@@ -97,6 +102,7 @@ func (v *Virtual) RemoveContainer() (err error) {
 	return
 }
 
+// AttachToContainer will attach given readers and writers to streams from a running docker container.
 func (v *Virtual) AttachToContainer(stdin io.Reader, stdout io.Writer, stderr io.Writer) (err error) {
 	if v.Container == nil {
 		return errors.New("Does not have any container started up yet.")
@@ -132,6 +138,7 @@ func (v *Virtual) AttachToContainer(stdin io.Reader, stdout io.Writer, stderr io
 	return
 }
 
+// ExecuteCommand will execute a command in a running docker container.
 func (v *Virtual) ExecuteCommand(commands string, stdin io.Reader, stdout, stderr io.Writer) (err error) {
 	cmdlock.Lock()
 	defer cmdlock.Unlock()

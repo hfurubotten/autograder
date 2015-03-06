@@ -12,7 +12,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	. "github.com/hfurubotten/ag-scoring/score"
+	"github.com/hfurubotten/ag-scoring/score"
 	"github.com/hfurubotten/autograder/git"
 	"github.com/hfurubotten/autograder/global"
 	"github.com/hfurubotten/diskv"
@@ -22,6 +22,7 @@ func init() {
 	gob.Register(Result{})
 }
 
+// DaemonOptions represent the options needed to start the testing daemon.
 type DaemonOptions struct {
 	Org        string
 	User       string
@@ -34,6 +35,7 @@ type DaemonOptions struct {
 	IsPush     bool
 }
 
+// StartTesterDaemon will start a new test build in the background.
 func StartTesterDaemon(opt DaemonOptions) {
 	// safeguard
 	defer func() {
@@ -42,7 +44,7 @@ func StartTesterDaemon(opt DaemonOptions) {
 		}
 	}()
 
-	logarray := make([]string, 0)
+	var logarray []string
 	logarray = append(logarray, "CI starting up on repo "+opt.Org+"/"+opt.Repo)
 
 	// Test execution
@@ -90,7 +92,7 @@ func StartTesterDaemon(opt DaemonOptions) {
 		PushTime:   time.Now(),
 		User:       opt.User,
 		Status:     "Active lab assignment",
-		TestScores: make([]Score, 0),
+		TestScores: make([]score.Score, 0),
 	}
 
 	for _, cmd := range cmds {
@@ -137,30 +139,31 @@ func StartTesterDaemon(opt DaemonOptions) {
 
 }
 
-// Uses a array of Score objects to calculate a total score between 0 and 100.
-func CalculateTestScore(s []Score) (total int) {
-	total_weight := float32(0)
-	weight := make([]float32, 0)
-	score := make([]float32, 0)
-	max := make([]float32, 0)
+// CalculateTestScore uses a array of Score objects to calculate a total score between 0 and 100.
+func CalculateTestScore(s []score.Score) (total int) {
+	totalWeight := float32(0)
+	var weight []float32
+	var score []float32
+	var max []float32
 	for _, ts := range s {
-		total_weight += float32(ts.Weight)
+		totalWeight += float32(ts.Weight)
 		weight = append(weight, float32(ts.Weight))
 		score = append(score, float32(ts.Score))
 		max = append(max, float32(ts.MaxScore))
 	}
 
-	tmp_total := float32(0)
+	tmpTotal := float32(0)
 	for i := 0; i < len(s); i = i + 1 {
 		if score[i] > max[i] {
 			score[i] = max[i]
 		}
-		tmp_total += ((score[i] / max[i]) * (weight[i] / total_weight))
+		tmpTotal += ((score[i] / max[i]) * (weight[i] / totalWeight))
 	}
 
-	return int(tmp_total * 100)
+	return int(tmpTotal * 100)
 }
 
+// SimpleParsing will do a simple parsing of the test results. It looks for the strings "--- PASS", "--- FAIL" and "build failed".
 func SimpleParsing(r *Result) {
 	key := "--- PASS"
 	negkey := "--- FAIL"
@@ -174,6 +177,7 @@ func SimpleParsing(r *Result) {
 	log.Println("Found ", r.NumPasses, " passed tests.")
 }
 
+// GetCIStorage will create a Diskv object used to store the test results.
 func GetCIStorage(course, user string) *diskv.Diskv {
 	return diskv.New(diskv.Options{
 		BasePath:     global.Basepath + "diskv/CI/" + course + "/" + user,
@@ -218,19 +222,19 @@ func logOutput(s string, l *Result, opt DaemonOptions) {
 	s = strings.Trim(s, string(0))
 	s = strings.TrimSpace(s)
 
-	var score Score
+	var testscore score.Score
 	if strings.Contains(s, opt.Secret) {
 		// TODO: must be a better way of detecting JSON data!
-		err := json.Unmarshal([]byte(s), &score)
+		err := json.Unmarshal([]byte(s), &testscore)
 		if err == nil {
-			if score.Secret == opt.Secret {
-				score.Secret = "Sanitized"
-				l.TestScores = append(l.TestScores, score)
+			if testscore.Secret == opt.Secret {
+				testscore.Secret = "Sanitized"
+				l.TestScores = append(l.TestScores, testscore)
 			}
 			return
-		} else {
-			s = strings.Replace(s, opt.Secret, "Sanitized", -1)
 		}
+
+		s = strings.Replace(s, opt.Secret, "Sanitized", -1)
 	}
 
 	if strings.Contains(s, opt.AdminToken) {
@@ -241,6 +245,7 @@ func logOutput(s string, l *Result, opt DaemonOptions) {
 	fmt.Println(s)
 }
 
+// GetIntegationResults will find a test result for a user or group.
 func GetIntegationResults(org, user, lab string) (logs Result, err error) {
 	teststore := GetCIStorage(org, user)
 
@@ -253,6 +258,7 @@ func GetIntegationResults(org, user, lab string) (logs Result, err error) {
 	return
 }
 
+// GetIntegationResultSummary will return a summary of the test results for a user or a group.
 func GetIntegationResultSummary(org, user string) (summary map[string]Result, err error) {
 	summary = make(map[string]Result)
 	teststore := GetCIStorage(org, user)

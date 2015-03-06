@@ -3,9 +3,10 @@ package ci
 import (
 	"time"
 
-	. "github.com/hfurubotten/ag-scoring/score"
+	"github.com/hfurubotten/ag-scoring/score"
 )
 
+// Result represent a result from a test build.
 type Result struct {
 	Course          string
 	User            string
@@ -17,6 +18,6 @@ type Result struct {
 	Labnum          int
 	Timestamp       time.Time
 	PushTime        time.Time
-	TestScores      []Score
+	TestScores      []score.Score
 	TotalScore      int
 }
