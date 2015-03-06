@@ -15,11 +15,11 @@ import (
 )
 
 var (
-	admin         = flag.String("admin", "", "Sets up a admin user up agains the system. The value has to be a valid Github username.")
-	hostname      = flag.String("domain", "", "Give the domain name for the autogradersystem.")
-	client_ID     = flag.String("clientid", "", "The application ID used in the OAuth process against Github. This can be generated at your settings page at Github.")
-	client_secret = flag.String("secret", "", "The secret application code used in the OAuth process against Github. This can be generated at your settings page at Github.")
-	help          = flag.Bool("help", false, "List the startup options for the autograder.")
+	admin        = flag.String("admin", "", "Sets up a admin user up agains the system. The value has to be a valid Github username.")
+	hostname     = flag.String("domain", "", "Give the domain name for the autogradersystem.")
+	clientID     = flag.String("clientid", "", "The application ID used in the OAuth process against Github. This can be generated at your settings page at Github.")
+	clientSecret = flag.String("secret", "", "The secret application code used in the OAuth process against Github. This can be generated at your settings page at Github.")
+	help         = flag.Bool("help", false, "List the startup options for the autograder.")
 )
 
 var optionstore = diskv.New(diskv.Options{
@@ -69,11 +69,11 @@ func main() {
 	}
 
 	// checks for the application codes to GitHub
-	if *client_ID != "" && *client_secret != "" {
-		optionstore.WriteGob("OAuthID", *client_ID)
-		optionstore.WriteGob("OAuthSecret", *client_secret)
-		global.OAuth_ClientID = *client_ID
-		global.OAuth_ClientSecret = *client_secret
+	if *clientID != "" && *clientSecret != "" {
+		optionstore.WriteGob("OAuthID", *clientID)
+		optionstore.WriteGob("OAuthSecret", *clientSecret)
+		global.OAuth_ClientID = *clientID
+		global.OAuth_ClientSecret = *clientSecret
 	} else {
 		if !optionstore.Has("OAuthID") && !optionstore.Has("OAuthSecret") {
 			log.Println("Missing OAuth details, set this the first time you start the system.")
@@ -149,18 +149,18 @@ func main() {
 		log.Println("Couldn't determin the path to the executable.")
 		log.Fatal(err)
 	}
-	dir_one := filepath.Join(execdir, "../src/github.com/hfurubotten/autograder/")
-	dir_two := filepath.Join(execdir, "/")
-	if info, err := os.Stat(dir_one); err == nil {
+	dirOne := filepath.Join(execdir, "../src/github.com/hfurubotten/autograder/")
+	dirTwo := filepath.Join(execdir, "/")
+	if info, err := os.Stat(dirOne); err == nil {
 		if info.Mode().IsDir() {
-			global.Basepath = dir_one + "/"
+			global.Basepath = dirOne + "/"
 		} else {
 			log.Fatal("Path found to source files is not a directory.")
 		}
 
-	} else if info, err := os.Stat(dir_two); err == nil {
+	} else if info, err := os.Stat(dirTwo); err == nil {
 		if info.Mode().IsDir() {
-			global.Basepath = dir_two + "/"
+			global.Basepath = dirTwo + "/"
 		} else {
 			log.Fatal("Path found to source files is not a directory.")
 		}
