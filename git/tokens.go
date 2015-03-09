@@ -19,28 +19,28 @@ func NewToken(oauthtoken string) Token {
 }
 
 // HasTokenInStore checks if the token is in storage.
-func (m *Token) HasTokenInStore() bool {
-	hash := sha256.Sum256([]byte(m.accessToken))
+func (t *Token) HasTokenInStore() bool {
+	hash := sha256.Sum256([]byte(t.accessToken))
 	return getTokenStore().Has(fmt.Sprintf("%x", hash))
 }
 
 // GetUsernameFromTokenInStore gets the username associated with the token.
-func (m *Token) GetUsernameFromTokenInStore() (user string, err error) {
-	hash := sha256.Sum256([]byte(m.accessToken))
+func (t *Token) GetUsernameFromTokenInStore() (user string, err error) {
+	hash := sha256.Sum256([]byte(t.accessToken))
 	err = getTokenStore().ReadGob(fmt.Sprintf("%x", hash), &user, false)
 	return user, err
 }
 
 // SetUsernameToTokenInStore sets the username associated with the token.
-func (m *Token) SetUsernameToTokenInStore(username string) (err error) {
-	hash := sha256.Sum256([]byte(m.accessToken))
+func (t *Token) SetUsernameToTokenInStore(username string) (err error) {
+	hash := sha256.Sum256([]byte(t.accessToken))
 	err = getTokenStore().WriteGob(fmt.Sprintf("%x", hash), username)
 	return
 }
 
 // RemoveTokenInStore removed the token from storage.
-func (m *Token) RemoveTokenInStore() (err error) {
-	return getTokenStore().Erase(m.accessToken)
+func (t *Token) RemoveTokenInStore() (err error) {
+	return getTokenStore().Erase(t.accessToken)
 }
 
 // HasToken checks if the token is set.
