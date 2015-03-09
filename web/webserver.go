@@ -75,6 +75,7 @@ func (ws WebServer) Start() {
 	http.HandleFunc(PublishReviewURL, PublishReviewHandler)
 	http.HandleFunc(ListReviewsURL, ListReviewsHandler)
 	http.HandleFunc(LeaderboardDataURL, LeaderboardDataHandler)
+	http.HandleFunc(AddGroupMemberURL, AddGroupMemberHandler)
 
 	// static files
 	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("web/js/"))))

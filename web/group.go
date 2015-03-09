@@ -94,6 +94,18 @@ func NewGroupHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	members := r.PostForm["member"]
 
+	if !org.IsTeacher(member) {
+		var found bool
+		for _, u := range members {
+			if u == member.Username {
+				found = true
+			}
+		}
+		if !found {
+			members = append(members, member.Username)
+		}
+	}
+
 	var opt git.CourseOptions
 	for _, username := range members {
 		user, err := git.NewMemberFromUsername(username)
@@ -102,6 +114,7 @@ func NewGroupHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		user.Lock()
+		defer user.Unlock()
 
 		opt = user.Courses[course]
 		if !opt.IsGroupMember {
@@ -112,11 +125,7 @@ func NewGroupHandler(w http.ResponseWriter, r *http.Request) {
 			group.AddMember(username)
 		}
 
-		user.Unlock()
-
-		if _, ok := org.PendingRandomGroup[username]; ok {
-			delete(org.PendingRandomGroup, username)
-		}
+		delete(org.PendingRandomGroup, username)
 	}
 
 	org.PendingGroup[org.GroupCount] = nil
@@ -196,18 +205,6 @@ func ApproveGroupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, ok1 := member.Teaching[orgname]
-	_, ok2 := member.AssistantCourses[orgname]
-
-	if !ok1 && !ok2 {
-		view.ErrorMsg = "You are not teaching this course."
-		err = enc.Encode(view)
-		if err != nil {
-			log.Println(err)
-		}
-		return
-	}
-
 	org, err := git.NewOrganization(orgname)
 	if err != nil {
 		view.ErrorMsg = "Could not retrieve stored organization."
@@ -221,9 +218,17 @@ func ApproveGroupHandler(w http.ResponseWriter, r *http.Request) {
 	org.Lock()
 	defer org.Unlock()
 
+	if !org.IsTeacher(member) {
+		err = enc.Encode(ErrNotTeacher)
+		if err != nil {
+			log.Println(err)
+		}
+		return
+	}
+
 	if org.GroupAssignments > 0 {
 		repo := git.RepositoryOptions{
-			Name:     "group" + r.FormValue("groupid"),
+			Name:     git.GroupRepoPrefix + r.FormValue("groupid"),
 			Private:  org.Private,
 			AutoInit: true,
 			Hook:     true,
@@ -237,9 +242,9 @@ func ApproveGroupHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		newteam := git.TeamOptions{
-			Name:       "group" + r.FormValue("groupid"),
+			Name:       git.GroupRepoPrefix + r.FormValue("groupid"),
 			Permission: git.PushPermission,
-			RepoNames:  []string{"group" + r.FormValue("groupid")},
+			RepoNames:  []string{git.GroupRepoPrefix + r.FormValue("groupid")},
 		}
 
 		teamID, err := org.CreateTeam(newteam)
@@ -249,6 +254,8 @@ func ApproveGroupHandler(w http.ResponseWriter, r *http.Request) {
 			enc.Encode(view)
 			return
 		}
+
+		group.TeamID = teamID
 
 		for username := range group.Members {
 			err = org.AddMemberToTeam(teamID, username)
@@ -324,7 +331,7 @@ func RemovePendingGroupHandler(w http.ResponseWriter, r *http.Request) {
 		delete(org.PendingGroup, groupid)
 	}
 
-	groupname := "group" + strconv.Itoa(groupid)
+	groupname := git.GroupRepoPrefix + strconv.Itoa(groupid)
 	if _, ok := org.Groups[groupname]; ok {
 		delete(org.Groups, groupname)
 	}
@@ -337,4 +344,109 @@ func RemovePendingGroupHandler(w http.ResponseWriter, r *http.Request) {
 
 	group.Delete()
 	org.Save()
+}
+
+// AddGroupMemberView is the view used to give a JSON reply to AddGroupMemberHandler.
+type AddGroupMemberView struct {
+	JSONErrorMsg
+	Added bool `json:"Added"`
+}
+
+// AddGroupMemberURL is the URL used to call AddGroupMemberHandler.
+var AddGroupMemberURL = "/group/addmember"
+
+// AddGroupMemberHandler is a http handler adding an additional member to a active group.
+func AddGroupMemberHandler(w http.ResponseWriter, r *http.Request) {
+	view := AddGroupMemberView{}
+	view.Error = true
+	enc := json.NewEncoder(w)
+
+	// Checks if the user is signed in and a teacher.
+	member, err := checkTeacherApproval(w, r, true)
+	if err != nil {
+		err = enc.Encode(ErrSignIn)
+		return
+	}
+
+	orgname := r.FormValue("course")
+	if orgname == "" || !git.HasOrganization(orgname) {
+		err = enc.Encode(ErrUnknownCourse)
+		return
+	}
+
+	groupid, err := strconv.Atoi(r.FormValue("groupid"))
+	if err != nil {
+		view.ErrorMsg = err.Error()
+		err = enc.Encode(view)
+		return
+	}
+
+	if !git.HasGroup(orgname, groupid) {
+		err = enc.Encode(ErrUnknownGroup)
+		return
+	}
+
+	org, err := git.NewOrganization(orgname)
+	if err != nil {
+		view.ErrorMsg = err.Error()
+		err = enc.Encode(view)
+		return
+	}
+
+	org.Lock()
+	defer org.Unlock()
+
+	if !org.IsTeacher(member) {
+		err = enc.Encode(ErrNotTeacher)
+		return
+	}
+
+	group, err := git.NewGroup(orgname, groupid)
+	if err != nil {
+		view.ErrorMsg = err.Error()
+		err = enc.Encode(view)
+		return
+	}
+
+	group.Lock()
+	defer group.Unlock()
+
+	if group.TeamID == 0 {
+		teams, err := org.ListTeams()
+		if err != nil {
+			view.ErrorMsg = err.Error()
+			err = enc.Encode(view)
+			return
+		}
+
+		if team, ok := teams[git.GroupRepoPrefix+strconv.Itoa(groupid)]; ok {
+			group.TeamID = team.ID
+		} else {
+			view.ErrorMsg = "Error finding team on GitHub."
+			err = enc.Encode(view)
+			return
+		}
+	}
+
+	r.ParseForm()
+	members := r.PostForm["member"]
+
+	for _, username := range members {
+		if username == "" || !git.HasMember(username) {
+			continue
+		}
+
+		group.AddMember(username)
+
+		org.AddMemberToTeam(group.TeamID, username)
+		delete(org.PendingRandomGroup, username)
+	}
+
+	group.Activate()
+	group.Save()
+	org.Save()
+
+	view.Added = true
+	view.Error = false
+	enc.Encode(view)
 }
