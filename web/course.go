@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/hfurubotten/autograder/git"
 	"github.com/hfurubotten/autograder/web/pages"
@@ -699,6 +700,7 @@ func UpdateCourseHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	r.ParseForm()
 	orgname := r.FormValue("org")
 
 	org, err := git.NewOrganization(orgname)
@@ -729,6 +731,12 @@ func UpdateCourseHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	org.GroupAssignments = groups
 
+	if r.FormValue("screenname") == "" {
+		org.ScreenName = org.Name
+	} else {
+		org.ScreenName = r.FormValue("screenname")
+	}
+
 	org.Description = r.FormValue("desc")
 	org.Private = r.FormValue("private") == "on"
 
@@ -737,26 +745,63 @@ func UpdateCourseHandler(w http.ResponseWriter, r *http.Request) {
 		org.CI.Basepath = basepath
 	}
 
-	var fname string
-	var fkey string
+	indvfolders := r.PostForm["lab"]
 	for i := 1; i <= indv; i = i + 1 {
-		fkey = "lab" + strconv.Itoa(i)
-		fname = r.FormValue(fkey)
-		if fname == "" {
-			fname = fkey
+		if len(indvfolders) < i-1 {
+			org.IndividualLabFolders[i] = "lab" + strconv.Itoa(i)
 		}
 
-		org.IndividualLabFolders[i] = fname
+		if fname := indvfolders[i-1]; fname != "" {
+			org.IndividualLabFolders[i] = fname
+		} else {
+			org.IndividualLabFolders[i] = "lab" + strconv.Itoa(i)
+		}
 	}
 
+	groupfolders := r.PostForm["group"]
 	for i := 1; i <= groups; i = i + 1 {
-		fkey = "group" + strconv.Itoa(i)
-		fname = r.FormValue(fkey)
-		if fname == "" {
-			fname = fkey
+		if len(groupfolders) < i-1 {
+			org.GroupLabFolders[i] = "grouplab" + strconv.Itoa(i)
 		}
 
-		org.GroupLabFolders[i] = fname
+		if fname := groupfolders[i-1]; fname != "" {
+			org.GroupLabFolders[i] = fname
+		} else {
+			org.GroupLabFolders[i] = "grouplab" + strconv.Itoa(i)
+		}
+	}
+
+	timelayout := "02/01/2006 15:04"
+	indvdeadlines := r.PostForm["indvdeadline"]
+	for i := 1; i <= indv; i = i + 1 {
+		if len(indvdeadlines) < i-1 {
+			org.SetIndividualDeadline(i, time.Now())
+		}
+
+		if timestring := indvdeadlines[i-1]; timestring != "" {
+			t, err := time.Parse(timelayout, timestring)
+			if err != nil {
+				org.SetIndividualDeadline(i, time.Now())
+			} else {
+				org.SetIndividualDeadline(i, t)
+			}
+		}
+	}
+
+	groupdeadlines := r.PostForm["groupdeadline"]
+	for i := 1; i <= groups; i = i + 1 {
+		if len(groupdeadlines) < i-1 {
+			org.SetGroupDeadline(i, time.Now())
+		}
+
+		if timestring := groupdeadlines[i-1]; timestring != "" {
+			t, err := time.Parse(timelayout, timestring)
+			if err != nil {
+				org.SetGroupDeadline(i, time.Now())
+			} else {
+				org.SetGroupDeadline(i, t)
+			}
+		}
 	}
 
 	org.Save()
@@ -765,7 +810,7 @@ func UpdateCourseHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // RemovePendingUserURL is the URL used to call RemovePendingUserHandler.
-var RemovePendingUserURL string = "/course/removepending"
+var RemovePendingUserURL = "/course/removepending"
 
 // RemovePendingUserHandler is http handler used to remove users from the list of pending students on a course.
 func RemovePendingUserHandler(w http.ResponseWriter, r *http.Request) {
