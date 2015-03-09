@@ -1,451 +1,469 @@
-{{define "title"}}UIS Autograder{{end}}
+{{define "title"}}Teachers panel - UIS Autograder{{end}}
 {{define "body"}}
+  <!-- Header -->
+  <div class="jumbotron">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12">
+          <h1>Teachers panel</h1>
+          <p><i>{{.Org.Name}}</i></p>
+        </div>
+      </div>
+    </div>
+  </div>
   <div class="container">
   	<div class="row">
-      <div class="col-md-12">
-        <h1>Teachers panel for {{.Org.Name}}</h1>
+      <!-- Nav -->
+      <div class="col-md-3 hidden-print">
+        <h3><!-- Something something --></h3>
+        <div class="list-group">
+          <a class="list-group-item disabled">Course</a>
+          <a class="list-group-item" href="/scoreboard/{{.Org.Name}}">Scoreboard <span class="pull-right glyphicon glyphicon-chevron-right"></span></a>
+          <a class="list-group-item" href="#teachers">Teachers <span class="badge">{{len .Org.Teachers}}</span></a>
+          {{if gt (len .Org.PendingUser) 0}}
+            <a class="list-group-item" href="#pendingstudents">Pending Students <span class="badge">{{len .Org.PendingUser}}</span></a>
+          {{end}}
+          {{if gt .Org.GroupAssignments 0}}
+            {{if or (gt (len .Org.PendingUser) 0) (gt (len .Org.PendingRandomGroup) 0)}}
+              <a class="list-group-item" href="#pendinggroups">Pending Groups <span class="badge">{{len .Org.PendingGroup}} + {{len .Org.PendingRandomGroup}}</span></a>
+            {{end}}
+          {{end}}
+          <a class="list-group-item" href="#settings">Settings <span class="pull-right glyphicon glyphicon-cog" aria-hidden="true"></span></a>
 
-        <div role="tabpanel">
+          <a class="list-group-item disabled">Results</a>
+          <a class="list-group-item" href="#studentresults">Students <span class="badge">{{len .Org.Members}}</span></a>
+          {{if gt .Org.GroupAssignments 0}}
+            <a class="list-group-item" href="#groupresults">Groups <span class="badge">{{len .Org.Groups}}</span></a>
+          {{end}}
 
-          <!-- Nav tabs -->
-          <ul class="nav nav-tabs" role="tablist" id="teachertab">
-            <li role="presentation"><a href="#students" aria-controls="students" role="tab" data-toggle="tab">Students</a></li>
-            {{if gt .Org.GroupAssignments 0}}<li role="presentation"><a href="#groups" aria-controls="groups" role="tab" data-toggle="tab">Groups</a></li>{{end}}
-            <li role="presentation" class="pull-right"><a href="#settings" aria-controls="settings" role="tab" data-toggle="tab"><span class="glyphicon glyphicon-cog" aria-hidden="true"></span></a></li>
+          <a class="list-group-item disabled">Repositories</a>
+          <a class="list-group-item" href="https://github.com/{{.Org.Name}}/course-info" target="_blank">Course info<span class="pull-right glyphicon glyphicon-link"></span></a>
+          <a class="list-group-item" href="https://github.com/{{.Org.Name}}/labs" target="_blank">Individual labs<span class="pull-right glyphicon glyphicon-link"></span></a>
+          <a class="list-group-item" href="https://github.com/{{.Org.Name}}/glabs" target="_blank">Group labs<span class="pull-right glyphicon glyphicon-link"></span></a>
+          
+          {{if .Org.CodeReview}}
+            <a class="list-group-item disabled">Code Review</a>
+            <a class="list-group-item" href="https://github.com/{{.Org.Name}}/code-reviews" target="_blank">Browse on Github <span class="pull-right glyphicon glyphicon-link"></span></a>
+            <a class="list-group-item reviewpubtab" href="#codereview">Publish review <span class="pull-right glyphicon glyphicon-chevron-right" aria-hidden="true"></span></a>
+            <a class="list-group-item" id="reviewlisttab" href="#codereview">List reviews <span class="pull-right glyphicon glyphicon-chevron-right" aria-hidden="true"></span></a>
+          {{end}}
+        </div>
+      </div>
+
+      <div class="col-md-9">
+
+        <!-- Pending student section -->
+        <section id="pendingstudents">
+          <h1>Pending students</h1>
+          <p class="lead">Pending students are a list of students that needs approval to get access to the course. Students already have access to the course material, but dont have their own repository. Approve students to create repositories for them and give them access to creating groups.</p>
+
+          <div class="alert alert-danger alert-dismissible" role="alert" id="pendinguseralert" style="display: none">
+            <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            <span class="inputtext"></span>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>Username</th>
+                  <th>Name</th>
+                  <th>Student ID</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {{range $index, $element := .Org.PendingUser}}
+                <tr id="{{$index}}">
+                  {{with $element}}
+                  <td>{{.Username}}</td>
+                  <td>{{.Name}}</td>
+                  <td>{{.StudentID}}</td>
+                  <td>
+                    <div class="btn-group hidden-print">
+                      <button type="button" onclick="approveuser('{{.Username}}')" class="btn btn-default"><span class="glyphicon glyphicon-ok"></span></button>
+                      <button type="button" class="btn btn-default" onclick="removependinguser({{.Username}})"><span class="glyphicon glyphicon-remove"></span></button>
+                      {{if .Email}}<a class="btn btn-default" href="mailto:{{.Email.Address}}" target="_blank"><span class="glyphicon glyphicon-envelope"></span></a>{{end}}
+                      <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                        <span class="caret"></span>
+                        <span class="sr-only">Toggle Dropdown</span>
+                      </button>
+                      <ul class="dropdown-menu" role="menu">
+                        <li><a onclick="addassistant({{.Username}}, true)">Make Teaching Assistant</a></li>
+                      </ul>
+                    </div>
+                  </td>
+                  {{end}}
+                </tr>
+                {{else}}
+                  <td>No pending students</td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                {{end}}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Pending group section -->
+        <section id="pendinggroups">
+          <h1>Pending groups</h1>
+          <p></p>
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Group name</th>
+                <th>Members</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {{range $index, $element := .PendingGroup}}
+              <tr id="group{{$index}}">
+                {{with $element}}
+                <td>{{.ID}}</td>
+                <td>group{{.ID}}</td>
+                <td>
+                  {{range $username, $obj := .Members}}
+                  {{$obj.Username}} - {{$obj.Name}} - {{$obj.StudentID}} <br />
+                  {{end}}
+                </td>
+                <td>
+                  <div class="btn-group hidden-print">
+                    <button type="button" onclick="approvegroup({{$index}})" class="btn btn-default"><span class="glyphicon glyphicon-ok"></span></button>
+                    <button type="button" class="btn btn-default" onclick="removegroup({{$index}})"><span class="glyphicon glyphicon-remove"></span></button>
+                    <a class="btn btn-default" href="mailto:{{range .Members}}{{if .Email}}{{.Email.Address}},{{end}}{{end}}" target="_blank"><span class="glyphicon glyphicon-envelope"></span></a>
+                  </div>
+                </td>
+                {{end}}
+              </tr>
+              {{else}}
+                <td>No pending groups</td>
+                <td></td>
+                <td></td>
+                <td></td>
+              {{end}}
+            </tbody>
+          </table>
+
+          <h1>Manuall group assignment</h1>
+          <p class="lead">List of students who waits for manuall assignment to a group</p>
+          <form action="/course/newgroup" method="post" accept-charset="utf-8" id="groupselection">
+            <input type="hidden" name="course" value="{{.Org.Name}}">
+            <input type="hidden" name="groupid" value="-1">
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>Selection</th>
+                  <th>Username</th>
+                </tr>
+              </thead>
+              <tbody>
+                {{range $index, $element := .Org.PendingRandomGroup}}
+                <tr id="{{$index}}">
+                  <td><input type="checkbox" name="member" value="{{$index}}"></td>
+                  <td>{{$index}}</td>
+                </tr>
+                {{else}}
+                  <td>No pending students</td>
+                  <td></td>
+                {{end}}
+              </tbody>
+            </table>
+            <div class="btn-group">
+              <button type="submit" class="btn btn-primary">Submit new group</button>
+              <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                Add to existing group <span class="caret"></span>
+                <span class="sr-only">Toggle Dropdown</span>
+              </button>
+              <ul class="dropdown-menu" role="menu">
+                {{range $groupname, $group := .Org.Groups}}
+                <li><a onclick="addtoexistinggroup({{$group.ID}})">{{$groupname}}</a></li>
+                {{end}}
+              </ul>
+            </div>
+          </form>
+        </section>
+
+        <!-- Student result section -->
+        <section id="studentresults">
+          <h1>Individual Results</h1>
+          <p class="lead">Build and test results from the students. Click in on a student to see complete build log.</p>
+
+          <div class="table-responsive">
+            <table class="table table-striped" id="studentresults">
+              <thead>
+                <tr>
+                  <th>Username</th>
+                  <th>Name</th>
+                  <th>StudentID</th>
+                  {{range $labname := .Org.IndividualLabFolders}}
+                  <th>{{$labname}}</th>
+                  {{end}}
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {{$org := .Org}}
+                {{range $index, $element := .Org.Members}}
+                <tr id="{{$index}}">
+                  <td>{{$index}}</td>
+                  <td>{{$element.Name}}</td>
+                  <td>{{$element.StudentID}}</td>
+                  {{range $labname := $org.IndividualLabFolders}}
+                  <td class="{{$labname}}">0%</td>
+                  {{end}}
+                  <td>
+                    <div class="btn-group hidden-print">
+                      <a class="btn btn-default" href="/course/result/{{$org.Name}}?user={{$index}}">See results</a>
+                      <a class="btn btn-default" href="https://github.com/{{$org.Name}}/{{$index}}-labs" target="_blank"><img src="/img/GitHub-Mark/PNG/GitHub-Mark-32px.png" alt="Repository" width="18px"></a>
+                      {{if $element.Email}}<a class="btn btn-default" href="mailto:{{$element.Email.Address}}" target="_blank"><span class="glyphicon glyphicon-envelope"></span></a>{{end}}
+                      <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                        <span class="caret"></span>
+                        <span class="sr-only">Toggle Dropdown</span>
+                      </button>
+                      <ul class="dropdown-menu" role="menu">
+                        <li><a onclick="addassistant({{$index}}, false)">Make Teaching Assistant</a></li>
+                      </ul>
+                    </div>
+                    
+                  </td>
+                </tr>
+                {{else}}
+                  <td>No students</td>
+                  <td></td>
+                {{end}}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="groupresults">
+          <h1>Group Results</h1>
+          <p class="lead">Build and test results from the students. Click in on a group to see complete build log.</p>
+
+          <div class="table-responsive">
+            <table class="table table-striped" id="groupresults">
+              <thead>
+                <tr>
+                  <th>Group</th>
+                  <th>Members</th>
+                  {{range $index, $element := .Org.GroupLabFolders}}
+                  <th>{{$element}}</th>
+                  {{end}}
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {{range $index, $element := .Org.Groups}}
+                <tr id="{{$index}}">
+                  <td>{{$index}}</td>
+                  <td>
+                    {{range $username, $obj := $element.Members}}
+                    {{$obj.Name}}<br />
+                    {{end}}
+                  </td>
+                  {{range $element := $org.GroupLabFolders}}
+                  <td class="{{$element}}">0%</td>
+                  {{end}}
+                  <td>
+                    <div class="btn-group hidden-print">
+                      <a class="btn btn-default" href="/course/result/{{$org.Name}}?user={{$index}}">See results</a>
+                      <a class="btn btn-default" href="https://github.com/{{$org.Name}}/{{$index}}" target="_blank"><img src="/img/GitHub-Mark/PNG/GitHub-Mark-32px.png" alt="Repository" width="18px"></a>
+                      <a class="btn btn-default" href="mailto:{{range $element.Members}}{{if .Email}}{{.Email.Address}},{{end}}{{end}}" target="_blank"><span class="glyphicon glyphicon-envelope"></span></a>
+                      <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                        <span class="caret"></span>
+                        <span class="sr-only">Toggle Dropdown</span>
+                      </button>
+                      <ul class="dropdown-menu" role="menu">
+                        <li><a onclick="removegroup({{$index}})">Remove this group</a></li>
+                      </ul>
+                    </div>
+                  </td>
+                </tr>
+                {{else}}
+                  <td>No groups yet</td>
+                  <td></td>
+                {{end}}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="teachers">
+          <h1>Teachers</h1>
+          <p class="lead">List of teachers in this course.</p>
+
+          <!-- prettify this -->
+
+          <ul>
+            {{range $username, $dontcare := .Org.Teachers}}
+            <li>{{$username}}</li>
+            {{end}}
           </ul>
 
-          <!-- Tab panes -->
-          <div class="tab-content">
-            <div role="tabpanel" class="tab-pane" id="students">
-              <h3>Pending students</h3>
-              <p>Pending students are a list of students that needs approval to get access to the course. Students already have access to the course material, but dont have their own repository. Approve students to create repositories for them and give them access to creating groups.</p>
+        </section>
 
-              <div class="alert alert-danger alert-dismissible" role="alert" id="pendinguseralert" style="display: none">
-                <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-                <span class="inputtext"></span>
+        <section id="settings">
+          {{with .Org}}
+
+            <h1>Course Settings</h1>
+
+            <!-- input form -->
+            <form class="form-horizontal" role="form" action="/course/update" method="POST">
+              <h3>Standard options</h3>
+              <div class="form-group">
+                <label for="org" class="col-sm-3 control-label">Github Organization *</label>
+                <div class="col-sm-9">
+                  <input type="text" class="form-control" id="org" placeholder="Organization" value="{{.Name}}" readonly>
+                  <input type="hidden" id="hiddenorg" name="org" value="{{.Name}}">
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="org" class="col-sm-3 control-label">Course Name *</label>
+                <div class="col-sm-9">
+                  <input type="text" class="form-control" id="screenname" placeholder="DAT100, DAT500 ..." value="{{.ScreenName}}">
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="col-sm-offset-3 col-sm-9">
+                  <div class="checkbox">
+                    <label>
+                      <input type="checkbox" id="private" name="private"{{if.Private}} checked{{end}}> Private repositories
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="col-sm-offset-3 col-sm-9">
+                  <div class="checkbox">
+                    <label>
+                      <input type="checkbox" id="codereview" name="codereview"{{if.CodeReview}} checked{{end}}> Use Code Reviews
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="indv" class="col-sm-3 control-label">Number of individual assignments *</label>
+                <div class="col-sm-9">
+                  <input type="number" class="form-control" id="indv" name="indv" placeholder="Individual Assignments" value="{{.IndividualAssignments}}">
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="groups" class="col-sm-3 control-label">Number of group assignments *</label>
+                <div class="col-sm-9">
+                  <input type="number" class="form-control" id="groups" name="groups" placeholder="Group Assignments" value="{{.GroupAssignments}}">
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="desc" class="col-sm-3 control-label">Course description</label>
+                <div class="col-sm-9">
+                  <textarea class="form-control" rows="3" name="desc" id="desc">{{.Description}}</textarea>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="col-sm-offset-3 col-sm-9">
+                  <button type="submit" class="btn btn-default">Update course info</button>
+                </div>
               </div>
 
-              <table class="table table-striped">
-                <thead>
-                  <tr>
-                    <th>Username</th>
-                    <th>Name</th>
-                    <th>Student ID</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {{range $index, $element := .Org.PendingUser}}
-                  <tr id="{{$index}}">
-                    {{with $element}}
-                    <td>{{.Username}}</td>
-                    <td>{{.Name}}</td>
-                    <td>{{.StudentID}}</td>
-                    <td>
-                      <div class="btn-group">
-                        <button type="button" onclick="approveuser('{{.Username}}')" class="btn btn-default"><span class="glyphicon glyphicon-ok"></span></button>
-                        <button type="button" class="btn btn-default" onclick="removependinguser({{.Username}})"><span class="glyphicon glyphicon-remove"></span></button>
-                        {{if .Email}}<a class="btn btn-default" href="mailto:{{.Email.Address}}" target="_blank"><span class="glyphicon glyphicon-envelope"></span></a>{{end}}
-                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
-                          <span class="caret"></span>
-                          <span class="sr-only">Toggle Dropdown</span>
-                        </button>
-                        <ul class="dropdown-menu" role="menu">
-                          <li><a onclick="addassistant({{.Username}}, true)">Make Teaching Assistant</a></li>
-                        </ul>
-                      </div>
-                    </td>
-                    {{end}}
-                  </tr>
-                  {{else}}
-                    <td>No pending students</td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                  {{end}}
-                </tbody>
-              </table>
-
-              <h3>Results</h3>
-              <p>Build and test results from the students. Click in on a student to see complete build log.</p>
-
-              <div class="table-responsive">
-              <table class="table table-striped" id="studentresults">
-                <thead>
-                  <tr>
-                    <th>Username</th>
-                    <th>Name</th>
-                    <th>StudentID</th>
-                    {{range $labname := .Org.IndividualLabFolders}}
-                    <th>{{$labname}}</th>
-                    {{end}}
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {{$org := .Org}}
-                  {{range $index, $element := .Org.Members}}
-                  <tr id="{{$index}}">
-                    <td>{{$index}}</td>
-                    <td>{{$element.Name}}</td>
-                    <td>{{$element.StudentID}}</td>
-                    {{range $labname := $org.IndividualLabFolders}}
-                    <td class="{{$labname}}">0%</td>
-                    {{end}}
-                    <td>
-                      <div class="btn-group">
-                        <a class="btn btn-default" href="/course/result/{{$org.Name}}?user={{$index}}">See results</a>
-                        <a class="btn btn-default" href="https://github.com/{{$org.Name}}/{{$index}}-labs" target="_blank"><img src="/img/GitHub-Mark/PNG/GitHub-Mark-32px.png" alt="Repository" width="18px"></a>
-                        {{if $element.Email}}<a class="btn btn-default" href="mailto:{{$element.Email.Address}}" target="_blank"><span class="glyphicon glyphicon-envelope"></span></a>{{end}}
-                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
-                          <span class="caret"></span>
-                          <span class="sr-only">Toggle Dropdown</span>
-                        </button>
-                        <ul class="dropdown-menu" role="menu">
-                          <li><a onclick="addassistant({{$index}}, false)">Make Teaching Assistant</a></li>
-                        </ul>
-                      </div>
-                      
-                    </td>
-                  </tr>
-                  {{else}}
-                    <td>No students</td>
-                    <td></td>
-                  {{end}}
-                </tbody>
-              </table>
+              <h3>CI Options</h3>
+              <p>Options to control the continuous integration process. Where the git repository is cloned into is controlled by the base path, and when giving feedback on scores the secret key below need to be copied and included. This secret key is unique for each course.</p>
+              <div class="form-group">
+                <label for="secret" class="col-sm-3 control-label">Secret key *</label>
+                <div class="col-sm-9">
+                  <input type="text" class="form-control" id="secret" placeholder="Secret" value="{{.CI.Secret}}" disabled>
+                  <p class="help-block">A secret hash value used when provinding the CI test results. The CI system will ignore all data not containing this. Need to be kept secret.</p>
+                </div>
               </div>
-            </div>
-            {{if gt .Org.GroupAssignments 0}}
-            <div role="tabpanel" class="tab-pane" id="groups">
-
-              <div class="alert alert-danger alert-dismissible" role="alert" id="pendinggroupalert" style="display: none">
-                <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-                <span class="inputtext"></span>
+              <div class="form-group">
+                <label for="basepath" class="col-sm-3 control-label">CI base path *</label>
+                <div class="col-sm-9">
+                  <input type="text" class="form-control" id="basepath" placeholder="Basepath" name="basepath" value="{{.CI.Basepath}}">
+                  <p class="help-block">The path location where student submittions will be cloned into.</p>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="col-sm-offset-3 col-sm-9">
+                  <button type="submit" class="btn btn-default">Update CI options</button>
+                </div>
               </div>
 
-              <h3>Pending groups</h3>
-              <p></p>
-              <table class="table table-striped">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Group name</th>
-                    <th>Members</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {{range $index, $element := .PendingGroup}}
-                  <tr id="group{{$index}}">
-                    {{with $element}}
-                    <td>{{.ID}}</td>
-                    <td>group{{.ID}}</td>
-                    <td>
-                      {{range $username, $obj := .Members}}
-                      {{$obj.Username}} - {{$obj.Name}} - {{$obj.StudentID}} <br />
-                      {{end}}
-                    </td>
-                    <td>
-                      <div class="btn-group">
-                        <button type="button" onclick="approvegroup({{$index}})" class="btn btn-default"><span class="glyphicon glyphicon-ok"></span></button>
-                        <button type="button" class="btn btn-default" onclick="removegroup({{$index}})"><span class="glyphicon glyphicon-remove"></span></button>
-                        <a class="btn btn-default" href="mailto:{{range .Members}}{{if .Email}}{{.Email.Address}},{{end}}{{end}}" target="_blank"><span class="glyphicon glyphicon-envelope"></span></a>
-                      </div>
-                    </td>
-                    {{end}}
-                  </tr>
-                  {{else}}
-                    <td>No pending groups</td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                  {{end}}
-                </tbody>
-              </table>
-
-              <h3>Manuall group assignment</h3>
-              <p>List of students who waits for manuall assignment to a group</p>
-              <form action="/course/newgroup" method="post" accept-charset="utf-8" id="groupselection">
-                <input type="hidden" name="course" value="{{.Org.Name}}">
-                <table class="table table-striped">
-                  <thead>
-                    <tr>
-                      <th>Selection</th>
-                      <th>Username</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {{range $index, $element := .Org.PendingRandomGroup}}
-                    <tr id="{{$index}}">
-                      <td><input type="checkbox" name="member" value="{{$index}}"></td>
-                      <td>{{$index}}</td>
-                    </tr>
-                    {{else}}
-                      <td>No pending students</td>
-                      <td></td>
-                    {{end}}
-                  </tbody>
-                </table>
-                <button type="submit" class="btn btn-primary">Submit new group</button>
-              </form>
-
-              <h3>Results</h3>
-              <p>Build and test results from the students. Click in on a group to see complete build log.</p>
-
-              <div  class="table-responsive">
-              <table class="table table-striped" id="groupresults">
-                <thead>
-                  <tr>
-                    <th>Group</th>
-                    <th>Members</th>
-                    {{range $index, $element := .Org.GroupLabFolders}}
-                    <th>{{$element}}</th>
-                    {{end}}
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {{range $index, $element := .Org.Groups}}
-                  <tr id="{{$index}}">
-                    <td>{{$index}}</td>
-                    <td>
-                      {{range $username, $obj := $element.Members}}
-                      {{$obj.Name}}<br />
-                      {{end}}
-                    </td>
-                    {{range $element := $org.GroupLabFolders}}
-                    <td class="{{$element}}">0%</td>
-                    {{end}}
-                    <td>
-                      <div class="btn-group">
-                        <a class="btn btn-default" href="/course/result/{{$org.Name}}?user={{$index}}">See results</a>
-                        <a class="btn btn-default" href="https://github.com/{{$org.Name}}/{{$index}}" target="_blank"><img src="/img/GitHub-Mark/PNG/GitHub-Mark-32px.png" alt="Repository" width="18px"></a>
-                        <a class="btn btn-default" href="mailto:{{range $element.Members}}{{if .Email}}{{.Email.Address}},{{end}}{{end}}" target="_blank"><span class="glyphicon glyphicon-envelope"></span></a>
-                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
-                          <span class="caret"></span>
-                          <span class="sr-only">Toggle Dropdown</span>
-                        </button>
-                        <ul class="dropdown-menu" role="menu">
-                          <li><a onclick="removegroup({{$index}})">Remove this group</a></li>
-                        </ul>
-                      </div>
-                    </td>
-                  </tr>
-                  {{else}}
-                    <td>No groups yet</td>
-                    <td></td>
-                  {{end}}
-                </tbody>
-              </table>
-              </div>
-            </div>
-
-            {{end}}
-            <div role="tabpanel" class="tab-pane" id="settings">
-              {{with .Org}}
-
-              <h3>Standard Settings</h3>
-
-              <!-- input form -->
-              <form class="form-horizontal" role="form" action="/course/update" method="POST">
-                <div class="form-group">
-                  <label for="org" class="col-sm-3 control-label">Organization *</label>
-                  <div class="col-sm-9">
-                    <input type="text" class="form-control" id="org" placeholder="Organization" value="{{.Name}}" disabled>
-                    <input type="hidden" id="hiddenorg" name="org" value="{{.Name}}">
-                  </div>
-                </div>
-                <div class="form-group">
-                  <div class="col-sm-offset-3 col-sm-9">
-                    <div class="checkbox">
-                      <label>
-                        <input type="checkbox" id="private" name="private"{{if.Private}} checked{{end}}> Private repositories
-                      </label>
-                    </div>
-                  </div>
-                </div>
-                <div class="form-group">
-                  <label for="indv" class="col-sm-3 control-label">Number of individual assignments *</label>
-                  <div class="col-sm-9">
-                    <input type="number" class="form-control" id="indv" name="indv" placeholder="Individual Assignments" value="{{.IndividualAssignments}}">
-                  </div>
-                </div>
-                <div class="form-group">
-                  <label for="groups" class="col-sm-3 control-label">Number of group assignments *</label>
-                  <div class="col-sm-9">
-                    <input type="number" class="form-control" id="groups" name="groups" placeholder="Group Assignments" value="{{.GroupAssignments}}">
-                  </div>
-                </div>
-                <div class="form-group">
-                  <label for="desc" class="col-sm-3 control-label">Course description</label>
-                  <div class="col-sm-9">
-                    <textarea class="form-control" rows="3" name="desc" id="desc">{{.Description}}</textarea>
-                  </div>
-                </div>
-                <div class="form-group">
-                  <div class="col-sm-offset-3 col-sm-9">
-                    <button type="submit" class="btn btn-default">Update course info</button>
-                  </div>
-                </div>
-
-                <h3>CI Options</h3>
-                <p>Options to control the continuous integration process. Where the git repository is cloned into is controlled by the base path, and when giving feedback on scores the secret key below need to be copied and included. This secret key is unique for each course.</p>
-                <div class="form-group">
-                  <label for="secret" class="col-sm-3 control-label">Secret key *</label>
-                  <div class="col-sm-9">
-                    <input type="text" class="form-control" id="secret" placeholder="Secret" value="{{.CI.Secret}}" disabled>
-                  </div>
-                </div>
-                <div class="form-group">
-                  <label for="basepath" class="col-sm-3 control-label">CI base path *</label>
-                  <div class="col-sm-9">
-                    <input type="text" class="form-control" id="basepath" placeholder="Basepath" name="basepath" value="{{.CI.Basepath}}">
-                  </div>
-                </div>
-                <div class="form-group">
-                  <div class="col-sm-offset-3 col-sm-9">
-                    <button type="submit" class="btn btn-default">Update CI options</button>
-                  </div>
-                </div>
-
-                {{if gt .IndividualAssignments 0 }}
-                <h3>Individual assignment folder names</h3>
+              {{if gt .IndividualAssignments 0 }}
+                <h3>Individual assignments</h3>
                 <p>If you change the names of the folders containing the different individual assignments, this has to be marked for the automatic system to recognize this. It needs to know which folder to use. The standard folder name is "lab#", where the # is replaced by the number in the sequence of assignments it is. Example of this is "lab1" for the first assignment. Fill in the folder name below and hit the update button to submit the changes. </p>
             
+                {{$indvdeadlines := .IndividualDeadlines}}
                 {{range $i, $element := .IndividualLabFolders}}
-                <div class="form-group">
-                  <label for="org" class="col-sm-3 control-label">Lab assignment {{$i}}</label>
-                  <div class="col-sm-9">
-                    <input type="text" class="form-control" id="org" name="lab{{$i}}" placeholder="{{$element}}" value="{{$element}}">
+                  <div class="form-group">
+                    <label for="org" class="col-sm-3 control-label">Folder name lab {{$i}}</label>
+                    <div class="col-sm-9">
+                      <input type="text" class="form-control" id="org" name="lab" placeholder="{{$element}}" value="{{$element}}">
+                    </div>
                   </div>
-                </div>
+
+                  <div class="form-group">
+                    <label for="org" class="col-sm-3 control-label">Deadline lab {{$i}}</label>
+                    <div class="col-sm-9">
+                      <div class="input-group date">
+                        <input type="text" class="form-control" id="org" name="indvdeadline" placeholder="DD/MM/YYYY HH:mm" value="{{noescapetime (index $indvdeadlines $i)}}">
+                        <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+                      </div>
+                    </div>
+                  </div>
+                  <hr>
                 {{end}}
 
                 <div class="form-group">
                   <div class="col-sm-offset-3 col-sm-9">
-                    <button type="submit" class="btn btn-default">Update folder info</button>
+                    <button type="submit" class="btn btn-default">Update individual labs</button>
                   </div>
                 </div>
-                {{end}}
-
-                {{if gt .GroupAssignments 0 }}
-                <h3>Group assignment folder names</h3>
-                <p>If you change the names of the folders containing the different group assignments, this has to be marked for the automatic system to recognize this. It needs to know which folder to use. The standard folder name is "group#", where the # is replaced by the number in the sequence of assignments it is. Example of this is "group1" for the first assignment. Fill in the folder name below and hit the update button to submit the changes. </p>
-            
-                {{range $i, $element := .GroupLabFolders}}
-                <div class="form-group">
-                  <label for="org" class="col-sm-3 control-label">Group assignment {{$i}}</label>
-                  <div class="col-sm-9">
-                    <input type="text" class="form-control" id="org" name="group{{$i}}" placeholder="{{$element}}" value="{{$element}}">
-                  </div>
-                </div>
-                {{end}}
-
-                <div class="form-group">
-                  <div class="col-sm-offset-3 col-sm-9">
-                    <button type="submit" class="btn btn-default">Update folder info</button>
-                  </div>
-                </div>
-                {{end}}
-              </form>
               {{end}}
 
-            </div>
-          </div>
-        </div>
+              {{if gt .GroupAssignments 0 }}
+                <h3>Group assignments</h3>
+                <p>If you change the names of the folders containing the different group assignments, this has to be marked for the automatic system to recognize this. It needs to know which folder to use. The standard folder name is "group#", where the # is replaced by the number in the sequence of assignments it is. Example of this is "group1" for the first assignment. Fill in the folder name below and hit the update button to submit the changes. </p>
+            
+                {{$groupdeadlines := .GroupDeadlines}}
+                {{range $i, $element := .GroupLabFolders}}
+                  <div class="form-group">
+                    <label for="org" class="col-sm-3 control-label">Folder name lab {{$i}}</label>
+                    <div class="col-sm-9">
+                      <input type="text" class="form-control" id="org" name="group" placeholder="{{$element}}" value="{{$element}}">
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="org" class="col-sm-3 control-label">Deadline lab {{$i}}</label>
+                    <div class="col-sm-9">
+                      <div class="input-group date">
+                        <input type="text" class="form-control" id="org" name="groupdeadline" placeholder="DD/MM/YYYY HH:mm" value="{{index $groupdeadlines $i |noescapetime}}">
+                        <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+                      </div>
+                    </div>
+                  </div>
+                  <hr>
+                {{end}}
+
+                <div class="form-group">
+                  <div class="col-sm-offset-3 col-sm-9">
+                    <button type="submit" class="btn btn-default">Update group labs</button>
+                  </div>
+                </div>
+              {{end}}
+            </form>
+          {{end}}
+        </section>
+
       </div>
     </div>
   </div>
 
   <script type="text/javascript">
     var course = "{{.Org.Name}}";
-
-    var updatesummary = function(index, element){
-      var username = $(element).attr("id");
-      $.getJSON("/course/cisummary", {"Course": course, "Username": username}, function(data){
-        $.each(data.Summary, function(labname, s){
-          $("tr#" + data.User + " > td." + labname).text(s.TotalScore + "%")
-          if(s.Status.toLowerCase() == "Active lab assignment".toLowerCase()){
-            $("tr#" + data.User + " > td." + labname).addClass("info");
-          } else if(s.Status.toLowerCase() == "Approved".toLowerCase()){
-            $("tr#" + data.User + " > td." + labname).addClass("success");
-          }
-        });
-      }).fail(function(){
-
-      });
-    }
-
-    $(function(){
-      $('#teachertab a:first').tab('show');
-
-      $("table#studentresults > tbody > tr").each(updatesummary);
-      $("table#groupresults > tbody > tr").each(updatesummary);
-    });
-
-    function addassistant(username, remove){
-      if(confirm("Are you sure you want to make " + username + " a teaching assistant?")){
-        $.post("/course/addassistant", {"course": course, "assistant": username}, function(base){
-          if(remove) {
-            $("tr#" + username).slideUp(500);
-          }
-        }).fail(function(){
-          $("#pendinguseralert > span.inputtext").text("Error adding the user as assistant.");
-          $("div#pendinguseralert").show();
-        });
-      }
-    }
-
-    function removependinguser(username){
-      $.post("/course/removepending", {"course": course, "user": username}, function(base){
-          $("tr#" + username).slideUp(500);
-        }).fail(function(){
-          $("#pendinguseralert > span.inputtext").text("Error removing the user from the list.");
-          $("div#pendinguseralert").show();
-        });
-    }
-
-    // TODO: expand this!
-    function approveuser(username) {
-      $.post("/course/approvemember/{{.Org.Name}}", {"user": username}, function(base){
-        var data = jQuery.parseJSON(base);
-        if (!data.Error) {
-          $("tr#" + username).slideUp(500);
-        } else {
-          $("#pendinguseralert > span.inputtext").text(data.ErrorMsg);
-          $("div#pendinguseralert").show();
-        }
-      });
-    }
-
-    // TODO: expand this!
-    function approvegroup(groupid) {
-      $.post("/course/approvegroup", {"course": "{{.Org.Name}}", "groupid": groupid}, function(base){
-        var data = jQuery.parseJSON(base);
-        if (!data.Error) {
-          $("tr#group" + groupid).slideUp(500);
-        } else {
-          $("#pendinggroupalert > span.inputtext").text(data.ErrorMsg);
-          $("div#pendinggroupalert").show();
-        }
-      });
-    }
-
-    function removegroup(groupid){
-      if(confirm("Are you sure you want to remove this group?")){
-
-        if (typeof groupid == "string") {
-          groupid = groupid.substring(5)
-        }
-
-        $.post("/course/removegroup", {"course": course, "groupid": groupid}, function(base){
-          $("tr#group" + groupid).slideUp(500);
-        }).fail(function(){
-          $("#pendinggroupalert > span.inputtext").text("Error removing the group from the list.");
-          $("div#pendinggroupalert").show();
-        });
-      }
-    }
+    var labtype = {{.CurrentLabType}};
   </script>
+  <script src="/js/teacher.page.js" type="text/javascript" charset="utf-8"></script>
 {{end}}

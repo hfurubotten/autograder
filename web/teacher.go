@@ -15,16 +15,14 @@ type TeachersPanelView struct {
 	Member *git.Member
 	Org    *git.Organization
 
-	HasPendingUsers bool
-	PendingUser     map[string]interface{}
+	PendingUser  map[string]interface{}
+	PendingGroup map[int]*git.Group
 
-	HasPendingRandomGroupAssignees bool
-	HasPendingGroups               bool
-	PendingGroup                   map[int]*git.Group
+	CurrentLabType int
 }
 
 // TeachersPanelURL is the URL used to call TeachersPanelHandler.
-var TeachersPanelURL string = "/course/teacher/"
+var TeachersPanelURL = "/course/teacher/"
 
 // TeachersPanelHandler is a http handler serving the Teacher panel.
 // This page shows a summary of all the students and groups.
@@ -60,17 +58,10 @@ func TeachersPanelHandler(w http.ResponseWriter, r *http.Request) {
 	org.Lock()
 	defer org.Unlock()
 
-	if _, ok := org.Teachers[member.Username]; !ok {
-		// migrate from bug where org does not contain teacher names.
-		if _, ok := member.Teaching[org.Name]; ok {
-			org.AddTeacher(member)
-			org.Save()
-		} else {
-			log.Println("User is not a teacher for this course.")
-			http.Redirect(w, r, pages.HOMEPAGE, 307)
-			return
-		}
-
+	if !org.IsTeacher(member) {
+		log.Println("User is not a teacher for this course.")
+		http.Redirect(w, r, pages.HOMEPAGE, 307)
+		return
 	}
 
 	// gets pending users
@@ -130,11 +121,14 @@ func TeachersPanelHandler(w http.ResponseWriter, r *http.Request) {
 		org.Groups[groupname] = group
 	}
 
+	_, _, labtype := org.FindCurrentLab()
+
 	view := TeachersPanelView{
-		Member:       member,
-		PendingUser:  users,
-		Org:          org,
-		PendingGroup: pendinggroups,
+		Member:         member,
+		PendingUser:    users,
+		Org:            org,
+		PendingGroup:   pendinggroups,
+		CurrentLabType: labtype,
 	}
 	execTemplate("teacherspanel.html", w, view)
 }
@@ -149,7 +143,7 @@ type ShowResultView struct {
 }
 
 // ShowResultURL is the URL used to call ShowResultHandler.
-var ShowResultURL string = "/course/result/"
+var ShowResultURL = "/course/result/"
 
 // ShowResultHandler is a http handler for showing a page detailing
 // lab resutls for a single user or group.
@@ -239,7 +233,7 @@ func ShowResultHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // AddAssistantURL is the URL used to call AddAssistantHandler.
-var AddAssistantURL string = "/course/addassistant"
+var AddAssistantURL = "/course/addassistant"
 
 // AddAssistantHandler is a http handler used to add users as assistants on a course.
 func AddAssistantHandler(w http.ResponseWriter, r *http.Request) {
