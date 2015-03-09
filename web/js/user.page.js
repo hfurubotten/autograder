@@ -193,4 +193,10 @@ $(function(){
       e.preventDefault();
     }
   });
+
+  $("button#random").click(function(){
+    $.post("/course/requestrandomgroup", {"course": course}, function(){
+      alert("You have been added to the list over people who wants random groups assignment.");
+    });
+  });
 });
