@@ -2,8 +2,8 @@ package web
 
 // JSONErrorMsg represents the error part of a JSON reply.
 type JSONErrorMsg struct {
-	Error    bool   `json:Error`
-	ErrorMsg string `json:ErrorMsg`
+	Error    bool   `json:"Error"`
+	ErrorMsg string `json:"ErrorMsg"`
 }
 
 var (
@@ -16,8 +16,14 @@ var (
 	// ErrNotMember is a standard JSON error reply when a user is not a member of a course.
 	ErrNotMember = &JSONErrorMsg{true, "You are not a member of this course."}
 
+	// ErrNotMember is a standard JSON error reply when a user is not a member of a course.
+	ErrUnknownMember = &JSONErrorMsg{true, "Unknown student."}
+
 	// ErrNotAdmin is a standard JSON error reply when a user is not a admin.
 	ErrNotAdmin = &JSONErrorMsg{true, "You are not a administrator. If you infact are an administrator, try to sign in again."} // TODO Fix text
+
+	// ErrNotAdmin is a standard JSON error reply when a user is not a admin.
+	ErrNotTeacher = &JSONErrorMsg{true, "You are not teaching this course."} // TODO Fix text
 
 	// ErrMissingField is a standard JSON error reply when a request is midding fields.
 	ErrMissingField = &JSONErrorMsg{true, "Missing required parameters."} // TODO Fix text
@@ -33,4 +39,7 @@ var (
 
 	// ErrUnknownCourse is a standard JSON error reply when the course is unknown.
 	ErrUnknownCourse = &JSONErrorMsg{true, "Unknown course."}
+
+	// ErrUnknownCourse is a standard JSON error reply when the course is unknown.
+	ErrUnknownGroup = &JSONErrorMsg{true, "Unknown group."}
 )
