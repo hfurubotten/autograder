@@ -3,7 +3,9 @@ package git
 import (
 	"encoding/gob"
 	"strconv"
+	"time"
 
+	"github.com/hfurubotten/ag-scoring/score"
 	"github.com/hfurubotten/autograder/global"
 	"github.com/hfurubotten/diskv"
 )
@@ -14,11 +16,16 @@ func init() {
 
 // Group represents a group of students in a course.
 type Group struct {
-	ID            int
-	Active        bool
-	Course        string
-	Members       map[string]interface{}
+	ID      int
+	TeamID  int
+	Active  bool
+	Course  string
+	Members map[string]interface{}
+
 	CurrentLabNum int
+	Notes         map[int]string      // Teachers notes on a lab.
+	ExtraCredit   map[int]score.Score // extra credit from the teacher.
+	ApproveDate   map[int]time.Time   // When a lab was approved.
 
 	store *diskv.Diskv
 }
@@ -43,6 +50,9 @@ func NewGroup(org string, groupnum int) (g *Group, err error) {
 		Active:        false,
 		Course:        org,
 		Members:       make(map[string]interface{}),
+		Notes:         make(map[int]string),
+		ExtraCredit:   make(map[int]score.Score),
+		ApproveDate:   make(map[int]time.Time),
 		CurrentLabNum: 1,
 		store:         store,
 	}
@@ -51,8 +61,6 @@ func NewGroup(org string, groupnum int) (g *Group, err error) {
 }
 
 // Activate will activate/approve a group.
-//
-// This function is race unsafe for the user objects in the group.
 func (g *Group) Activate() {
 	g.Active = true
 
@@ -61,6 +69,9 @@ func (g *Group) Activate() {
 		if err != nil {
 			continue
 		}
+
+		user.Lock()
+		defer user.Unlock()
 
 		opt := user.Courses[g.Course]
 		if !opt.IsGroupMember {
@@ -92,7 +103,7 @@ func (g *Group) Unlock() {
 }
 
 // Save will store the group to memory and disk.
-func (g Group) Save() error {
+func (g *Group) Save() error {
 	return g.store.WriteGob(strconv.Itoa(g.ID), g)
 }
 
@@ -116,12 +127,22 @@ func (g *Group) Delete() error {
 	return g.store.Erase(strconv.Itoa(g.ID))
 }
 
+var groupstore map[string]*diskv.Diskv
+
 // GetGroupStore will get the Diskv object used to fetch the group object from storage.
 func GetGroupStore(org string) *diskv.Diskv {
-	return diskv.New(diskv.Options{
-		BasePath:     global.Basepath + "diskv/groups/" + org + "/",
-		CacheSizeMax: 1024 * 1024 * 256,
-	})
+	if groupstore == nil {
+		groupstore = make(map[string]*diskv.Diskv)
+	}
+
+	if _, ok := groupstore[org]; !ok {
+		groupstore[org] = diskv.New(diskv.Options{
+			BasePath:     global.Basepath + "diskv/groups/" + org + "/",
+			CacheSizeMax: 1024 * 1024 * 256,
+		})
+	}
+
+	return groupstore[org]
 }
 
 // HasGroup will check if the group is in storage.

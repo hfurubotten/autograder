@@ -347,12 +347,31 @@ func (o *Organization) AddTeacher(member *Member) (err error) {
 // IsTeacher returns whether if a user is a teacher or not.
 func (o *Organization) IsTeacher(member *Member) bool {
 	_, orgok := o.Teachers[member.Username]
-	_, mok := member.Teaching[o.Name]
 
-	if orgok && !mok {
-		member.Teaching[o.Name] = nil
-		member.Save() // This line is not tread safe!
-	} else if !orgok && mok {
+	// Clean up if any sync problems occures
+	var mok bool
+	if member.IsTeacher {
+		_, mok = member.Teaching[o.Name]
+		if orgok && !mok {
+			member.Teaching[o.Name] = nil
+			member.Save() // This line is not tread safe!
+		}
+	} else {
+		var ok bool
+		if _, ok = member.Teaching[o.Name]; orgok && ok {
+			delete(member.Teaching, o.Name)
+		}
+
+		_, mok = member.AssistantCourses[o.Name]
+		if orgok && !mok {
+			member.AssistantCourses[o.Name] = nil
+			member.Save() // This line is not tread safe!
+		} else if ok {
+			member.Save() // This line is not tread safe!
+		}
+	}
+
+	if !orgok && mok {
 		o.Teachers[member.Username] = nil
 	}
 
@@ -375,6 +394,28 @@ func (o *Organization) IsMember(member *Member) bool {
 	}
 
 	return orgok || mok
+}
+
+// SetIndividualDeadline will set the deadline of one lab assignment.
+//
+// This method needs locking
+func (o *Organization) SetIndividualDeadline(lab int, t time.Time) {
+	if o.IndividualDeadlines == nil {
+		o.IndividualDeadlines = make(map[int]time.Time)
+	}
+
+	o.IndividualDeadlines[lab] = t
+}
+
+// SetGroupDeadline will set the deadline of one lab assignment.
+//
+// This method needs locking
+func (o *Organization) SetGroupDeadline(lab int, t time.Time) {
+	if o.GroupDeadlines == nil {
+		o.GroupDeadlines = make(map[int]time.Time)
+	}
+
+	o.GroupDeadlines[lab] = t
 }
 
 // AddGroup will add a group to the list of groups in the
