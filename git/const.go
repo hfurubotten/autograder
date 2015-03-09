@@ -14,7 +14,9 @@ const (
 	AdminPermission = "admin"
 	PullPermission  = "pull"
 	PushPermission  = "push"
+)
 
+const (
 	// Assignment types
 	IndividualType int = iota
 	GroupType
