@@ -1,17 +1,21 @@
 package git
 
 const (
-	StandardRepoName   string = "labs"
-	GroupsRepoName     string = "glabs"
-	CourseInfoName     string = "course-info"
-	TestRepoName       string = "labs-test"
-	GrouptestRepoName  string = "groups-test" // Deprecated. Use only the TEST_REPO_NAME.
-	CodeReviewRepoName string = "code-reviews"
+	// Standard repository names
+	StandardRepoName   = "labs"
+	GroupsRepoName     = "glabs"
+	CourseInfoName     = "course-info"
+	TestRepoName       = "labs-test"
+	GrouptestRepoName  = "groups-test" // Deprecated. Use only the TEST_REPO_NAME.
+	CodeReviewRepoName = "code-reviews"
+	GroupRepoPrefix    = "group"
 
-	AdminPermission string = "admin"
-	PullPermission  string = "pull"
-	PushPermission  string = "push"
+	// Team premission names on github
+	AdminPermission = "admin"
+	PullPermission  = "pull"
+	PushPermission  = "push"
 
+	// Assignment types
 	IndividualType int = iota
 	GroupType
 )
