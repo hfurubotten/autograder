@@ -3,9 +3,7 @@ package git
 import (
 	"encoding/gob"
 	"strconv"
-	"time"
 
-	"github.com/hfurubotten/ag-scoring/score"
 	"github.com/hfurubotten/autograder/global"
 	"github.com/hfurubotten/diskv"
 )
@@ -23,9 +21,7 @@ type Group struct {
 	Members map[string]interface{}
 
 	CurrentLabNum int
-	Notes         map[int]string      // Teachers notes on a lab.
-	ExtraCredit   map[int]score.Score // extra credit from the teacher.
-	ApproveDate   map[int]time.Time   // When a lab was approved.
+	Assignments   map[int]LabAssignmentOptions
 
 	store *diskv.Diskv
 }
@@ -50,9 +46,7 @@ func NewGroup(org string, groupnum int) (g *Group, err error) {
 		Active:        false,
 		Course:        org,
 		Members:       make(map[string]interface{}),
-		Notes:         make(map[int]string),
-		ExtraCredit:   make(map[int]score.Score),
-		ApproveDate:   make(map[int]time.Time),
+		Assignments:   make(map[int]LabAssignmentOptions),
 		CurrentLabNum: 1,
 		store:         store,
 	}
