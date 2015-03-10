@@ -739,6 +739,7 @@ func UpdateCourseHandler(w http.ResponseWriter, r *http.Request) {
 
 	org.Description = r.FormValue("desc")
 	org.Private = r.FormValue("private") == "on"
+	org.CodeReview = r.FormValue("codereview") == "on"
 
 	basepath := r.FormValue("basepath")
 	if basepath != "" {
