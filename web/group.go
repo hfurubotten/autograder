@@ -323,6 +323,13 @@ func RemovePendingGroupHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !git.HasGroup(org.Name, groupid) {
+		groupname := git.GroupRepoPrefix + strconv.Itoa(groupid)
+		if _, ok := org.Groups[groupname]; ok {
+			delete(org.Groups, groupname)
+			org.Save()
+			return
+		}
+
 		http.Error(w, "Unknown group.", 404)
 		return
 	}
