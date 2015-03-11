@@ -6,7 +6,7 @@
       <div class="row">
         <div class="col-md-12">
           <h1>Teachers panel</h1>
-          <p><i>{{.Org.Name}}</i></p>
+          <p><i>{{.Org.ScreenName}}</i></p>
         </div>
       </div>
     </div>
@@ -44,8 +44,8 @@
           {{if .Org.CodeReview}}
             <a class="list-group-item disabled">Code Review</a>
             <a class="list-group-item" href="https://github.com/{{.Org.Name}}/code-reviews" target="_blank">Browse on Github <span class="pull-right glyphicon glyphicon-link"></span></a>
-            <a class="list-group-item reviewpubtab" href="#codereview">Publish review <span class="pull-right glyphicon glyphicon-chevron-right" aria-hidden="true"></span></a>
-            <a class="list-group-item" id="reviewlisttab" href="#codereview">List reviews <span class="pull-right glyphicon glyphicon-chevron-right" aria-hidden="true"></span></a>
+            <a class="list-group-item reviewpubtab" href="#pubcodereview">Publish review <span class="pull-right glyphicon glyphicon-chevron-right" aria-hidden="true"></span></a>
+            <a class="list-group-item" id="reviewlisttab" href="#listcodereview">List reviews <span class="pull-right glyphicon glyphicon-chevron-right" aria-hidden="true"></span></a>
           {{end}}
         </div>
       </div>
@@ -55,7 +55,7 @@
         <!-- Pending student section -->
         <section id="pendingstudents">
           <h1>Pending students</h1>
-          <p class="lead">Pending students are a list of students that needs approval to get access to the course. Students already have access to the course material, but dont have their own repository. Approve students to create repositories for them and give them access to creating groups.</p>
+          <p class="lead">List of students waiting to be approved to the course. Approve students to create their own repository.</p>
 
           <div class="alert alert-danger alert-dismissible" role="alert" id="pendinguseralert" style="display: none">
             <button type="button" class="close" data-dismiss="alert"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
@@ -258,34 +258,36 @@
               </thead>
               <tbody>
                 {{range $index, $element := .Org.Groups}}
-                <tr id="{{$index}}">
-                  <td>{{$index}}</td>
-                  <td>
-                    {{range $username, $obj := $element.Members}}
-                    {{$obj.Name}}<br />
+                  <tr id="{{$index}}">
+                    <td>{{$index}}</td>
+                    <td>
+                      {{range $username, $obj := $element.Members}}
+                      {{$obj.Name}}<br />
+                      {{end}}
+                    </td>
+                    {{range $element := $org.GroupLabFolders}}
+                    <td class="{{$element}}">0%</td>
                     {{end}}
-                  </td>
-                  {{range $element := $org.GroupLabFolders}}
-                  <td class="{{$element}}">0%</td>
-                  {{end}}
-                  <td>
-                    <div class="btn-group hidden-print">
-                      <a class="btn btn-default" href="/course/result/{{$org.Name}}?user={{$index}}">See results</a>
-                      <a class="btn btn-default" href="https://github.com/{{$org.Name}}/{{$index}}" target="_blank"><img src="/img/GitHub-Mark/PNG/GitHub-Mark-32px.png" alt="Repository" width="18px"></a>
-                      <a class="btn btn-default" href="mailto:{{range $element.Members}}{{if .Email}}{{.Email.Address}},{{end}}{{end}}" target="_blank"><span class="glyphicon glyphicon-envelope"></span></a>
-                      <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
-                        <span class="caret"></span>
-                        <span class="sr-only">Toggle Dropdown</span>
-                      </button>
-                      <ul class="dropdown-menu" role="menu">
-                        <li><a onclick="removegroup({{$index}})">Remove this group</a></li>
-                      </ul>
-                    </div>
-                  </td>
-                </tr>
+                    <td>
+                      <div class="btn-group hidden-print">
+                        <a class="btn btn-default" href="/course/result/{{$org.Name}}?user={{$index}}">See results</a>
+                        <a class="btn btn-default" href="https://github.com/{{$org.Name}}/{{$index}}" target="_blank"><img src="/img/GitHub-Mark/PNG/GitHub-Mark-32px.png" alt="Repository" width="18px"></a>
+                        <a class="btn btn-default" href="mailto:{{range $element.Members}}{{if .Email}}{{.Email.Address}},{{end}}{{end}}" target="_blank"><span class="glyphicon glyphicon-envelope"></span></a>
+                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                          <span class="caret"></span>
+                          <span class="sr-only">Toggle Dropdown</span>
+                        </button>
+                        <ul class="dropdown-menu" role="menu">
+                          <li><a onclick="removegroup({{$index}})">Remove this group</a></li>
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
                 {{else}}
-                  <td>No groups yet</td>
-                  <td></td>
+                  <tr>
+                    <td>No groups yet</td>
+                    <td></td>
+                  </tr>
                 {{end}}
               </tbody>
             </table>
@@ -296,14 +298,100 @@
           <h1>Teachers</h1>
           <p class="lead">List of teachers in this course.</p>
 
-          <!-- prettify this -->
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>Username</th>
+                  <th>Name</th>
+                  <th>ID</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {{range $index, $element := .Org.Teachers}}
+                <tr id="{{$index}}">
+                  {{with $element}}
+                  <td>{{.Username}}</td>
+                  <td>{{.Name}}</td>
+                  <td>{{.StudentID}}</td>
+                  <td></td>
+                  {{end}}
+                </tr>
+                {{end}}
+              </tbody>
+            </table>
+          </div>
 
-          <ul>
-            {{range $username, $dontcare := .Org.Teachers}}
-            <li>{{$username}}</li>
-            {{end}}
-          </ul>
+        </section>
 
+        <section id="pubcodereview">
+          <div id="publishreviewview">
+            <h1>Publish Code Review</h1>
+            <p class="lead">
+              Complete the form, including the code that you want to have reviewed. <br>
+              All fields required.
+            </p>
+            <div class="alert alert-success" role="alert" style="display: none">Howdy there! I should be hiding now!</div>
+            <form action="/review/publish" method="post" accept-charset="utf-8" class="form-horizontal" id="publishreviewform">
+              <input type="hidden" name="course" value="{{.Org.Name}}">
+              <!-- CR Title -->
+              <div class="form-group">
+                <label for="cr-title" class="col-sm-2 control-label">Title *</label>
+                <div class="col-sm-10">
+                  <input type="text" class="form-control" id="cr-title" placeholder="Title" name="title">
+                </div>
+              </div>
+              <!-- CR File extention -->
+              <div class="form-group">
+                <label for="cr-fileext" class="col-sm-2 control-label">File type *</label>
+                <div class="col-sm-10">
+                  <input type="text" class="form-control" id="cr-fileext" placeholder="go, java or similar" name="fileext">
+                </div>
+              </div>
+              <!-- CR Description -->
+              <div class="form-group">
+                <label for="cr-desc" class="col-sm-2 control-label">Description *</label>
+                <div class="col-sm-10">
+                  <textarea class="form-control" rows="3" id="cr-desc" placeholder="Description" name="desc"></textarea>
+                </div>
+              </div>
+              <!-- CR Code -->
+              <div class="form-group">
+                <label for="cr-code" class="col-sm-2 control-label">Your code *</label>
+                <div class="col-sm-10">
+                  <textarea class="form-control" rows="18" id="cr-code" placeholder="Write some code!" name="code"></textarea>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="col-sm-offset-2 col-sm-10">
+                  <button type="submit" class="btn btn-primary">Publish</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <section id="listcodereview">
+          <div class="result-content" id="listreviewsview">
+            <h1>Available Code Reviews</h1>
+            <p class="lead">Click on one of the reviews to open it on GitHub.</p>
+            <table id="reviewlisttable" class="table table-striped">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Title</th>
+                  <th>Description</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="4">Thats all the code reviews. <a class="reviewpubtab" href="#pubcodereview">Now go and make our own Code Review!</a></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </section>
 
         <section id="settings">
@@ -324,7 +412,7 @@
               <div class="form-group">
                 <label for="org" class="col-sm-3 control-label">Course Name *</label>
                 <div class="col-sm-9">
-                  <input type="text" class="form-control" id="screenname" placeholder="DAT100, DAT500 ..." value="{{.ScreenName}}">
+                  <input type="text" class="form-control" id="screenname" name="screenname" placeholder="DAT100, DAT500 ..." value="{{.ScreenName}}">
                 </div>
               </div>
               <div class="form-group">
@@ -466,4 +554,5 @@
     var labtype = {{.CurrentLabType}};
   </script>
   <script src="/js/teacher.page.js" type="text/javascript" charset="utf-8"></script>
+  <script src="/js/codereview.js" type="text/javascript" charset="utf-8"></script>
 {{end}}

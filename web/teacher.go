@@ -91,6 +91,11 @@ func TeachersPanelHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// gets teachers
+	for username := range org.Teachers {
+		org.Teachers[username], _ = git.NewMemberFromUsername(username)
+	}
+
 	// gets users
 	for username := range org.Members {
 		org.Members[username], _ = git.NewMemberFromUsername(username)
