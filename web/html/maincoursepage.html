@@ -16,7 +16,7 @@
     <!-- Nav and Content -->
     <div class="row">
       <!-- Nav -->
-      <div class="col-md-3">
+      <div class="col-md-3 hidden-print">
         <h3><!-- Something something --></h3>
         <div class="list-group">
           <a class="list-group-item disabled">Course</a>
@@ -44,7 +44,7 @@
               <a class="list-group-item" id="groupregtab" href="#group">Register group <span class="pull-right glyphicon glyphicon-chevron-right" aria-hidden="true"></span></a>
             {{end}}
           {{end}}
-          {{if not .Org.CodeReview}}
+          {{if .Org.CodeReview}}
             <a class="list-group-item disabled">Code Review</a>
             <a class="list-group-item" href="https://github.com/{{.Org.Name}}/code-reviews" target="_blank">Browse on Github <span class="pull-right glyphicon glyphicon-link"></span></a>
             <a class="list-group-item reviewpubtab" href="#codereview">Publish review <span class="pull-right glyphicon glyphicon-chevron-right" aria-hidden="true"></span></a>
@@ -106,7 +106,7 @@
               <p id="fails">Number of failed tests: ?</p>
               <p id="timedate">Build time: No build yet</p>
             </div>
-            <div class="col-lg-4">
+            <div class="col-lg-4 hidden-print">
               <h2>Actions</h2>
               <div class="row">
                 <div class="col-lg-12">
@@ -183,7 +183,7 @@
           {{end}}
         </section>
 
-        {{/*if not .Org.CodeReview*/}}
+        {{if .Org.CodeReview}}
           <section id="codereview">
             <div class="result-content" id="publishreviewview" style="display: none">
               <h1>Publish Code Review</h1>
@@ -250,7 +250,7 @@
               </table>
             </div>
           </section>
-        {{/*end*/}}
+        {{end}}
       </div>
 
     </div>
@@ -282,4 +282,5 @@
     {{end}}
   </script>
   <script src="/js/user.page.js" type="text/javascript" charset="utf-8"></script>
+  <script src="/js/codereview.js" type="text/javascript" charset="utf-8"></script>
 {{end}}

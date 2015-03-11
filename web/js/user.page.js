@@ -4,7 +4,7 @@ var curlab = "";
 var loadLabResult = function(user, lab){
   $('span#lab-headline').text(lab);
   $.getJSON("/course/ciresutls", {"Labname": lab, "Course": course, "Username": user}, function(data){
-  // updates text fields
+    // updates text fields
     $("#status").text("Status: ").append(data.Status);
     $("#passes").text("Number of passed tests: ").append(data.NumPasses);
     $("#fails").text("Number of failed tests: ").append(data.NumFails);
@@ -16,10 +16,11 @@ var loadLabResult = function(user, lab){
     });
 
     // updates build and push times. 
-    var d = new Date(data.Timestamp);
-    $("p#timedate").text("Build time: ").append(d.toLocaleDateString() + " - " + d.toLocaleTimeString());
-    var d2 = new Date(data.PushTime);
-    $("#pushtime").text("Code delievered: ").append(d2.toLocaleDateString() + " - " + d2.toLocaleTimeString());
+    var timeformat = "DD/MM/YYYY HH:mm:ss"
+    var buildtime = moment(data.Timestamp).format(timeformat);
+    $("p#timedate").text("Build time: ").append(buildtime);
+    var pushtime = moment(data.PushTime).format(timeformat);
+    $("#pushtime").text("Code delievered: ").append(pushtime);
 
     // updates processbar
     var pbar = $("div.progress > div.progress-bar");
@@ -62,31 +63,8 @@ var loadLabResult = function(user, lab){
   });
 }
 
-var tablerowlink = function(href, target){
-  window.open(href, target);
-}
-
 $(function(){
   // forms
-  $('form#publishreviewform').submit(function(){
-    // TODO: validate
-    $.post("/review/publish", $(this).serialize(), function(base){
-      var data = jQuery.parseJSON(base);
-      a = $('#publishreviewview > .alert');
-      a.removeClass("alert-success alert-danger");
-      if(data.Error) {
-        a.addClass("alert-danger");
-        a.text("Could not publish code review. Message: " + data.Errormsg);
-      } else {
-        a.addClass("alert-success");
-        a.html('Code Review published! <a href="' + data.CommitURL + '" target="_blank">Take a look at it.<a/>');
-      }
-      a.show();
-    });
-    event.preventDefault();
-    return false
-  });
-
   $("button#groupsubmit").click(function(){
     $("form#groupselection").submit();
   });
@@ -149,50 +127,7 @@ $(function(){
     $('.reviewpubtab').addClass("active");
   });
 
-  $('a#reviewlisttab').click(function(){
-    $('div.result-content').hide();
-    $('div#listreviewsview').show();
-
-    // nav active marking
-    $('a.list-group-item').removeClass("active")
-    $(this).addClass("active")
-
-    $.getJSON("/review/list", {"course": course}, function(data){
-      def = $('#reviewlisttable > tbody > tr').last();
-      $('#reviewlisttable > tbody').html(def);
-      data.Reviews.forEach(function(r, i) {
-        if (r.Desc.length > 75) {
-          desc = r.Desc.substring(0, 75) + "...";
-        } else {
-          desc = r.Desc;
-        }
-        $('#reviewlisttable > tbody > tr').first().before("<tr onclick=\"tablerowlink('" + r.URL + "', '_blank')\"><td>" + (i + 1) + "</td><td>" + r.Title + "</td><td><i>" + desc + "</i></td><td><a href=\"#\">Go to review</a></td></tr>");
-      });
-    });
-  });
-
   $('a.indvlabtab:eq(' + labnum + ')').click();
-
-  // allow use of tabs in textareas
-  $("textarea").keydown(function(e) {
-    if(e.keyCode === 9) { // tab was pressed
-      // get caret position/selection
-      var start = this.selectionStart;
-      var end = this.selectionEnd;
-
-      var $this = $(this);
-      var value = $this.val();
-
-      // set textarea value to: text before caret + tab + text after caret
-      $this.val(value.substring(0, start) + "    " + value.substring(end));
-
-      // put caret at right position again (add one for the tab)
-      this.selectionStart = this.selectionEnd = start + 4;
-
-      // prevent the focus lose
-      e.preventDefault();
-    }
-  });
 
   $("button#random").click(function(){
     $.post("/course/requestrandomgroup", {"course": course}, function(){
