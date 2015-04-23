@@ -10,7 +10,10 @@ import (
 )
 
 func cleanUpMemberStorage() error {
-	return os.RemoveAll(global.Basepath + "diskv/users/")
+	if err := os.RemoveAll(global.Basepath + "diskv/users/"); err != nil {
+		return err
+	}
+	return os.RemoveAll(global.Basepath + "diskv/tokens/")
 }
 
 var testIsComplete = []struct {
