@@ -501,7 +501,8 @@ func (o *Organization) CreateRepo(opt RepositoryOptions) (err error) {
 		return
 	}
 
-	if opt.Hook {
+	// TODO: make the string determin what gets sent back from hook.
+	if opt.Hook != "" {
 		config := make(map[string]interface{})
 		config["url"] = global.Hostname + "/event/hook"
 		config["content_type"] = "json"
@@ -610,7 +611,7 @@ func (o *Organization) ListTeams() (teams map[string]Team, err error) {
 func (o *Organization) ListRepos() (repos map[string]Repo, err error) {
 	err = o.connectAdminToGithub()
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	repolist, _, err := o.githubadmin.Repositories.ListByOrg(o.Name, nil)

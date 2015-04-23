@@ -231,7 +231,7 @@ func ApproveGroupHandler(w http.ResponseWriter, r *http.Request) {
 			Name:     git.GroupRepoPrefix + r.FormValue("groupid"),
 			Private:  org.Private,
 			AutoInit: true,
-			Hook:     true,
+			Hook:     "*",
 		}
 		err = org.CreateRepo(repo)
 		if err != nil {

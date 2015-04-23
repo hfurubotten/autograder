@@ -6,7 +6,7 @@ type RepositoryOptions struct {
 	Private  bool
 	TeamID   int
 	AutoInit bool
-	Hook     bool
+	Hook     string
 }
 
 // Repo represent a existing repository.
