@@ -195,7 +195,7 @@ func (m *Member) connectToGithub() error {
 	return nil
 }
 
-// ListOrgs will list all organisations the user is a member of.
+// ListOrgs will list all organisations the user is a member of on github.
 func (m *Member) ListOrgs() (ls []string, err error) {
 	err = m.connectToGithub()
 	if err != nil {
