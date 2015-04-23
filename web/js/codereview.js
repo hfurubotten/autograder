@@ -2,7 +2,12 @@ var tablerowlink = function(href, target){
   window.open(href, target);
 }
 
-$('form#publishreviewform').submit(function(){
+var clearreviewform = function(){
+  $('form#publishreviewform > div > div > input[type=text]').val('');
+  $('form#publishreviewform > div > div > textarea').val('');
+}
+
+$('form#publishreviewform').submit(function(event){
   // TODO: validate
   $.post("/review/publish", $(this).serialize(), function(base){
     var data = jQuery.parseJSON(base);
@@ -14,6 +19,8 @@ $('form#publishreviewform').submit(function(){
     } else {
       a.addClass("alert-success");
       a.html('Code Review published! <a href="' + data.CommitURL + '" target="_blank">Take a look at it.<a/>');
+
+      clearreviewform();
     }
     a.show();
   });
@@ -26,8 +33,8 @@ $('a#reviewlisttab').click(function(){
   $('div#listreviewsview').show();
 
   // nav active marking
-  $('a.list-group-item').removeClass("active")
-  $(this).addClass("active")
+  $('a.list-group-item').removeClass("active");
+  $(this).addClass("active");
 
   $.getJSON("/review/list", {"course": course}, function(data){
     def = $('#reviewlisttable > tbody > tr').last();
