@@ -135,217 +135,167 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	org.IndividualAssignments = indv
 
-	if r.FormValue("template") == "" {
-		repo := git.RepositoryOptions{
-			Name:     git.CourseInfoName,
-			Private:  false,
-			AutoInit: true,
-			Hook:     false,
-		}
-		err = org.CreateRepo(repo)
+	currepos, err := org.ListRepos()
+	if err != nil {
+		log.Println("Problem listing repos in the new course organization: ", err)
+		http.Redirect(w, r, pages.HOMEPAGE, 307)
+		return
+	}
+
+	templaterepos := make(map[string]git.Repo)
+	if r.FormValue("template") != "" {
+		templateorg, _ := git.NewOrganization(r.FormValue("template"))
+		templaterepos, err = templateorg.ListRepos()
 		if err != nil {
-			log.Println(err)
+			log.Println("Problem listing repos in the template organization: ", err)
+			http.Redirect(w, r, pages.HOMEPAGE, 307)
 			return
 		}
+	}
 
-		repo = git.RepositoryOptions{
-			Name:     git.StandardRepoName,
-			Private:  org.Private,
-			AutoInit: true,
-			Hook:     false,
-		}
-		err = org.CreateRepo(repo)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
-		repo = git.RepositoryOptions{
-			Name:     git.TestRepoName,
-			Private:  org.Private,
-			AutoInit: true,
-			Hook:     false,
-		}
-		err = org.CreateRepo(repo)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
-		for i := 0; i < org.IndividualAssignments; i++ {
-			path := "lab" + strconv.Itoa(i+1) + "/README.md"
-			commitmessage := "Adding readme file for lab assignment " + strconv.Itoa(i+1)
-			content := "# Lab assignment " + strconv.Itoa(i+1)
-			_, err = org.CreateFile(git.StandardRepoName, path, content, commitmessage)
+	// creates the course info repo
+	if _, ok := currepos[git.CourseInfoName]; !ok {
+		if _, ok = templaterepos[git.CourseInfoName]; ok {
+			err = org.Fork(r.FormValue("template"), git.CourseInfoName)
 			if err != nil {
-				log.Println(err)
-			}
-			_, err = org.CreateFile(git.TestRepoName, path, content, commitmessage)
-			content = "# Lab assignment " + strconv.Itoa(i+1) + " test"
-			if err != nil {
-				log.Println(err)
-			}
-		}
-
-		if org.GroupAssignments > 0 {
-			repo.Name = git.GroupsRepoName
-			err = org.CreateRepo(repo)
-			if err != nil {
-				log.Println(err)
+				log.Println("Couldn't fork the course info repo: ", err)
+				http.Redirect(w, r, pages.HOMEPAGE, 307)
 				return
 			}
-			repo = git.RepositoryOptions{
-				Name:     git.GrouptestRepoName,
-				Private:  org.Private,
-				AutoInit: true,
-			}
-			err = org.CreateRepo(repo)
-			if err != nil {
-				log.Println(err)
-				return
-			}
-
-			for i := 0; i < org.GroupAssignments; i++ {
-				path := "lab" + strconv.Itoa(i+1) + "/README.md"
-				commitmessage := "Adding readme file for lab assignment " + strconv.Itoa(i+1)
-				content := "# Group assignment " + strconv.Itoa(i+1)
-				_, err = org.CreateFile(git.GroupsRepoName, path, content, commitmessage)
-				if err != nil {
-					log.Println(err)
-				}
-				content = "# Group assignment " + strconv.Itoa(i+1) + " tests"
-				_, err = org.CreateFile(git.GrouptestRepoName, path, content, commitmessage)
-				if err != nil {
-					log.Println(err)
-				}
-			}
-		}
-
-	} else {
-		var repo git.RepositoryOptions
-
-		// Tries to fork the course-info repo, if it fails it will create a blank one.
-		err = org.Fork(r.FormValue("template"), git.CourseInfoName)
-		if err != nil {
-			repo = git.RepositoryOptions{
+		} else {
+			repo := git.RepositoryOptions{
 				Name:     git.CourseInfoName,
-				Private:  org.Private,
+				Private:  false,
 				AutoInit: true,
-				Hook:     false,
 			}
 			err = org.CreateRepo(repo)
 			if err != nil {
 				log.Println(err)
 				return
-			}
-		}
-
-		// Tries to fork the labs repo, if it fails it will create a blank one.
-		err = org.Fork(r.FormValue("template"), git.StandardRepoName)
-		if err != nil {
-			repo = git.RepositoryOptions{
-				Name:     git.StandardRepoName,
-				Private:  org.Private,
-				AutoInit: true,
-				Hook:     false,
-			}
-			err = org.CreateRepo(repo)
-			if err != nil {
-				log.Println(err)
-				return
-			}
-
-			for i := 0; i < org.IndividualAssignments; i++ {
-				path := "lab" + strconv.Itoa(i+1) + "/README.md"
-				commitmessage := "Adding readme file for lab assignment " + strconv.Itoa(i+1)
-				content := "# Lab assignment " + strconv.Itoa(i+1)
-				_, err = org.CreateFile(git.StandardRepoName, path, content, commitmessage)
-				if err != nil {
-					log.Println(err)
-				}
-			}
-		}
-
-		// Tries to fork the test-labs repo, if it fails it will create a blank one.
-		err = org.Fork(r.FormValue("template"), git.TestRepoName)
-		if err != nil {
-			repo = git.RepositoryOptions{
-				Name:     git.TestRepoName,
-				Private:  org.Private,
-				AutoInit: true,
-				Hook:     false,
-			}
-			err = org.CreateRepo(repo)
-			if err != nil {
-				log.Println(err)
-				return
-			}
-
-			for i := 0; i < org.IndividualAssignments; i++ {
-				path := "lab" + strconv.Itoa(i+1) + "/README.md"
-				commitmessage := "Adding readme file for lab assignment " + strconv.Itoa(i+1)
-				content := "# Lab assignment " + strconv.Itoa(i+1)
-				_, err = org.CreateFile(git.TestRepoName, path, content, commitmessage)
-				if err != nil {
-					log.Println(err)
-				}
-			}
-		}
-
-		if org.GroupAssignments > 0 {
-			err = org.Fork(r.FormValue("template"), git.GroupsRepoName)
-			if err != nil {
-				repo = git.RepositoryOptions{
-					Name:     git.GroupsRepoName,
-					Private:  org.Private,
-					AutoInit: true,
-					Hook:     false,
-				}
-				err = org.CreateRepo(repo)
-				if err != nil {
-					log.Println(err)
-					return
-				}
-
-				for i := 0; i < org.IndividualAssignments; i++ {
-					path := "lab" + strconv.Itoa(i+1) + "/README.md"
-					commitmessage := "Adding readme file for lab assignment " + strconv.Itoa(i+1)
-					content := "# Group lab assignment " + strconv.Itoa(i+1)
-					_, err = org.CreateFile(git.GroupsRepoName, path, content, commitmessage)
-					if err != nil {
-						log.Println(err)
-					}
-				}
-			}
-
-			err = org.Fork(r.FormValue("template"), git.GrouptestRepoName)
-			if err != nil {
-				repo = git.RepositoryOptions{
-					Name:     git.GrouptestRepoName,
-					Private:  org.Private,
-					AutoInit: true,
-					Hook:     false,
-				}
-				err = org.CreateRepo(repo)
-				if err != nil {
-					log.Println(err)
-					return
-				}
-
-				for i := 0; i < org.IndividualAssignments; i++ {
-					path := "lab" + strconv.Itoa(i+1) + "/README.md"
-					commitmessage := "Adding readme file for lab assignment " + strconv.Itoa(i+1)
-					content := "# Group lab assignment " + strconv.Itoa(i+1)
-					_, err = org.CreateFile(git.GrouptestRepoName, path, content, commitmessage)
-					if err != nil {
-						log.Println(err)
-					}
-				}
 			}
 		}
 	}
 
+	// creates the lab assignment repo
+	labsl := make(chan int)
+	if _, ok := currepos[git.StandardRepoName]; !ok {
+		go func(l chan int) {
+			if _, ok = templaterepos[git.StandardRepoName]; ok {
+				err = org.Fork(r.FormValue("template"), git.StandardRepoName)
+				if err != nil {
+					log.Println("Couldn't fork the individual assignment repo: ", err)
+					http.Redirect(w, r, pages.HOMEPAGE, 307)
+					return
+				}
+			} else {
+				repo := git.RepositoryOptions{
+					Name:     git.StandardRepoName,
+					Private:  org.Private,
+					AutoInit: true,
+				}
+				err = org.CreateRepo(repo)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+
+				for i := 0; i < org.IndividualAssignments; i++ {
+					path := "lab" + strconv.Itoa(i+1) + "/README.md"
+					commitmessage := "Adding readme file for lab assignment " + strconv.Itoa(i+1)
+					content := "# Lab assignment " + strconv.Itoa(i+1)
+					_, err = org.CreateFile(git.StandardRepoName, path, content, commitmessage)
+					if err != nil {
+						log.Println(err)
+					}
+				}
+			}
+			l <- 1
+		}(labsl)
+	}
+
+	// creates test repo
+	testl := make(chan int)
+	if _, ok := currepos[git.TestRepoName]; !ok {
+		go func(l chan int) {
+			if _, ok = templaterepos[git.TestRepoName]; ok {
+				err = org.Fork(r.FormValue("template"), git.TestRepoName)
+				if err != nil {
+					log.Println("Couldn't fork the test repo: ", err)
+					http.Redirect(w, r, pages.HOMEPAGE, 307)
+					return
+				}
+			} else {
+				repo := git.RepositoryOptions{
+					Name:     git.TestRepoName,
+					Private:  org.Private,
+					AutoInit: true,
+					//Hook:     "push", // TODO: uncomment when CI rebuilds all on new test.
+				}
+				err = org.CreateRepo(repo)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+
+				for i := 0; i < org.IndividualAssignments; i++ {
+					path := "lab" + strconv.Itoa(i+1) + "/README.md"
+					commitmessage := "Adding readme file for lab assignment " + strconv.Itoa(i+1)
+					content := "# Lab assignment " + strconv.Itoa(i+1)
+					_, err = org.CreateFile(git.TestRepoName, path, content, commitmessage)
+					content = "# Lab assignment " + strconv.Itoa(i+1) + " test"
+					if err != nil {
+						log.Println(err)
+					}
+				}
+			}
+			l <- 1
+		}(testl)
+	}
+
+	// creates the group assignment repo, if number of assignments are larger than 0.
+	glabsl := make(chan int)
+	if org.GroupAssignments > 0 {
+		if _, ok := currepos[git.GroupsRepoName]; !ok {
+			go func(l chan int) {
+				if _, ok = templaterepos[git.GroupsRepoName]; ok {
+					err = org.Fork(r.FormValue("template"), git.GroupsRepoName)
+					if err != nil {
+						log.Println("Couldn't fork the group assignment repo: ", err)
+						http.Redirect(w, r, pages.HOMEPAGE, 307)
+						return
+					}
+				} else {
+					repo := git.RepositoryOptions{
+						Name:     git.GroupsRepoName,
+						Private:  org.Private,
+						AutoInit: true,
+					}
+					err = org.CreateRepo(repo)
+					if err != nil {
+						log.Println(err)
+						return
+					}
+
+					for i := 0; i < org.IndividualAssignments; i++ {
+						path := "lab" + strconv.Itoa(i+1) + "/README.md"
+						commitmessage := "Adding readme file for lab assignment " + strconv.Itoa(i+1)
+						content := "# Lab assignment " + strconv.Itoa(i+1)
+						_, err = org.CreateFile(git.GroupsRepoName, path, content, commitmessage)
+						content = "# Lab assignment " + strconv.Itoa(i+1) + " test"
+						if err != nil {
+							log.Println(err)
+						}
+					}
+				}
+				l <- 1
+			}(glabsl)
+		}
+	} else {
+		glabsl <- 1
+	}
+
 	// Creates the student team
+	// TODO: put this in a seperate go rutine and check if the team exsists already.
 	var repos []string
 	repos = append(repos, git.StandardRepoName, git.CourseInfoName)
 	if org.GroupAssignments > 0 {
@@ -363,6 +313,12 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	org.AddTeacher(member)
+
+	// wait on github completion
+	// TODO: fix correct channel use further up.
+	// <-labsl
+	// <-testl
+	// <-glabsl
 
 	// Saved the new organization info
 	err = org.Save()
@@ -540,7 +496,7 @@ func ApproveCourseMembershipHandler(w http.ResponseWriter, r *http.Request) {
 			Name:     username + "-" + git.StandardRepoName,
 			Private:  org.Private,
 			AutoInit: true,
-			Hook:     true,
+			Hook:     "*",
 		}
 		err = org.CreateRepo(repo)
 		if err != nil {
