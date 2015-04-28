@@ -96,7 +96,7 @@ type SetTeacherView struct {
 }
 
 // SetTeacherURL is the URL used to call SetTeacherHandler.
-var SetTeacherURL string = "/admin/teacher"
+var SetTeacherURL = "/admin/teacher"
 
 // SetTeacherHandler is a http handler which can set or unset the teacher property of a user.
 func SetTeacherHandler(w http.ResponseWriter, r *http.Request) {

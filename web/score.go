@@ -71,6 +71,7 @@ type LeaderboardDataView struct {
 var LeaderboardDataURL = "/leaderboard"
 
 const (
+	// Time periods used to get different scores.
 	TotalScore int = iota
 	MonthlyScore
 	WeeklyScore

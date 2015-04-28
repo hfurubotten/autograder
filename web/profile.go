@@ -76,7 +76,7 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 // UpdateMemberURL is the URL used to call UpdateMemberHandler.
 var UpdateMemberURL = "/updatemember"
 
-//  UpdateMemberHandler is a http handler for updating a users profile data.
+// UpdateMemberHandler is a http handler for updating a users profile data.
 func UpdateMemberHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		if r.FormValue("name") == "" || r.FormValue("studentid") == "" || r.FormValue("email") == "" {
