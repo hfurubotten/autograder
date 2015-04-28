@@ -26,7 +26,7 @@
       </div>
     </div>
     <div class="col-md-9">
-      <h1>Top 10 Students <span class="period">in total</span></h1>
+      <h1>Top Students <span class="period">in total</span></h1>
       <div class="row">
         <div class="col-md-11">
           <p class="lead" id="userposition"><span class="text-muted">You are #<span id="userplace"></span> on the scoreboard <span class="period">in total</span> with <span id="userpoints">0</span> points!</span></p>
@@ -39,7 +39,7 @@
         <thead>
           <tr>
             <th class="col-md-1"></th>
-            <th class="col-md-4">Student</th>
+            <th class="col-md-4">Students</th>
             <th class="col-md-2"></th>
             <th class="col-md-3"></th>
             <th class="col-md-2"></th>
@@ -53,7 +53,7 @@
             <td style="padding-top: 15px;"><span class="lead pull-right"><span class="points" place="0">0</span> points!</span></td>
             <td></td>
           </tr>
-          
+
           <tr class="scorerow" place="1" style="display: none;">
             <td><img class="media-object" src="/img/flaticon/number1.png" alt="2" width="48px" style="display: block; margin-left: auto; margin-right: auto;"></td>
             <td style="padding-top: 15px;"><span class="username lead" place="1">u</span></td>
@@ -61,7 +61,7 @@
             <td style="padding-top: 15px;"><span class="lead pull-right"><span class="points" place="1">0</span> points!</span></td>
             <td></td>
           </tr>
-          
+
           <tr class="scorerow" place="2" style="display: none;">
             <td><img class="media-object" src="/img/flaticon/number2.png" alt="3" width="48px" style="display: block; margin-left: auto; margin-right: auto;"></td>
             <td style="padding-top: 15px;"><span class="username lead" place="2">u</span></td>
@@ -69,7 +69,7 @@
             <td style="padding-top: 15px;"><span class="lead pull-right"><span class="points" place="2">0</span> points!</span></td>
             <td></td>
           </tr>
-          
+
           <tr class="scorerow" place="3" style="display: none;">
             <td><img class="media-object" src="/img/flaticon/number3.png" alt="4" width="32px" style="display: block; margin-left: auto; margin-right: auto;"></td>
             <td style="padding-top: 8px;"><span class="username lead" place="3">u</span></td>
@@ -77,7 +77,7 @@
             <td style="padding-top: 8px;"><span class="lead pull-right"><span class="points" place="3">0</span> points!</span></td>
             <td></td>
           </tr>
-          
+
           <tr class="scorerow" place="4" style="display: none;">
             <td><img class="media-object" src="/img/flaticon/number4.png" alt="5" width="32px" style="display: block; margin-left: auto; margin-right: auto;"></td>
             <td style="padding-top: 8px;"><span class="username lead" place="4">u</span></td>
@@ -85,7 +85,7 @@
             <td style="padding-top: 8px;"><span class="lead pull-right"><span class="points" place="4">0</span> points!</span></td>
             <td></td>
           </tr>
-          
+
           <tr class="scorerow" place="5" style="display: none;">
             <td><img class="media-object" src="/img/flaticon/number5.png" alt="6" width="32px" style="display: block; margin-left: auto; margin-right: auto;"></td>
             <td><span class="username lead" place="5">u</span></td>
@@ -93,7 +93,7 @@
             <td style="padding-top: 8px;"><span class="lead pull-right"><span class="points" place="5">0</span> points!</span></td>
             <td></td>
           </tr>
-          
+
           <tr class="scorerow" place="6" style="display: none;">
             <td><img class="media-object" src="/img/flaticon/number6.png" alt="7" width="32px" style="display: block; margin-left: auto; margin-right: auto;"></td>
             <td style="padding-top: 8px;"><span class="username lead" place="6">u</span></td>
@@ -101,7 +101,7 @@
             <td style="padding-top: 8px;"><span class="lead pull-right"><span class="points" place="6">0</span> points!</span></td>
             <td></td>
           </tr>
-          
+
           <tr class="scorerow" place="7" style="display: none;">
             <td><img class="media-object" src="/img/flaticon/number7.png" alt="8" width="32px" style="display: block; margin-left: auto; margin-right: auto;"></td>
             <td style="padding-top: 8px;"><span class="username lead" place="7">u</span></td>
@@ -109,7 +109,7 @@
             <td style="padding-top: 8px;"><span class="lead pull-right"><span class="points" place="7">0</span> points!</span></td>
             <td></td>
           </tr>
-          
+
           <tr class="scorerow" place="8" style="display: none;">
             <td><img class="media-object" src="/img/flaticon/number8.png" alt="9" width="32px" style="display: block; margin-left: auto; margin-right: auto;"></td>
             <td style="padding-top: 8px;"><span class="username lead" place="8">u</span></td>
@@ -180,7 +180,7 @@
             $('#userposition').show();
             $("span#userplace").text(i+1)
             $("span#userpoints").text(data.Scores[u])
-          } else {            
+          } else {
             $('#userposition').hide();
           }
         }

@@ -40,7 +40,7 @@
           <a class="list-group-item" href="https://github.com/{{.Org.Name}}/course-info" target="_blank">Course info<span class="pull-right glyphicon glyphicon-link"></span></a>
           <a class="list-group-item" href="https://github.com/{{.Org.Name}}/labs" target="_blank">Individual labs<span class="pull-right glyphicon glyphicon-link"></span></a>
           <a class="list-group-item" href="https://github.com/{{.Org.Name}}/glabs" target="_blank">Group labs<span class="pull-right glyphicon glyphicon-link"></span></a>
-          
+
           {{if .Org.CodeReview}}
             <a class="list-group-item disabled">Code Review</a>
             <a class="list-group-item" href="https://github.com/{{.Org.Name}}/code-reviews" target="_blank">Browse on Github <span class="pull-right glyphicon glyphicon-link"></span></a>
@@ -190,7 +190,7 @@
         <!-- Student result section -->
         <section id="studentresults">
           <h1>Individual Results</h1>
-          <p class="lead">Build and test results from the students. Click in on a student to see complete build log.</p>
+          <p class="lead">Build and test results from the students. Click on a student to see complete build log.</p>
 
           <div class="table-responsive">
             <table class="table table-striped" id="studentresults">
@@ -228,7 +228,7 @@
                         <li><a onclick="addassistant({{$index}}, false)">Make Teaching Assistant</a></li>
                       </ul>
                     </div>
-                    
+
                   </td>
                 </tr>
                 {{else}}
@@ -482,7 +482,7 @@
               {{if gt .IndividualAssignments 0 }}
                 <h3>Individual assignments</h3>
                 <p>If you change the names of the folders containing the different individual assignments, this has to be marked for the automatic system to recognize this. It needs to know which folder to use. The standard folder name is "lab#", where the # is replaced by the number in the sequence of assignments it is. Example of this is "lab1" for the first assignment. Fill in the folder name below and hit the update button to submit the changes. </p>
-            
+
                 {{$indvdeadlines := .IndividualDeadlines}}
                 {{range $i, $element := .IndividualLabFolders}}
                   <div class="form-group">
@@ -514,7 +514,7 @@
               {{if gt .GroupAssignments 0 }}
                 <h3>Group assignments</h3>
                 <p>If you change the names of the folders containing the different group assignments, this has to be marked for the automatic system to recognize this. It needs to know which folder to use. The standard folder name is "group#", where the # is replaced by the number in the sequence of assignments it is. Example of this is "group1" for the first assignment. Fill in the folder name below and hit the update button to submit the changes. </p>
-            
+
                 {{$groupdeadlines := .GroupDeadlines}}
                 {{range $i, $element := .GroupLabFolders}}
                   <div class="form-group">
