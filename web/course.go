@@ -340,7 +340,7 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 // NewCourseMemberURL is the URL used to call NewCourseMemberHandler.
 var NewCourseMemberURL = "/course/register"
 
-// NewMemberView is the struct passed to the html template complier in NewCourseMemberHandler and RegisterCourseMemberHandler.
+// NewMemberView is the struct passed to the html template compiler in NewCourseMemberHandler and RegisterCourseMemberHandler.
 type NewMemberView struct {
 	Member *git.Member
 	Orgs   []*git.Organization
