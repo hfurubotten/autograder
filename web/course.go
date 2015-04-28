@@ -209,7 +209,7 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 					}
 				}
 			}
-			l <- 1
+			//l <- 1
 		}(labsl)
 	}
 
@@ -248,7 +248,7 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 					}
 				}
 			}
-			l <- 1
+			//l <- 1
 		}(testl)
 	}
 
@@ -287,11 +287,11 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 						}
 					}
 				}
-				l <- 1
+				//l <- 1
 			}(glabsl)
 		}
 	} else {
-		glabsl <- 1
+		//glabsl <- 1
 	}
 
 	// Creates the student team
