@@ -352,9 +352,15 @@ func (o *Organization) IsTeacher(member *Member) bool {
 	var mok bool
 	if member.IsTeacher {
 		_, mok = member.Teaching[o.Name]
-		if orgok && !mok {
+		_, aok := member.AssistantCourses[o.Name]
+		if orgok && (!mok && !aok) {
 			member.Teaching[o.Name] = nil
 			member.Save() // This line is not tread safe!
+		}
+
+		if mok && aok {
+			delete(member.AssistantCourses, o.Name)
+			member.Save()
 		}
 	} else {
 		var ok bool
