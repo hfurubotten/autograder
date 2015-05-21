@@ -65,7 +65,7 @@ var loadLabResult = function(user, lab){
 
 $("#rebuild").click(function(event){
   var lab = curlab;
-  var user = curuser;
+  var user = username;
   $("div.alert").show(200);
   $("div.alert").removeClass("alert-primary alert-danger alert-success").addClass("alert-warning").text("Running build");
   $.post("/event/manualbuild", {"course": course, "user": user, "lab": lab}, function(){
