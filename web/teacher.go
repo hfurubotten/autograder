@@ -205,9 +205,9 @@ func ShowResultHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			if group.CurrentLabNum >= org.GroupAssignments {
-				labnum = org.GroupAssignments - 1
+				labnum = org.GroupAssignments
 			} else {
-				labnum = group.CurrentLabNum - 1
+				labnum = group.CurrentLabNum
 			}
 		} else {
 			http.Redirect(w, r, pages.HOMEPAGE, 307)
@@ -221,9 +221,9 @@ func ShowResultHandler(w http.ResponseWriter, r *http.Request) {
 
 		nr := user.Courses[org.Name].CurrentLabNum
 		if nr >= org.IndividualAssignments {
-			labnum = org.IndividualAssignments - 1
+			labnum = org.IndividualAssignments
 		} else {
-			labnum = nr - 1
+			labnum = nr
 		}
 	}
 
