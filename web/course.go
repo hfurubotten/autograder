@@ -704,7 +704,7 @@ func UpdateCourseHandler(w http.ResponseWriter, r *http.Request) {
 
 	indvfolders := r.PostForm["lab"]
 	for i := 1; i <= indv; i = i + 1 {
-		if len(indvfolders) < i-1 {
+		if len(indvfolders) <= i-1 {
 			org.IndividualLabFolders[i] = "lab" + strconv.Itoa(i)
 		}
 
@@ -717,7 +717,7 @@ func UpdateCourseHandler(w http.ResponseWriter, r *http.Request) {
 
 	groupfolders := r.PostForm["group"]
 	for i := 1; i <= groups; i = i + 1 {
-		if len(groupfolders) < i-1 {
+		if len(groupfolders) <= i-1 {
 			org.GroupLabFolders[i] = "grouplab" + strconv.Itoa(i)
 		}
 
@@ -731,7 +731,7 @@ func UpdateCourseHandler(w http.ResponseWriter, r *http.Request) {
 	timelayout := "02/01/2006 15:04"
 	indvdeadlines := r.PostForm["indvdeadline"]
 	for i := 1; i <= indv; i = i + 1 {
-		if len(indvdeadlines) < i-1 {
+		if len(indvdeadlines) <= i-1 {
 			org.SetIndividualDeadline(i, time.Now())
 		}
 
@@ -747,7 +747,7 @@ func UpdateCourseHandler(w http.ResponseWriter, r *http.Request) {
 
 	groupdeadlines := r.PostForm["groupdeadline"]
 	for i := 1; i <= groups; i = i + 1 {
-		if len(groupdeadlines) < i-1 {
+		if len(groupdeadlines) <= i-1 {
 			org.SetGroupDeadline(i, time.Now())
 		}
 
