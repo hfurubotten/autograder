@@ -12,8 +12,8 @@ import (
 
 // ScoreboardView is the stuct used to pass data to the html template compiler.
 type ScoreboardView struct {
-	Member *git.Member
-	Org    *git.Organization
+	StdTemplate
+	Org *git.Organization
 }
 
 // ScoreboardURL is the URL used to call ScoreboardHandler.
@@ -53,8 +53,10 @@ func ScoreboardHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	view := ScoreboardView{
-		Member: member,
-		Org:    org,
+		StdTemplate: StdTemplate{
+			Member: member,
+		},
+		Org: org,
 	}
 
 	execTemplate("scoreboard.html", w, view)

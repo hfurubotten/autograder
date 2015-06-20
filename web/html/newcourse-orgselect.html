@@ -1,10 +1,11 @@
-{{define "title"}} UIS Autograder {{end}}
+{{define "PageTitle"}} UIS Autograder {{end}}
+{{define "Headline"}}Create a new course{{end}}
+{{define "Subtext"}}Step 2: Link Autograder to GitHub organization{{end}}
 {{define "body"}}
 
       <div id="newcoursepart2" class="container">
         <div class="row">
-          <div class="col-md-9">
-            <h1>Create a new course</h1>
+          <div class="col-md-12">
             <p>Select the organisation you want to use with the course:</p>
             <table class="table table-hover">
             {{range .Orgs}}

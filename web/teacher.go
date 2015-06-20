@@ -12,8 +12,8 @@ import (
 
 // TeachersPanelView is the view passed to the html template compiler in TeachersPanelHandler.
 type TeachersPanelView struct {
-	Member *git.Member
-	Org    *git.Organization
+	StdTemplate
+	Org *git.Organization
 
 	PendingUser  map[string]interface{}
 	PendingGroup map[int]*git.Group
@@ -129,7 +129,9 @@ func TeachersPanelHandler(w http.ResponseWriter, r *http.Request) {
 	_, _, labtype := org.FindCurrentLab()
 
 	view := TeachersPanelView{
-		Member:         member,
+		StdTemplate: StdTemplate{
+			Member: member,
+		},
 		PendingUser:    users,
 		Org:            org,
 		PendingGroup:   pendinggroups,
@@ -140,7 +142,7 @@ func TeachersPanelHandler(w http.ResponseWriter, r *http.Request) {
 
 // ShowResultView is the view passed to the html template compiler in ShowResultHandler.
 type ShowResultView struct {
-	Member   *git.Member
+	StdTemplate
 	Org      *git.Organization
 	Username string
 	Labnum   int
@@ -228,7 +230,9 @@ func ShowResultHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	view := ShowResultView{
-		Member:   member,
+		StdTemplate: StdTemplate{
+			Member: member,
+		},
 		Org:      org,
 		Username: username,
 		Labnum:   labnum,

@@ -20,9 +20,9 @@ var NewCourseURL = "/course/new/org"
 
 // CourseView is the struct sent to the html template compiler.
 type CourseView struct {
-	Member *git.Member
-	Org    string
-	Orgs   []string
+	StdTemplate
+	Org  string
+	Orgs []string
 }
 
 // NewCourseHandler is a http hander giving a information page for
@@ -342,9 +342,9 @@ var NewCourseMemberURL = "/course/register"
 
 // NewMemberView is the struct passed to the html template compiler in NewCourseMemberHandler and RegisterCourseMemberHandler.
 type NewMemberView struct {
-	Member *git.Member
-	Orgs   []*git.Organization
-	Org    string
+	StdTemplate
+	Orgs []*git.Organization
+	Org  string
 }
 
 // NewCourseMemberHandler is a http handler which gives a page where
@@ -358,8 +358,10 @@ func NewCourseMemberHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	view := NewMemberView{
-		Member: member,
-		Orgs:   git.ListRegisteredOrganizations(),
+		StdTemplate: StdTemplate{
+			Member: member,
+		},
+		Orgs: git.ListRegisteredOrganizations(),
 	}
 	execTemplate("course-registermember.html", w, view)
 }
@@ -418,8 +420,10 @@ func RegisterCourseMemberHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	view := NewMemberView{
-		Member: member,
-		Org:    orgname,
+		StdTemplate: StdTemplate{
+			Member: member,
+		},
+		Org: orgname,
 	}
 	execTemplate("course-registeredmemberinfo.html", w, view)
 }
@@ -575,7 +579,7 @@ var UserCoursePageURL = "/course/"
 
 // MainCourseView is the struct sent to the html template compiler in UserCoursePageHandler.
 type MainCourseView struct {
-	Member      *git.Member
+	StdTemplate
 	Group       *git.Group
 	Labnum      int
 	GroupLabnum int
@@ -615,8 +619,10 @@ func UserCoursePageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	view := MainCourseView{
-		Member: member,
-		Org:    org,
+		StdTemplate: StdTemplate{
+			Member: member,
+		},
+		Org: org,
 	}
 
 	nr := member.Courses[org.Name].CurrentLabNum

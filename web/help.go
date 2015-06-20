@@ -3,14 +3,7 @@ package web
 import (
 	"net/http"
 	"strings"
-
-	"github.com/hfurubotten/autograder/git"
 )
-
-// HelpView is the struct given to the html template compilator in HelpHandler.
-type HelpView struct {
-	Member *git.Member
-}
 
 // HelpURL is the URL used to call HelpHandler.
 var HelpURL = "/help/"
@@ -26,7 +19,7 @@ func HelpHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in.
 	member, err := checkMemberApproval(w, r, false)
 	if err == nil {
-		view := HelpView{
+		view := StdTemplate{
 			Member: member,
 		}
 

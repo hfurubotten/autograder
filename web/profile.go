@@ -15,7 +15,8 @@ import (
 
 // ProfileView is the view passed to the html template compiler for ProfileHandler.
 type ProfileView struct {
-	Member             *git.Member
+	StdTemplate
+
 	PointsToNextLvl    int64
 	PercentLvlComplete int
 
@@ -63,7 +64,10 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	view := ProfileView{
-		Member:             m,
+		StdTemplate: StdTemplate{
+			Member:          m,
+			OptinalHeadline: true,
+		},
 		PointsToNextLvl:    diffUser,
 		PercentLvlComplete: percentDone,
 		MissingName:        m.Name == "",

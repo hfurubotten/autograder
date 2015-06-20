@@ -1,18 +1,7 @@
-{{define "title"}}UIS Autograder{{end}}
+{{define "PageTitle"}} UIS Autograder {{end}}
+{{define "Headline"}}Results for {{.Username}}{{end}}
+{{define "Subtext"}}{{.Org.ScreenName}}{{end}}
 {{define "body"}}
-  <!-- Header -->
-  <div class="jumbotron">
-    <div class="container">
-      <div class="row">
-        <div class="col-md-12">
-          <h1>Results for {{.Username}}</h1>
-          <p><i>{{.Org.ScreenName}}</i></p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-
 
   <div class="container">
   	<div class="row">

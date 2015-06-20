@@ -121,7 +121,7 @@ func CatchAllHandler(w http.ResponseWriter, r *http.Request) {
 
 // HomeView is the view passed to the html template compailer in HomeHandler.
 type HomeView struct {
-	Member    *git.Member
+	StdTemplate
 	Teaching  map[string]*git.Organization
 	Assisting map[string]*git.Organization
 	Courses   map[string]*git.Organization
@@ -138,7 +138,9 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	view := HomeView{
-		Member:    member,
+		StdTemplate: StdTemplate{
+			Member: member,
+		},
 		Teaching:  make(map[string]*git.Organization),
 		Assisting: make(map[string]*git.Organization),
 		Courses:   make(map[string]*git.Organization),

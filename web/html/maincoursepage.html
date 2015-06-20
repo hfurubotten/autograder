@@ -1,17 +1,7 @@
-{{define "title"}} UIS Autograder {{end}}
+{{define "PageTitle"}} UIS Autograder {{end}}
+{{define "Headline"}}{{.Org.ScreenName}}{{end}}
+{{define "Subtext"}}{{.Org.Description}}{{end}}
 {{define "body"}}
-<!-- Header -->
-<div class="jumbotron">
-  <div class="container">
-    <div class="row">
-      <div class="col-md-12">
-        <h1>{{.Org.Name}}</h1>
-        <p><i>{{.Org.Description}}</i></p>
-      </div>
-    </div>
-  </div>
-</div>
-
   <div class="container">
     <!-- Nav and Content -->
     <div class="row">

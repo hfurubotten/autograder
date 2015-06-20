@@ -11,7 +11,7 @@ import (
 
 // AdminView is the struct passed to the html template compiler.
 type AdminView struct {
-	Member  *git.Member
+	StdTemplate
 	Members []*git.Member
 }
 

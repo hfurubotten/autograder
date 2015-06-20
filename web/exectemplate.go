@@ -5,7 +5,14 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/hfurubotten/autograder/git"
 )
+
+type StdTemplate struct {
+	OptinalHeadline bool
+	Member          *git.Member
+}
 
 var funcMap = template.FuncMap{
 	"noescape": func(s string) template.HTML {
