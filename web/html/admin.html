@@ -1,17 +1,28 @@
 {{define "title"}}UIS Autograder - Admin pages{{end}}
 {{define "body"}}
+  <div class="jumbotron">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12">
+          <h1>Admin Panel</h1>
+
+          <p>Manage members teacher and administrator privileges.</p>
+				
+        </div>
+      </div>
+    </div>
+  </div>
 	<div class="container">
 		<div class="row">
 			<div class="col-md-12">
-				<h1>Administrator Options</h1>
-				<p>Here you can promote members to either a teacher or administrator.</p>
+				
 				<p>An <strong>administrator</strong> will be able to access this page and can promote members like you.</p>
 				<p>Here you can promote a member to a <strong>teacher</strong>. A teacher is able to create new courses and can manage those created by this teacher. When a teacher registers to the autograder, the teacher will be equal to the students, and need to be promoted before managing courses. If a teaching assistant will be added, the assistant should not be promoted to a teacher. In the managing page of the course, teaching assistants can be added from the members who have signed up for the course. </p>
 
 				<p>Toggle the buttons to change the status of the members.</p>
 
 				<table class="table table-striped">
-					<caption>Members</caption>
+					<caption><strong>Members</strong></caption>
 					<thead>
 						<tr>
 							<th>Username</th>
