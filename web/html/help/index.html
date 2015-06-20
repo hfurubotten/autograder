@@ -1,10 +1,25 @@
 {{define "homeMenyTags"}} class="active" {{end}}
 {{define "title"}}UIS Autograder - Help pages{{end}}
 {{define "body"}}
+  <!-- Header -->
+  <div class="jumbotron">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12">
+          <h1>Autograder Help</h1>
+          <p><i></i></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
   <div class="container">
     <div class="row">
-      <div class="col-lg-2">
-  	    <div class="list-group affix">
+
+      <div class="col-md-3 hidden-print">
+        <h3><!-- Something something --></h3>
+        <div class="list-group">
           <a href="#" class="list-group-item disabled">Help</a>
           <a href="#autograder" class="list-group-item">Autograder</a>
           <a href="#reg" class="list-group-item">Registration</a>
@@ -12,7 +27,7 @@
         </div>
       </div>
 
-      <div class="col-lg-10">
+      <div class="col-lg-9">
 
         <article>
           <h1 id="autograder">Autograder</h1>
