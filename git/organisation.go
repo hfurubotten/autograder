@@ -344,6 +344,36 @@ func (o *Organization) AddTeacher(member *Member) (err error) {
 	return
 }
 
+// RemoveTeacher will remove a teacher from the teaching staff. This
+// method also removes the user to the owners team on github.
+//
+// TODO: Owners team is no longer a spesial admin team over the
+// organization on github. This method needs to be rewritten
+// to suppert the new admin API.
+//
+// This method needs locking
+func (o *Organization) RemoveTeacher(member *Member) (err error) {
+	err = o.connectAdminToGithub()
+	if err != nil {
+		return
+	}
+
+	delete(o.Teachers, member.Username)
+
+	var teams map[string]Team
+	if o.OwnerTeamID == 0 {
+		teams, err = o.ListTeams()
+		owners, ok := teams["Owners"]
+		if !ok {
+			return errors.New("Couldn't find the owners team.")
+		}
+		o.OwnerTeamID = owners.ID
+	}
+
+	_, err = o.githubadmin.Organizations.RemoveTeamMembership(o.OwnerTeamID, member.Username)
+	return
+}
+
 // IsTeacher returns whether if a user is a teacher or not.
 func (o *Organization) IsTeacher(member *Member) bool {
 	_, orgok := o.Teachers[member.Username]

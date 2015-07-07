@@ -250,6 +250,17 @@ func (m *Member) AddAssistingOrganization(org *Organization) (err error) {
 	return
 }
 
+// AddAssistingOrganization will add a new github organization to courses the user are teaching assistant of.
+func (m *Member) RemoveAssistingOrganization(org *Organization) (err error) {
+	if m.AssistantCourses == nil {
+		m.AssistantCourses = make(map[string]interface{})
+	}
+
+	delete(m.AssistantCourses, org.Name)
+
+	return
+}
+
 // GetToken returns the users github token.
 func (m Member) GetToken() (token string) {
 	return m.accessToken.GetToken()
