@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/hfurubotten/autograder/ci"
 	"github.com/hfurubotten/autograder/git"
@@ -37,6 +39,25 @@ func ManualCITriggerHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Defaults back to username or group name for the user if not a teacher.
+	if !org.IsTeacher(member) {
+		if org.IsMember(member) {
+			if strings.Contains(user, "group") {
+				if member.Courses[org.Name].IsGroupMember {
+					user = "group" + strconv.Itoa(member.Courses[org.Name].GroupNum)
+				} else {
+					http.Error(w, "Not a group member", 404)
+					return
+				}
+			} else {
+				user = member.Username
+			}
+		} else {
+			http.Error(w, "Not a member of the course", 404)
+			return
+		}
+	}
+
 	var repo string
 	var destfolder string
 	if _, ok := org.Members[user]; ok {
@@ -48,18 +69,6 @@ func ManualCITriggerHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		http.Error(w, "Unknown user", 404)
 		return
-	}
-
-	_, ok1 := member.Teaching[course]
-	_, ok2 := member.AssistantCourses[course]
-
-	if !ok1 && !ok2 {
-		if _, ok := org.Members[member.Username]; ok {
-			user = member.Username
-		} else {
-			http.Error(w, "Not a member of the course", 404)
-			return
-		}
 	}
 
 	opt := ci.DaemonOptions{
