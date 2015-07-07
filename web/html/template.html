@@ -92,13 +92,15 @@
                       <li><a href="/course/register">Join a course</a></li>
                     </ul>
                   </li>
-                  {{if or .IsTeacher .IsAssistant}}
+                  {{if or .IsTeacher (gt (len .AssistantCourses) 0)}}
                   <li class="dropdown">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">Teacher panel <span class="caret"></span></a>
                     <ul class="dropdown-menu" role="menu">
-                      <li><p class="navbar-text">Select a course:</p></li>
-                      {{range $index, $element := .Teaching}}
-                      <li><a href="/course/teacher/{{$index}}">{{$index}}</a></li>
+                      {{if gt (len .Teaching) 0}}
+                        <li><p class="navbar-text">Select a course:</p></li>
+                        {{range $index, $element := .Teaching}}
+                        <li><a href="/course/teacher/{{$index}}">{{$index}}</a></li>
+                        {{end}}
                       {{end}}
                       {{range $index, $element := .AssistantCourses}}
                       <li><a href="/course/teacher/{{$index}}">{{$index}}</a></li>
