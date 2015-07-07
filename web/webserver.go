@@ -69,6 +69,7 @@ func (ws WebServer) Start() {
 	http.HandleFunc(RemovePendingGroupURL, RemovePendingGroupHandler)
 	http.HandleFunc(ApproveGroupURL, ApproveGroupHandler)
 	http.HandleFunc(AddAssistantURL, AddAssistantHandler)
+	http.HandleFunc(RemoveAssistantURL, RemoveAssistantHandler)
 	http.HandleFunc(RemovePendingUserURL, RemovePendingUserHandler)
 	http.HandleFunc(WebhookEventURL, WebhookEventHandler)
 	http.HandleFunc(ManualCITriggerURL, ManualCITriggerHandler)

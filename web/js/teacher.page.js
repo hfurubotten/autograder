@@ -65,6 +65,20 @@ function addassistant(username, remove){
   }
 }
 
+// addassistant will send a request to the server for adding a student to the list of teaching assistants. 
+function removeassistant(username, remove){
+  if(confirm("Are you sure you want to remove " + username + " from the teaching staff?")){
+    $.post("/course/removeassistant", {"course": course, "assistant": username}, function(base){
+      if(remove) {
+        $("tr#" + username).slideUp(500);
+      }
+    }).fail(function(){
+      $("#pendinguseralert > span.inputtext").text("Error adding the user as assistant.");
+      $("div#pendinguseralert").show();
+    });
+  }
+}
+
 // removependinguser will send a request to the server and remove a pending user. 
 function removependinguser(username){
   $.post("/course/removepending", {"course": course, "user": username}, function(base){

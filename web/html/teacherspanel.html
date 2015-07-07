@@ -286,6 +286,7 @@
           </div>
         </section>
 
+        <!-- Teachers Section -->
         <section id="teachers">
           <h1>Teachers</h1>
           <p class="lead">List of teachers in this course.</p>
@@ -307,7 +308,7 @@
                   <td>{{.Username}}</td>
                   <td>{{.Name}}</td>
                   <td>{{.StudentID}}</td>
-                  <td></td>
+                  <td><button type="button" class="btn btn-danger" onclick="removeassistant({{.Username}}, true)">Remove</button></td>
                   {{end}}
                 </tr>
                 {{end}}

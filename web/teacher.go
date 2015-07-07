@@ -247,8 +247,9 @@ var AddAssistantURL = "/course/addassistant"
 // AddAssistantHandler is a http handler used to add users as assistants on a course.
 func AddAssistantHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
-	member, err := checkTeacherApproval(w, r, true)
+	member, err := checkTeacherApproval(w, r, false)
 	if err != nil {
+		log.Println(err)
 		return
 	}
 
@@ -294,6 +295,61 @@ func AddAssistantHandler(w http.ResponseWriter, r *http.Request) {
 	if _, ok := org.PendingUser[username]; ok {
 		delete(org.PendingUser, username)
 	}
+	org.Save()
+
+}
+
+// RemoveAssistantURL is the URL used to call RemoveAssistantHandler.
+var RemoveAssistantURL = "/course/removeassistant"
+
+// RemoveAssistantHandler is a http handler used to remove users as assistants on a course.
+func RemoveAssistantHandler(w http.ResponseWriter, r *http.Request) {
+	// Checks if the user is signed in and a teacher.
+	member, err := checkTeacherApproval(w, r, false)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	username := r.FormValue("assistant")
+	course := r.FormValue("course")
+
+	if !git.HasOrganization(course) {
+		http.Error(w, "Unknown course.", 404)
+		return
+	}
+
+	if username == member.Username {
+		return
+	}
+
+	assistant, err := git.NewMemberFromUsername(username)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	assistant.Lock()
+	defer assistant.Unlock()
+
+	org, err := git.NewOrganization(course)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	org.Lock()
+	defer org.Unlock()
+
+	if !org.IsTeacher(member) {
+		http.Error(w, "User is not the teacher for this course.", 404)
+		return
+	}
+
+	assistant.RemoveAssistingOrganization(org)
+	assistant.Save()
+
+	org.RemoveTeacher(assistant)
 	org.Save()
 
 }
