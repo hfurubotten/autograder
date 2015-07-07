@@ -16,7 +16,7 @@
             <a class="list-group-item" href="#pendingstudents">Pending Students <span class="badge">{{len .Org.PendingUser}}</span></a>
           {{end}}
           {{if gt .Org.GroupAssignments 0}}
-            {{if or (gt (len .Org.PendingUser) 0) (gt (len .Org.PendingRandomGroup) 0)}}
+            {{if or (gt (len .Org.PendingGroup) 0) (gt (len .Org.PendingRandomGroup) 0)}}
               <a class="list-group-item" href="#pendinggroups">Pending Groups <span class="badge">{{len .Org.PendingGroup}} + {{len .Org.PendingRandomGroup}}</span></a>
             {{end}}
           {{end}}
