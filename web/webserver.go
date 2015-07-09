@@ -67,6 +67,7 @@ func (ws WebServer) Start() {
 	http.HandleFunc(NewGroupURL, NewGroupHandler)
 	http.HandleFunc(RequestRandomGroupURL, RequestRandomGroupHandler)
 	http.HandleFunc(RemovePendingGroupURL, RemovePendingGroupHandler)
+	http.HandleFunc(RemoveUserURL, RemoveUserHandler)
 	http.HandleFunc(ApproveGroupURL, ApproveGroupHandler)
 	http.HandleFunc(AddAssistantURL, AddAssistantHandler)
 	http.HandleFunc(RemoveAssistantURL, RemoveAssistantHandler)

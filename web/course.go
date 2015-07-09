@@ -411,7 +411,7 @@ func RegisterCourseMemberHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = org.AddMembership(member)
 	if err != nil {
-		log.Println(err)
+		log.Println("Error adding the student to course. Error msg:", err)
 	}
 
 	err = org.Save()
@@ -814,5 +814,60 @@ func RemovePendingUserHandler(w http.ResponseWriter, r *http.Request) {
 	if _, ok := org.PendingUser[username]; ok {
 		delete(org.PendingUser, username)
 		org.Save()
+	}
+}
+
+// RemovePendingUserURL is the URL used to call RemovePendingUserHandler.
+var RemoveUserURL = "/course/removemember"
+
+// RemovePendingUserHandler is http handler used to remove users from the list of students on a course.
+func RemoveUserHandler(w http.ResponseWriter, r *http.Request) {
+	// Checks if the user is signed in and a teacher.
+	member, err := checkTeacherApproval(w, r, true)
+	if err != nil {
+		http.Redirect(w, r, "/", 307)
+		log.Println(err)
+		return
+	}
+
+	username := r.FormValue("user")
+	course := r.FormValue("course")
+
+	if !git.HasOrganization(course) {
+		http.Error(w, "Unknown course.", 404)
+		return
+	}
+
+	org, err := git.NewOrganization(course)
+	if err != nil {
+		http.Error(w, "Not valid organization.", 404)
+		return
+	}
+
+	org.Lock()
+	defer org.Unlock()
+
+	if !org.IsTeacher(member) {
+		http.Error(w, "Is not a teacher or assistant for this course.", 404)
+		return
+	}
+
+	user, err := git.NewMemberFromUsername(username)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	user.Lock()
+	defer user.Unlock()
+
+	if org.IsMember(user) {
+		org.RemoveMembership(user)
+		user.RemoveOrganization(org)
+
+		org.Save()
+		user.Save()
+	} else {
+		http.Error(w, "Couldn't find this user in this course. ", 404)
+		return
 	}
 }

@@ -102,6 +102,20 @@ function approveuser(username) {
   });
 }
 
+// removeuserfromcourse will send a request to the server for removing a student from a course. 
+function removeuserfromcourse(username, remove){
+  if(confirm("Are you sure you want to remove " + username + " from the course?")){
+    $.post("/course/removemember", {"course": course, "user": username}, function(base){
+      if(remove) {
+        $("tr#" + username).slideUp(500);
+      }
+    }).fail(function(){
+      $("#pendinguseralert > span.inputtext").text("Error adding the user as assistant.");
+      $("div#pendinguseralert").show();
+    });
+  }
+}
+
 // approvegroup will send a request to the server to approve a group.
 function approvegroup(groupid) {
   $.post("/course/approvegroup", {"course": course, "groupid": groupid}, function(base){
