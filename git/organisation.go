@@ -296,6 +296,16 @@ func (o *Organization) AddMembership(member *Member) (err error) {
 		return
 	}
 
+	var teams map[string]Team
+	if o.StudentTeamID == 0 {
+		teams, err = o.ListTeams()
+		students, ok := teams[StudentsTeam]
+		if !ok {
+			return errors.New("Couldn't find the students team.")
+		}
+		o.StudentTeamID = students.ID
+	}
+
 	_, _, err = o.githubadmin.Organizations.AddTeamMembership(o.StudentTeamID,
 		member.Username,
 		&github.OrganizationAddTeamMembershipOptions{"member"})
@@ -307,9 +317,7 @@ func (o *Organization) AddMembership(member *Member) (err error) {
 		o.PendingUser = make(map[string]interface{})
 	}
 
-	if _, ok := o.PendingUser[member.Username]; !ok {
-		o.PendingUser[member.Username] = nil
-	}
+	o.PendingUser[member.Username] = nil
 
 	return
 }
@@ -363,7 +371,7 @@ func (o *Organization) AddTeacher(member *Member) (err error) {
 	var teams map[string]Team
 	if o.OwnerTeamID == 0 {
 		teams, err = o.ListTeams()
-		owners, ok := teams["Owners"]
+		owners, ok := teams[OwnersTeam]
 		if !ok {
 			return errors.New("Couldn't find the owners team.")
 		}

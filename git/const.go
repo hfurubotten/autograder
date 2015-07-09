@@ -10,6 +10,10 @@ const (
 	CodeReviewRepoName = "code-reviews"
 	GroupRepoPrefix    = "group"
 
+	// Standard team names
+	StudentsTeam = "students"
+	OwnersTeam   = "Owners"
+
 	// Team premission names on github
 	AdminPermission = "admin"
 	PullPermission  = "pull"
