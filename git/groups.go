@@ -82,6 +82,15 @@ func (g *Group) AddMember(user string) {
 	g.Members[user] = nil
 }
 
+// RemoveMember will remove a member from the group.
+func (g *Group) RemoveMember(user string) {
+	if len(g.Members) <= 2 {
+		g.Delete()
+	}
+
+	delete(g.Members, user)
+}
+
 // Lock will put a writers lock on the group.
 //
 // Not yet implemented

@@ -284,7 +284,7 @@ func (o *Organization) FindCurrentLab() (labnum int, labname string, labtype int
 	return
 }
 
-// AddMembership will add a user as a pending student to this
+// AddMembership will add a user as a pending student in this
 // organization. A pending student is a student which still has
 // to be approved by the teaching staff. This method will also
 // add the user to the student team on github.
@@ -296,19 +296,49 @@ func (o *Organization) AddMembership(member *Member) (err error) {
 		return
 	}
 
-	_, _, err = o.githubadmin.Organizations.AddTeamMembership(o.StudentTeamID, member.Username)
+	_, _, err = o.githubadmin.Organizations.AddTeamMembership(o.StudentTeamID,
+		member.Username,
+		&github.OrganizationAddTeamMembershipOptions{"member"})
 	if err != nil {
 		return
 	}
 
-	//member.AddOrganization(*o)
-	//err = member.StickToSystem()
 	if o.PendingUser == nil {
 		o.PendingUser = make(map[string]interface{})
 	}
 
 	if _, ok := o.PendingUser[member.Username]; !ok {
 		o.PendingUser[member.Username] = nil
+	}
+
+	return
+}
+
+// RemoveMembership will remove a user from this organization
+// on github and from the course in Autograder.
+//
+// This method needs locking
+func (o *Organization) RemoveMembership(member *Member) (err error) {
+	err = o.connectAdminToGithub()
+	if err != nil {
+		return
+	}
+
+	_, err = o.githubadmin.Organizations.RemoveOrgMembership(member.Username, o.Name)
+	if err != nil {
+		return
+	}
+
+	if o.PendingUser == nil {
+		o.PendingUser = make(map[string]interface{})
+	}
+
+	if _, ok := o.PendingUser[member.Username]; ok {
+		delete(o.PendingUser, member.Username)
+	}
+
+	if _, ok := o.Members[member.Username]; ok {
+		delete(o.Members, member.Username)
 	}
 
 	return
@@ -340,7 +370,8 @@ func (o *Organization) AddTeacher(member *Member) (err error) {
 		o.OwnerTeamID = owners.ID
 	}
 
-	_, _, err = o.githubadmin.Organizations.AddTeamMembership(o.OwnerTeamID, member.Username)
+	_, _, err = o.githubadmin.Organizations.AddTeamMembership(o.OwnerTeamID, member.Username,
+		&github.OrganizationAddTeamMembershipOptions{"member"})
 	return
 }
 
@@ -572,7 +603,7 @@ func (o *Organization) CreateTeam(opt TeamOptions) (teamID int, err error) {
 
 	if opt.RepoNames != nil {
 		for _, repo := range opt.RepoNames {
-			_, err = o.githubadmin.Organizations.AddTeamRepo(*team.ID, o.Name, repo)
+			_, err = o.githubadmin.Organizations.AddTeamRepo(*team.ID, o.Name, repo, nil)
 			if err != nil {
 				log.Println(err)
 			}
@@ -589,7 +620,7 @@ func (o *Organization) LinkRepoToTeam(teamID int, repo string) (err error) {
 		return
 	}
 
-	_, err = o.githubadmin.Organizations.AddTeamRepo(teamID, o.Name, repo)
+	_, err = o.githubadmin.Organizations.AddTeamRepo(teamID, o.Name, repo, nil)
 	return
 }
 
@@ -600,7 +631,8 @@ func (o *Organization) AddMemberToTeam(teamID int, user string) (err error) {
 		return
 	}
 
-	_, _, err = o.githubadmin.Organizations.AddTeamMembership(teamID, user)
+	_, _, err = o.githubadmin.Organizations.AddTeamMembership(teamID, user,
+		&github.OrganizationAddTeamMembershipOptions{"member"})
 	return
 }
 

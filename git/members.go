@@ -226,6 +226,34 @@ func (m *Member) AddOrganization(org *Organization) (err error) {
 	return
 }
 
+// RemoveOrganization will remove a github organization from attending courses.
+func (m *Member) RemoveOrganization(org *Organization) (err error) {
+	if m.Courses == nil {
+		m.Courses = make(map[string]CourseOptions)
+	}
+
+	if _, ok := m.Courses[org.Name]; ok {
+		c := m.Courses[org.Name]
+
+		if c.IsGroupMember {
+			g, err := NewGroup(c.Course, c.GroupNum)
+			if err != nil {
+				return err
+			}
+
+			g.Lock()
+			defer g.Unlock()
+
+			g.RemoveMember(m.Username)
+			g.Save()
+		}
+
+		delete(m.Courses, org.Name)
+	}
+
+	return
+}
+
 // AddTeachingOrganization will add a new github organization to courses the user are teaching.
 func (m *Member) AddTeachingOrganization(org *Organization) (err error) {
 	if m.Teaching == nil {
