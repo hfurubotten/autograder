@@ -47,7 +47,7 @@
               </p>
 
               <p{{if $missingname}} class="has-error"{{end}}>
-                <input type="hidden" class="form-control" id="name" name="name" placeholder="Full Name" value="{{.Name}}">
+                <input type="hidden" class="form-control" id="name" name="name" placeholder="Full Name" value="{{.Name}}" data-toggle="tooltip" data-placement="right" title="Your real name, as known by the University, is required." data-container="body">
               </p>
 
               <b>Student ID</b>
@@ -121,6 +121,7 @@
         $('#editname').click(function(){
           $('#nameblock').hide();
           $('#name').attr('type', 'text')
+          $('[data-toggle="tooltip"]').tooltip('show')
         });
 
         $('#editstudid').click(function(){
