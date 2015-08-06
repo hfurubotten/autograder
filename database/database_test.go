@@ -95,7 +95,7 @@ func TestGet(t *testing.T) {
 		Store(tmpbucket, []byte(v.key), v.value)
 
 		var got string
-		Get(tmpbucket, []byte(v.key), &got)
+		Get(tmpbucket, []byte(v.key), &got, true)
 
 		if got != v.value {
 			t.Errorf("Got %s want %s", got, v.key)
