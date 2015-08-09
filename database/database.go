@@ -102,6 +102,34 @@ func Get(bucket string, key string, val interface{}, readonly bool) (err error) 
 	})
 }
 
+// Has will check if the key is pressent in the database.
+func Has(bucket, key string) bool {
+	found := false
+
+	err := db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(bucket))
+		if b == nil {
+			return errors.New("Unknown bucket")
+		}
+		c := b.Cursor()
+
+		for k, _ := c.First(); k != nil; k, _ = c.Next() {
+			if key == string(k) {
+				found = true
+				break
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return false
+	}
+
+	return found
+}
+
 // Remove will delete a key in specified bucket.
 func Remove(bucket, key string) (err error) {
 	return db.Update(func(tx *bolt.Tx) error {
