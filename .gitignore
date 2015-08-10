@@ -27,3 +27,5 @@ _testmain.go
 experiments/*
 diskv/*
 main
+
+*.db
