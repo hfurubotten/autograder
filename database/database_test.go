@@ -19,14 +19,6 @@ func TestStart(t *testing.T) {
 		t.Error("Got error while executing start function. " + err.Error())
 	}
 
-	if encoder == nil {
-		t.Error("Encoder not initalized.")
-	}
-
-	if decoder == nil {
-		t.Error("Decoder not initalized.")
-	}
-
 	cleanUpDB()
 }
 
@@ -48,7 +40,7 @@ func TestStore(t *testing.T) {
 	}
 
 	for _, v := range testStoreValues {
-		Store(tmpbucket, []byte(v.key), v.value)
+		Store(tmpbucket, v.key, v.value)
 	}
 
 	err = db.View(func(tx *bolt.Tx) error {
@@ -92,10 +84,10 @@ func TestGet(t *testing.T) {
 	}
 
 	for _, v := range testStoreValues {
-		Store(tmpbucket, []byte(v.key), v.value)
+		Store(tmpbucket, v.key, v.value)
 
 		var got string
-		Get(tmpbucket, []byte(v.key), &got, true)
+		Get(tmpbucket, v.key, &got, true)
 
 		if got != v.value {
 			t.Errorf("Got %s want %s", got, v.key)
