@@ -154,6 +154,9 @@ func RegisterBucket(bucket string) (err error) {
 // GetPureDB Returns the pure connection to the database. Can be used with more
 // advanced DB interaction.
 func GetPureDB() *bolt.DB {
+	if db == nil {
+		panic("Trying to obtain uninitalized database")
+	}
 	return db
 }
 
