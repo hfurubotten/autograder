@@ -27,9 +27,7 @@ func NewToken(oauthtoken string) Token {
 // HasTokenInStore checks if the token is in storage.
 func (t *Token) HasTokenInStore() bool {
 	hash := sha256.Sum256([]byte(t.accessToken))
-	val := ""
-	err := database.Get(TokenBucketName, fmt.Sprintf("%x", hash), val, true)
-	return err == nil && val != ""
+	return database.Has(TokenBucketName, fmt.Sprintf("%x", hash))
 }
 
 // GetUsernameFromTokenInStore gets the username associated with the token.
@@ -49,7 +47,8 @@ func (t *Token) SetUsernameToTokenInStore(username string) (err error) {
 
 // RemoveTokenInStore removed the token from storage.
 func (t *Token) RemoveTokenInStore() (err error) {
-	return database.Remove(TokenBucketName, t.accessToken)
+	hash := sha256.Sum256([]byte(t.accessToken))
+	return database.Remove(TokenBucketName, fmt.Sprintf("%x", hash))
 }
 
 // HasToken checks if the token is set.
