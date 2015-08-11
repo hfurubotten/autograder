@@ -13,7 +13,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/hfurubotten/ag-scoring/score"
-	"github.com/hfurubotten/autograder/git"
+	git "github.com/hfurubotten/autograder/entities"
 	"github.com/hfurubotten/autograder/global"
 	"github.com/hfurubotten/diskv"
 )

@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/hfurubotten/autograder/git"
+	git "github.com/hfurubotten/autograder/entities"
 )
 
 // PublishReviewURL is the URL used to call PublishReviewHandler.
@@ -53,12 +53,19 @@ func PublishReviewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	org, err := git.NewOrganization(r.FormValue("course"))
+	org, err := git.NewOrganization(r.FormValue("course"), false)
 	if err != nil {
 		view.Errormsg = "Error while getting orgaization data from storage."
 		enc.Encode(view)
 		return
 	}
+
+	defer func() {
+		if err := org.Save(); err != nil {
+			org.Unlock()
+			log.Println(err)
+		}
+	}()
 
 	if !org.IsMember(member) {
 		view.Errormsg = "Not a member of this course."
@@ -88,9 +95,6 @@ func PublishReviewHandler(w http.ResponseWriter, r *http.Request) {
 	title = reg.ReplaceAllString(title, "")
 	title = strings.TrimSpace(title)
 
-	org.Lock()
-	defer org.Unlock()
-
 	cr := git.CodeReview{
 		Title: title,
 		Ext:   ext,
@@ -105,7 +109,6 @@ func PublishReviewHandler(w http.ResponseWriter, r *http.Request) {
 		enc.Encode(view)
 		return
 	}
-	org.Save()
 
 	view.Error = false
 	view.CommitURL = cr.URL
@@ -152,7 +155,7 @@ func ListReviewsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	org, err := git.NewOrganization(r.FormValue("course"))
+	org, err := git.NewOrganization(r.FormValue("course"), true)
 	if err != nil {
 		view.Errormsg = "Unknown course."
 		enc.Encode(view)

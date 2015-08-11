@@ -10,7 +10,7 @@ import (
 	"strconv"
 
 	"github.com/hfurubotten/autograder/auth"
-	"github.com/hfurubotten/autograder/git"
+	git "github.com/hfurubotten/autograder/entities"
 	"github.com/hfurubotten/autograder/global"
 	"github.com/hfurubotten/autograder/web/pages"
 	"github.com/hfurubotten/autograder/web/sessions"
@@ -149,13 +149,13 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for key := range member.Teaching {
-		view.Teaching[key], _ = git.NewOrganization(key)
+		view.Teaching[key], _ = git.NewOrganization(key, true)
 	}
 	for key := range member.AssistantCourses {
-		view.Assisting[key], _ = git.NewOrganization(key)
+		view.Assisting[key], _ = git.NewOrganization(key, true)
 	}
 	for key := range member.Courses {
-		view.Courses[key], _ = git.NewOrganization(key)
+		view.Courses[key], _ = git.NewOrganization(key, true)
 	}
 
 	if !member.IsComplete() {
@@ -166,9 +166,11 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	execTemplate("home.html", w, view)
 }
 
-// checkAdminApproval will check the sessions of the user and see if the user is logged in.
-// If the user is not logged in the function will return error. If the redirect is true
-// the function also writes a redirect to the response headers.
+// checkAdminApproval will check the sessions of the user and see if the user is
+// logged in. If the user is not logged in the function will return error. If the
+// redirect is true the function also writes a redirect to the response headers.
+//
+// Member returned is standard read only. If written to, locking need to be done manually.
 func checkMemberApproval(w http.ResponseWriter, r *http.Request, redirect bool) (member *git.Member, err error) {
 	if !auth.IsApprovedUser(r) {
 		if redirect {
@@ -187,7 +189,7 @@ func checkMemberApproval(w http.ResponseWriter, r *http.Request, redirect bool) 
 		return
 	}
 
-	member, err = git.NewMember(value.(string))
+	member, err = git.NewMember(value.(string), true)
 	if err != nil {
 		return nil, err
 	}
@@ -203,9 +205,12 @@ func checkMemberApproval(w http.ResponseWriter, r *http.Request, redirect bool) 
 	return
 }
 
-// checkAdminApproval will check the sessions of the user and see if the user is a teacher.
-// If the user is not a teacher or logged in the function will return error. If the redirect is true
-// the function also writes a redirect to the response headers.
+// checkAdminApproval will check the sessions of the user and see if the user is
+// a teacher. If the user is not a teacher or logged in the function will return
+// error. If the redirect is true the function also writes a redirect to the
+// response headers.
+//
+// Member returned is standard read only. If written to, locking need to be done manually.
 func checkTeacherApproval(w http.ResponseWriter, r *http.Request, redirect bool) (member *git.Member, err error) {
 	member, err = checkMemberApproval(w, r, redirect)
 	if err != nil {
@@ -231,9 +236,13 @@ func checkTeacherApproval(w http.ResponseWriter, r *http.Request, redirect bool)
 	return
 }
 
-// checkAdminApproval will check the sessions of the user and see if the user is a system admin.
-// If the user is not an admin or a user the function will return error. If the redirect is true
-// the function also writes a redirect to the response headers.
+// checkAdminApproval will check the sessions of the user and see if the user is
+// a system admin. If the user is not an admin or a user the function will
+// return error. If the redirect is true the function also writes a redirect to
+// the response headers.
+//
+// Member returned is standard read only. If written to, locking need to be done
+// manually.
 func checkAdminApproval(w http.ResponseWriter, r *http.Request, redirect bool) (member *git.Member, err error) {
 	member, err = checkMemberApproval(w, r, redirect)
 	if err != nil {

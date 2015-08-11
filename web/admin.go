@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/hfurubotten/autograder/git"
+	git "github.com/hfurubotten/autograder/entities"
 )
 
 // AdminView is the struct passed to the html template compiler.
@@ -59,22 +59,21 @@ func SetAdminHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m, err := git.NewMemberFromUsername(r.FormValue("user"))
+	m, err := git.NewMemberFromUsername(r.FormValue("user"), false)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 	}
 
-	m.Lock()
-	defer m.Unlock()
-
 	m.IsAdmin, err = strconv.ParseBool(r.FormValue("admin"))
 	if err != nil {
+		m.Unlock()
 		err = enc.Encode(ErrInvalidAdminField)
 		return
 	}
 
 	err = m.Save()
 	if err != nil {
+		m.Unlock()
 		err = enc.Encode(ErrNotStored)
 		return
 	}
@@ -115,24 +114,23 @@ func SetTeacherHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m, err := git.NewMemberFromUsername(r.FormValue("user"))
+	m, err := git.NewMemberFromUsername(r.FormValue("user"), false)
 	if err != nil {
 		log.Println("Unautorized request of admin page.") // TODO replace this with more appropiate msg.
 		err = enc.Encode(ErrNotAdmin)                     // TODO replace this with more appropiate msg.
 		return
 	}
 
-	m.Lock()
-	defer m.Unlock()
-
 	m.IsTeacher, err = strconv.ParseBool(r.FormValue("teacher"))
 	if err != nil {
+		m.Unlock()
 		err = enc.Encode(ErrInvalidTeacherField)
 		return
 	}
 
 	err = m.Save()
 	if err != nil {
+		m.Unlock()
 		err = enc.Encode(ErrNotStored)
 		return
 	}

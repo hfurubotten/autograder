@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hfurubotten/autograder/git"
+	git "github.com/hfurubotten/autograder/entities"
 	"github.com/hfurubotten/autograder/web/pages"
 )
 
@@ -107,16 +107,29 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	member.Lock()
-	defer member.Unlock()
 
-	org, err := git.NewOrganization(r.FormValue("org"))
+	org, err := git.NewOrganization(r.FormValue("org"), false)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	org.Lock()
-	defer org.Unlock()
+	defer func() {
+		// Saved the new organization info
+		err = org.Save()
+		if err != nil {
+			org.Unlock()
+			log.Println(err)
+			return
+		}
+
+		err = member.Save()
+		if err != nil {
+			member.Unlock()
+			log.Println(err)
+			return
+		}
+	}()
 
 	org.AdminToken = member.GetToken()
 	org.Private = r.FormValue("private") == "on"
@@ -144,7 +157,7 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 
 	templaterepos := make(map[string]git.Repo)
 	if r.FormValue("template") != "" {
-		templateorg, _ := git.NewOrganization(r.FormValue("template"))
+		templateorg, _ := git.NewOrganization(r.FormValue("template"), true)
 		templaterepos, err = templateorg.ListRepos()
 		if err != nil {
 			log.Println("Problem listing repos in the template organization: ", err)
@@ -320,19 +333,7 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 	// <-testl
 	// <-glabsl
 
-	// Saved the new organization info
-	err = org.Save()
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
 	member.AddTeachingOrganization(org)
-	err = member.Save()
-	if err != nil {
-		log.Println(err)
-		return
-	}
 
 	http.Redirect(w, r, pages.FRONTPAGE, 307)
 }
@@ -395,14 +396,19 @@ func RegisterCourseMemberHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	org, err := git.NewOrganization(orgname)
+	org, err := git.NewOrganization(orgname, false)
 	if err != nil {
 		http.Redirect(w, r, "/course/register", 307)
 		return
 	}
 
-	org.Lock()
-	defer org.Unlock()
+	defer func() {
+		err = org.Save()
+		if err != nil {
+			org.Unlock()
+			log.Println(err)
+		}
+	}()
 
 	if _, ok := org.Members[member.Username]; ok {
 		http.Redirect(w, r, "/course/"+orgname, 307)
@@ -412,11 +418,6 @@ func RegisterCourseMemberHandler(w http.ResponseWriter, r *http.Request) {
 	err = org.AddMembership(member)
 	if err != nil {
 		log.Println("Error adding the student to course. Error msg:", err)
-	}
-
-	err = org.Save()
-	if err != nil {
-		log.Println(err)
 	}
 
 	view := NewMemberView{
@@ -477,15 +478,19 @@ func ApproveCourseMembershipHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	org, err := git.NewOrganization(orgname)
+	org, err := git.NewOrganization(orgname, false)
 	if err != nil {
 		view.ErrorMsg = "Could not retrieve the stored organization."
 		enc.Encode(view)
 		return
 	}
-
-	org.Lock()
-	defer org.Unlock()
+	defer func() {
+		err := org.Save()
+		if err != nil {
+			org.Unlock()
+			log.Println(err)
+		}
+	}()
 
 	teams, err := org.ListTeams()
 	if err != nil {
@@ -553,20 +558,22 @@ func ApproveCourseMembershipHandler(w http.ResponseWriter, r *http.Request) {
 
 	delete(org.PendingUser, username)
 	org.Members[username] = nil
-	org.Save()
 
-	member, err := git.NewMemberFromUsername(username)
+	member, err := git.NewMemberFromUsername(username, false)
 	if err != nil {
 		view.ErrorMsg = "Could not retrieve the stored user."
 		enc.Encode(view)
 		return
 	}
-
-	member.Lock()
-	defer member.Unlock()
+	defer func() {
+		err = member.Save()
+		if err != nil {
+			member.Unlock()
+			log.Println(err)
+		}
+	}()
 
 	member.AddOrganization(org)
-	err = member.Save()
 
 	view.Error = false // it wasn't an error after all
 	view.Approved = true
@@ -612,7 +619,7 @@ func UserCoursePageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	org, err := git.NewOrganization(orgname)
+	org, err := git.NewOrganization(orgname, true)
 	if err != nil {
 		http.Redirect(w, r, pages.HOMEPAGE, 307)
 		return
@@ -633,7 +640,7 @@ func UserCoursePageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if member.Courses[orgname].IsGroupMember {
-		group, err := git.NewGroup(orgname, member.Courses[orgname].GroupNum)
+		group, err := git.NewGroup(orgname, member.Courses[orgname].GroupNum, true)
 		if err != nil {
 			log.Println(err)
 			return
@@ -665,19 +672,24 @@ func UpdateCourseHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	orgname := r.FormValue("org")
 
-	org, err := git.NewOrganization(orgname)
+	org, err := git.NewOrganization(orgname, false)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
 	}
 
+	defer func() {
+		err := org.Save()
+		if err != nil {
+			org.Unlock()
+			log.Println(err)
+		}
+	}()
+
 	if !org.IsTeacher(member) {
 		http.Error(w, "Not valid organization.", 404)
 		return
 	}
-
-	org.Lock()
-	defer org.Unlock()
 
 	indv, err := strconv.Atoi(r.FormValue("indv"))
 	if err != nil {
@@ -771,8 +783,6 @@ func UpdateCourseHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	org.Save()
-
 	http.Redirect(w, r, "/course/teacher/"+org.Name, 307)
 }
 
@@ -797,11 +807,18 @@ func RemovePendingUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	org, err := git.NewOrganization(course)
+	org, err := git.NewOrganization(course, false)
 	if err != nil {
 		http.Error(w, "Not valid organization.", 404)
 		return
 	}
+	defer func() {
+		err := org.Save()
+		if err != nil {
+			org.Unlock()
+			log.Println(err)
+		}
+	}()
 
 	org.Lock()
 	defer org.Unlock()
@@ -813,14 +830,13 @@ func RemovePendingUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	if _, ok := org.PendingUser[username]; ok {
 		delete(org.PendingUser, username)
-		org.Save()
 	}
 }
 
 // RemovePendingUserURL is the URL used to call RemovePendingUserHandler.
 var RemoveUserURL = "/course/removemember"
 
-// RemovePendingUserHandler is http handler used to remove users from the list of students on a course.
+// RemoveUserHandler is http handler used to remove users from the list of students on a course.
 func RemoveUserHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
 	member, err := checkTeacherApproval(w, r, true)
@@ -838,34 +854,42 @@ func RemoveUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	org, err := git.NewOrganization(course)
+	org, err := git.NewOrganization(course, false)
 	if err != nil {
 		http.Error(w, "Not valid organization.", 404)
 		return
 	}
 
-	org.Lock()
-	defer org.Unlock()
+	defer func() {
+		err := org.Save()
+		if err != nil {
+			org.Unlock()
+			log.Println(err)
+		}
+	}()
 
 	if !org.IsTeacher(member) {
 		http.Error(w, "Is not a teacher or assistant for this course.", 404)
 		return
 	}
 
-	user, err := git.NewMemberFromUsername(username)
+	user, err := git.NewMemberFromUsername(username, false)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
 	}
-	user.Lock()
-	defer user.Unlock()
+
+	defer func() {
+		err := user.Save()
+		if err != nil {
+			user.Unlock()
+			log.Println(err)
+		}
+	}()
 
 	if org.IsMember(user) {
 		org.RemoveMembership(user)
 		user.RemoveOrganization(org)
-
-		org.Save()
-		user.Save()
 	} else {
 		http.Error(w, "Couldn't find this user in this course. ", 404)
 		return

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/hfurubotten/autograder/git"
+	git "github.com/hfurubotten/autograder/entities"
 )
 
 type StdTemplate struct {

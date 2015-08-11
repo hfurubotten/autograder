@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hfurubotten/autograder/git"
+	git "github.com/hfurubotten/autograder/entities"
 )
 
 // ScoreboardView is the stuct used to pass data to the html template compiler.
@@ -41,7 +41,7 @@ func ScoreboardHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	org, err := git.NewOrganization(orgname)
+	org, err := git.NewOrganization(orgname, true)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
@@ -103,7 +103,7 @@ func LeaderboardDataHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	org, err := git.NewOrganization(orgname)
+	org, err := git.NewOrganization(orgname, true)
 	if err != nil {
 		view.ErrorMsg = err.Error()
 		enc.Encode(view)

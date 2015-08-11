@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	ci "github.com/hfurubotten/autograder/ci"
-	"github.com/hfurubotten/autograder/git"
+	git "github.com/hfurubotten/autograder/entities"
 	"github.com/hfurubotten/github-gamification/events"
 	github "github.com/hfurubotten/github-gamification/githubobjects"
 	"github.com/hfurubotten/github-gamification/points"
@@ -65,8 +65,8 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		user, _ := git.NewUserWithGithubData(payload.Comment.User)
-		org, _ := git.NewOrganizationWithGithubData(payload.Organization)
+		user, _ := git.NewUserWithGithubData(payload.Comment.User, true)
+		org, _ := git.NewOrganizationWithGithubData(payload.Organization, true)
 
 		if org.IsTeacher(user) {
 			body = TeacherActionMsg
@@ -97,8 +97,8 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		user, _ := git.NewUserWithGithubData(payload.Comment.User)
-		org, _ := git.NewOrganizationWithGithubData(payload.Organization)
+		user, _ := git.NewUserWithGithubData(payload.Comment.User, true)
+		org, _ := git.NewOrganizationWithGithubData(payload.Organization, true)
 
 		if org.IsTeacher(user) {
 			body = TeacherActionMsg
@@ -129,8 +129,8 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		user, _ := git.NewUserWithGithubData(payload.Sender)
-		org, _ := git.NewOrganizationWithGithubData(payload.Organization)
+		user, _ := git.NewUserWithGithubData(payload.Sender, true)
+		org, _ := git.NewOrganizationWithGithubData(payload.Organization, true)
 
 		p, ta, err := events.FindIssuesPointsAndTrophyAction(payload)
 		if err != nil {
@@ -197,8 +197,8 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		user, _ := git.NewUserWithGithubData(payload.Comment.User)
-		org, _ := git.NewOrganizationWithGithubData(payload.Organization)
+		user, _ := git.NewUserWithGithubData(payload.Comment.User, true)
+		org, _ := git.NewOrganizationWithGithubData(payload.Organization, true)
 
 		if org.IsTeacher(user) {
 			body = TeacherActionMsg
@@ -257,8 +257,8 @@ func StartTestBuildProcess(load github.PushPayload) (err error) {
 		return errors.New("Not a valid org: " + orgname)
 	}
 
-	org, err := git.NewOrganization(orgname)
-	user, err := git.NewMemberFromUsername(userlogin)
+	org, err := git.NewOrganization(orgname, true)
+	user, err := git.NewMemberFromUsername(userlogin, true)
 
 	isgroup := !strings.Contains(reponame, "-"+git.StandardRepoName)
 
@@ -273,7 +273,7 @@ func StartTestBuildProcess(load github.PushPayload) (err error) {
 			return err
 		}
 
-		group, err := git.NewGroup(org.Name, gnum)
+		group, err := git.NewGroup(org.Name, gnum, true)
 		if err != nil {
 			log.Println(err)
 			return err

@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/hfurubotten/autograder/git"
+	git "github.com/hfurubotten/autograder/entities"
 	"github.com/hfurubotten/autograder/global"
 	"github.com/hfurubotten/autograder/web/pages"
 	"github.com/hfurubotten/autograder/web/sessions"
@@ -84,18 +84,18 @@ func githubOauthHandler(w http.ResponseWriter, r *http.Request) {
 		scope := q.Get("scope")
 
 		if scope != "" {
-			m, err := git.NewMember(accessToken)
+			m, err := git.NewMember(accessToken, false)
 			if err != nil {
 				log.Println("Could not open Member object.")
 				http.Redirect(w, r, pages.FRONTPAGE, 307)
 				return
 			}
 
-			m.Lock()
-			defer m.Unlock()
-
 			m.Scope = scope
-			m.Save()
+			err = m.Save()
+			if err != nil {
+				m.Unlock()
+			}
 		}
 
 		sessions.SetSessions(w, r, sessions.AuthSession, sessions.ApprovedSessionKey, approved)

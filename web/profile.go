@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/hfurubotten/autograder/auth"
-	"github.com/hfurubotten/autograder/git"
+	git "github.com/hfurubotten/autograder/entities"
 	"github.com/hfurubotten/autograder/web/pages"
 	"github.com/hfurubotten/autograder/web/sessions"
 	"github.com/hfurubotten/github-gamification/levels"
@@ -43,7 +43,7 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m, err := git.NewMember(value.(string))
+	m, err := git.NewMember(value.(string), true)
 	if err != nil {
 		log.Println(err.Error())
 		http.Error(w, err.Error(), 500)
@@ -100,15 +100,19 @@ func UpdateMemberHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		member, err := git.NewMember(value.(string))
+		member, err := git.NewMember(value.(string), false)
 		if err != nil {
 			log.Println(err.Error())
 			http.Error(w, err.Error(), 500)
 			return
 		}
 
-		member.Lock()
-		defer member.Unlock()
+		defer func() {
+			if err := member.Save(); err != nil {
+				member.Unlock()
+				log.Println("Error storing:", err)
+			}
+		}()
 
 		member.Name = r.FormValue("name")
 		studentid, err := strconv.Atoi(r.FormValue("studentid"))
@@ -127,11 +131,6 @@ func UpdateMemberHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		member.Email = email
-
-		err = member.Save()
-		if err != nil {
-			log.Println("Error storing:", err)
-		}
 
 		http.Redirect(w, r, pages.HOMEPAGE, 307)
 	} else {

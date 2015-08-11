@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/hfurubotten/autograder/ci"
-	"github.com/hfurubotten/autograder/git"
+	git "github.com/hfurubotten/autograder/entities"
 )
 
 // ManualCITriggerURL is the URL used to call ManualCITriggerHandler.
@@ -33,7 +33,7 @@ func ManualCITriggerHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	org, err := git.NewOrganization(course)
+	org, err := git.NewOrganization(course, false)
 	if err != nil {
 		http.Error(w, "Organization Error", 404)
 		return

@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/hfurubotten/autograder/ci"
-	"github.com/hfurubotten/autograder/git"
+	git "github.com/hfurubotten/autograder/entities"
 )
 
 // ApproveLabURL is the URL used to call ApproveLabHandler.
@@ -44,7 +44,7 @@ func ApproveLabHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	org, err := git.NewOrganization(course)
+	org, err := git.NewOrganization(course, true)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), 404)
@@ -77,35 +77,36 @@ func ApproveLabHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), 404)
 			return
 		}
-		group, err := git.NewGroup(course, gnum)
+		group, err := git.NewGroup(course, gnum, false)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, err.Error(), 404)
 			return
 		}
 
-		group.Lock()
-		defer group.Unlock()
+		defer func() {
+			if err := group.Save(); err != nil {
+				group.Unlock()
+				log.Println(err)
+			}
+		}()
 
 		if group.CurrentLabNum <= labnum {
 			group.CurrentLabNum = labnum + 1
-			group.Save()
 		}
 
 		labfolder = org.GroupLabFolders[labnum]
 	} else {
-		user, err := git.NewMemberFromUsername(username)
+		user, err := git.NewMemberFromUsername(username, true)
 		if err != nil {
 			log.Println(err.Error())
 			http.Error(w, err.Error(), 500)
 			return
 		}
 
-		user.Lock()
-		defer user.Unlock()
-
 		copt := user.Courses[course]
 		if copt.CurrentLabNum <= labnum {
+			user.Lock()
 			copt.CurrentLabNum = labnum + 1
 			user.Courses[course] = copt
 			user.Save()
@@ -115,7 +116,7 @@ func ApproveLabHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	teststore := ci.GetCIStorage(org.Name, username)
-
+	// TODO: Fix new storage for builds
 	res := ci.Result{}
 	err = teststore.ReadGob(labfolder, &res, false)
 	if err != nil {

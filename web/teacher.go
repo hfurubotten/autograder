@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/hfurubotten/autograder/git"
+	git "github.com/hfurubotten/autograder/entities"
 	"github.com/hfurubotten/autograder/web/pages"
 )
 
@@ -49,14 +49,11 @@ func TeachersPanelHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	org, err := git.NewOrganization(orgname)
+	org, err := git.NewOrganization(orgname, true)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
 	}
-
-	org.Lock()
-	defer org.Unlock()
 
 	if !org.IsTeacher(member) {
 		log.Println("User is not a teacher for this course.")
@@ -69,7 +66,7 @@ func TeachersPanelHandler(w http.ResponseWriter, r *http.Request) {
 	var status string
 	for username := range users {
 		// check status up against Github
-		users[username], err = git.NewMemberFromUsername(username)
+		users[username], err = git.NewMemberFromUsername(username, true)
 		if err != nil {
 			continue
 		}
@@ -93,23 +90,23 @@ func TeachersPanelHandler(w http.ResponseWriter, r *http.Request) {
 
 	// gets teachers
 	for username := range org.Teachers {
-		org.Teachers[username], _ = git.NewMemberFromUsername(username)
+		org.Teachers[username], _ = git.NewMemberFromUsername(username, true)
 	}
 
 	// gets users
 	for username := range org.Members {
-		org.Members[username], _ = git.NewMemberFromUsername(username)
+		org.Members[username], _ = git.NewMemberFromUsername(username, true)
 	}
 
 	// get pending groups
 	pendinggroups := make(map[int]*git.Group)
 	for groupID := range org.PendingGroup {
-		group, err := git.NewGroup(org.Name, groupID)
+		group, err := git.NewGroup(org.Name, groupID, true)
 		if err != nil {
 			log.Println(err)
 		}
 		for key := range group.Members {
-			groupmember, _ := git.NewMemberFromUsername(key)
+			groupmember, _ := git.NewMemberFromUsername(key, true)
 			group.Members[key] = groupmember
 		}
 		pendinggroups[groupID] = group
@@ -118,9 +115,9 @@ func TeachersPanelHandler(w http.ResponseWriter, r *http.Request) {
 	// get groups
 	for groupname := range org.Groups {
 		groupID, _ := strconv.Atoi(groupname[5:])
-		group, _ := git.NewGroup(org.Name, groupID)
+		group, _ := git.NewGroup(org.Name, groupID, true)
 		for key := range group.Members {
-			groupmember, _ := git.NewMemberFromUsername(key)
+			groupmember, _ := git.NewMemberFromUsername(key, true)
 			group.Members[key] = groupmember
 		}
 		org.Groups[groupname] = group
@@ -186,7 +183,7 @@ func ShowResultHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	org, err := git.NewOrganization(orgname)
+	org, err := git.NewOrganization(orgname, true)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 	}
@@ -199,9 +196,9 @@ func ShowResultHandler(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, pages.HOMEPAGE, 307)
 			return
 		}
-		if git.HasGroup(org.Name, groupnum) {
+		if git.HasGroup(groupnum) {
 			isgroup = true
-			group, err := git.NewGroup(org.Name, groupnum)
+			group, err := git.NewGroup(org.Name, groupnum, true)
 			if err != nil {
 				http.Redirect(w, r, pages.HOMEPAGE, 307)
 				return
@@ -216,7 +213,7 @@ func ShowResultHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		user, err := git.NewMemberFromUsername(username)
+		user, err := git.NewMemberFromUsername(username, true)
 		if err != nil {
 			http.Error(w, err.Error(), 500)
 		}
@@ -265,23 +262,31 @@ func AddAssistantHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	assistant, err := git.NewMemberFromUsername(username)
+	assistant, err := git.NewMemberFromUsername(username, false)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
 	}
 
-	assistant.Lock()
-	defer assistant.Unlock()
+	defer func() {
+		if err := assistant.Save(); err != nil {
+			assistant.Unlock()
+			log.Println(err)
+		}
+	}()
 
-	org, err := git.NewOrganization(course)
+	org, err := git.NewOrganization(course, false)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
 	}
 
-	org.Lock()
-	defer org.Unlock()
+	defer func() {
+		if err := org.Save(); err != nil {
+			org.Unlock()
+			log.Println(err)
+		}
+	}()
 
 	if !org.IsTeacher(member) {
 		http.Error(w, "User is not the teacher for this course.", 404)
@@ -289,14 +294,11 @@ func AddAssistantHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	assistant.AddAssistingOrganization(org)
-	assistant.Save()
 
 	org.AddTeacher(assistant)
 	if _, ok := org.PendingUser[username]; ok {
 		delete(org.PendingUser, username)
 	}
-	org.Save()
-
 }
 
 // RemoveAssistantURL is the URL used to call RemoveAssistantHandler.
@@ -323,23 +325,31 @@ func RemoveAssistantHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	assistant, err := git.NewMemberFromUsername(username)
+	assistant, err := git.NewMemberFromUsername(username, false)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
 	}
 
-	assistant.Lock()
-	defer assistant.Unlock()
+	defer func() {
+		if err := assistant.Save(); err != nil {
+			assistant.Unlock()
+			log.Println(err)
+		}
+	}()
 
-	org, err := git.NewOrganization(course)
+	org, err := git.NewOrganization(course, false)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
 	}
 
-	org.Lock()
-	defer org.Unlock()
+	defer func() {
+		if err := org.Save(); err != nil {
+			org.Unlock()
+			log.Println(err)
+		}
+	}()
 
 	if !org.IsTeacher(member) {
 		http.Error(w, "User is not the teacher for this course.", 404)
@@ -347,9 +357,6 @@ func RemoveAssistantHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	assistant.RemoveAssistingOrganization(org)
-	assistant.Save()
 
 	org.RemoveTeacher(assistant)
-	org.Save()
-
 }
