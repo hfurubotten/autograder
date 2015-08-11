@@ -5,6 +5,7 @@ import (
 	"encoding/gob"
 	"errors"
 	"io/ioutil"
+	"log"
 	"strconv"
 	"sync"
 
@@ -212,7 +213,10 @@ func (g *Group) Delete() error {
 			courseopt.IsGroupMember = false
 			courseopt.GroupNum = 0
 			user.Courses[g.Course] = courseopt
-			user.Save()
+			if err = user.Save(); err != nil {
+				user.Unlock()
+				log.Println(err)
+			}
 		}
 	}
 
@@ -232,7 +236,7 @@ func GetNextGroupID() int {
 	nextid := -1
 	if err := database.GetPureDB().Update(func(tx *bolt.Tx) error {
 		// open the bucket
-		b := tx.Bucket([]byte(OrganizationBucketName))
+		b := tx.Bucket([]byte(GroupsBucketName))
 
 		// Checks if the bucket was opened, and creates a new one if not existing. Returns error on any other situation.
 		if b == nil {
