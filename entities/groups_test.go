@@ -407,6 +407,17 @@ func TestSaveHasAndDelete(t *testing.T) {
 
 }
 
+var testGetNextGroupIDIterations = 100
+
+func TestGetNextGroupID(t *testing.T) {
+	for i := 1; i <= testGetNextGroupIDIterations; i++ {
+		nextID := GetNextGroupID()
+		if nextID != i {
+			t.Errorf("Error with counting in getting next group ID. Got %d, want %d.", nextID, i)
+		}
+	}
+}
+
 func cleanUpGroupStorage(course string) error {
 	return os.RemoveAll(global.Basepath + "diskv/groups/" + course + "/")
 }
