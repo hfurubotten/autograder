@@ -1,22 +1,26 @@
 Autograder
 ==========
+[![GoDoc](https://godoc.org/github.com/hfurubotten/autograder?status.svg)](http://godoc.org/github.com/hfurubotten/autograder)
+[![Build Status](https://travis-ci.org/hfurubotten/autograder.svg?branch=master)](https://travis-ci.org/hfurubotten/autograder)
+[![Coverage Status](https://coveralls.io/repos/hfurubotten/autograder/badge.svg?branch=master&service=github)](https://coveralls.io/github/hfurubotten/autograder?branch=master)
+
 Autograder is an automatic feedback system for the students. It is integrated
 with GitHub and manages courses and students within GitHubs git management
 system. When students push code to their repositories, the push triggers a
 continuous integration process. Results form this integration process is then
 given to the students on their personal web pages. Teachers can then access this
-integration log, thus have a valuabel tool in the grading of lab assignments.
+integration log, thus have a valuable tool in the grading of lab assignments.
 
 ## Features ##
-Listed below is some of the features in autograder
+Listed below is some of the features in autograder.
 
 ### Training in industrial grade tools ###
-The teaching enviorment of autograder is infact GitHub itself, thus training the
-students in using version controll systems to have controll over their code and
-assignments. Integrated in autograder is also a custom made continous
-integration tools. Versjon controlling and continous integration is tools widely
+The teaching environment of autograder is infact GitHub itself, thus training the
+students in using version control systems to have control over their code and
+assignments. Integrated in autograder is also a custom made continuous
+integration tools. Version controlling and continuous integration is tools widely
 used by the industry. Training the students in tools like git, GitHub and CI
-makes the students more equipt when making the transition to working life.
+makes the students more equipped when making the transition to working life.
 
 ### Automatic assignment testing ###
 Students submit their assignments to GitHub and they are done with the hand in
@@ -66,7 +70,7 @@ When compiling these following libraies need to be included;
 
 The runtime of the test enviorment are virtualized in [docker].
 
-[goauth2]: https://code.google.com/p/goauth2/
+[goauth2]: http://golang.org/x/oauth2
 [go-github]: https://github.com/google/go-github
 [docker]: https://www.docker.com/
 [go-dockerclient]: https://github.com/fsouza/go-dockerclient
