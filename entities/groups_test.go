@@ -21,7 +21,7 @@ var testNewGroup = []struct {
 			CurrentLabNum: 1,
 			Active:        false,
 			Members:       make(map[string]interface{}),
-			Assignments:   make(map[int]LabAssignmentOptions),
+			Assignments:   make(map[int]*LabAssignmentOptions),
 		},
 	},
 	{
@@ -33,7 +33,7 @@ var testNewGroup = []struct {
 			CurrentLabNum: 1,
 			Active:        false,
 			Members:       make(map[string]interface{}),
-			Assignments:   make(map[int]LabAssignmentOptions),
+			Assignments:   make(map[int]*LabAssignmentOptions),
 		},
 	},
 	{
@@ -45,7 +45,7 @@ var testNewGroup = []struct {
 			CurrentLabNum: 1,
 			Active:        false,
 			Members:       make(map[string]interface{}),
-			Assignments:   make(map[int]LabAssignmentOptions),
+			Assignments:   make(map[int]*LabAssignmentOptions),
 		},
 	},
 	{
@@ -57,7 +57,7 @@ var testNewGroup = []struct {
 			CurrentLabNum: 1,
 			Active:        false,
 			Members:       make(map[string]interface{}),
-			Assignments:   make(map[int]LabAssignmentOptions),
+			Assignments:   make(map[int]*LabAssignmentOptions),
 		},
 	},
 	{
@@ -69,7 +69,7 @@ var testNewGroup = []struct {
 			CurrentLabNum: 1,
 			Active:        false,
 			Members:       make(map[string]interface{}),
-			Assignments:   make(map[int]LabAssignmentOptions),
+			Assignments:   make(map[int]*LabAssignmentOptions),
 		},
 	},
 	{
@@ -81,7 +81,7 @@ var testNewGroup = []struct {
 			CurrentLabNum: 1,
 			Active:        false,
 			Members:       make(map[string]interface{}),
-			Assignments:   make(map[int]LabAssignmentOptions),
+			Assignments:   make(map[int]*LabAssignmentOptions),
 		},
 	},
 }
@@ -126,7 +126,7 @@ var testActivate = []struct {
 			CurrentLabNum: 1,
 			Active:        false,
 			Members:       make(map[string]interface{}),
-			Assignments:   make(map[int]LabAssignmentOptions),
+			Assignments:   make(map[int]*LabAssignmentOptions),
 		},
 		&Group{
 			ID:            7,
@@ -134,7 +134,7 @@ var testActivate = []struct {
 			CurrentLabNum: 1,
 			Active:        true,
 			Members:       make(map[string]interface{}),
-			Assignments:   make(map[int]LabAssignmentOptions),
+			Assignments:   make(map[int]*LabAssignmentOptions),
 		},
 	},
 	{
@@ -147,7 +147,7 @@ var testActivate = []struct {
 				"user1": nil,
 				"user2": nil,
 			},
-			Assignments: make(map[int]LabAssignmentOptions),
+			Assignments: make(map[int]*LabAssignmentOptions),
 		},
 		&Group{
 			ID:            8,
@@ -158,7 +158,7 @@ var testActivate = []struct {
 				"user1": nil,
 				"user2": nil,
 			},
-			Assignments: make(map[int]LabAssignmentOptions),
+			Assignments: make(map[int]*LabAssignmentOptions),
 		},
 	},
 	{
@@ -173,7 +173,7 @@ var testActivate = []struct {
 				"user5": nil,
 				"user6": nil,
 			},
-			Assignments: make(map[int]LabAssignmentOptions),
+			Assignments: make(map[int]*LabAssignmentOptions),
 		},
 		&Group{
 			ID:            9,
@@ -186,7 +186,7 @@ var testActivate = []struct {
 				"user5": nil,
 				"user6": nil,
 			},
-			Assignments: make(map[int]LabAssignmentOptions),
+			Assignments: make(map[int]*LabAssignmentOptions),
 		},
 	},
 }
@@ -245,7 +245,7 @@ var testAddMember = []struct {
 			CurrentLabNum: 1,
 			Active:        false,
 			Members:       make(map[string]interface{}),
-			Assignments:   make(map[int]LabAssignmentOptions),
+			Assignments:   make(map[int]*LabAssignmentOptions),
 		},
 		[]string{"user7"},
 		&Group{
@@ -256,7 +256,7 @@ var testAddMember = []struct {
 			Members: map[string]interface{}{
 				"user7": nil,
 			},
-			Assignments: make(map[int]LabAssignmentOptions),
+			Assignments: make(map[int]*LabAssignmentOptions),
 		},
 	},
 	{
@@ -266,7 +266,7 @@ var testAddMember = []struct {
 			CurrentLabNum: 1,
 			Active:        false,
 			Members:       make(map[string]interface{}),
-			Assignments:   make(map[int]LabAssignmentOptions),
+			Assignments:   make(map[int]*LabAssignmentOptions),
 		},
 		[]string{"user8", "user9"},
 		&Group{
@@ -278,7 +278,7 @@ var testAddMember = []struct {
 				"user8": nil,
 				"user9": nil,
 			},
-			Assignments: make(map[int]LabAssignmentOptions),
+			Assignments: make(map[int]*LabAssignmentOptions),
 		},
 	},
 	{
@@ -291,7 +291,7 @@ var testAddMember = []struct {
 				"user10": nil,
 				"user11": nil,
 			},
-			Assignments: make(map[int]LabAssignmentOptions),
+			Assignments: make(map[int]*LabAssignmentOptions),
 		},
 		[]string{"user12", "user13"},
 		&Group{
@@ -305,7 +305,7 @@ var testAddMember = []struct {
 				"user12": nil,
 				"user13": nil,
 			},
-			Assignments: make(map[int]LabAssignmentOptions),
+			Assignments: make(map[int]*LabAssignmentOptions),
 		},
 	},
 }
@@ -330,7 +330,7 @@ var testSaveHasAndDelete = []struct {
 			CurrentLabNum: 1,
 			Active:        false,
 			Members:       make(map[string]interface{}),
-			Assignments:   make(map[int]LabAssignmentOptions),
+			Assignments:   make(map[int]*LabAssignmentOptions),
 		},
 	},
 	{
@@ -343,7 +343,7 @@ var testSaveHasAndDelete = []struct {
 				"user14": nil,
 				"user15": nil,
 			},
-			Assignments: make(map[int]LabAssignmentOptions),
+			Assignments: make(map[int]*LabAssignmentOptions),
 		},
 	},
 	{
@@ -358,7 +358,7 @@ var testSaveHasAndDelete = []struct {
 				"user18": nil,
 				"user19": nil,
 			},
-			Assignments: make(map[int]LabAssignmentOptions),
+			Assignments: make(map[int]*LabAssignmentOptions),
 		},
 	},
 }

@@ -293,6 +293,47 @@ func (m *Member) connectToGithub() error {
 	return nil
 }
 
+// AddBuildResult will add a build result to the group.
+func (m *Member) AddBuildResult(course string, lab, buildid int) {
+	if _, ok := m.Courses[course]; !ok {
+		return
+	}
+
+	g := m.Courses[course]
+
+	if g.Assignments == nil {
+		g.Assignments = make(map[int]*LabAssignmentOptions)
+	}
+
+	if _, ok := g.Assignments[lab]; !ok {
+		g.Assignments[lab] = NewLabAssignmentOptions()
+	}
+
+	g.Assignments[lab].AddBuildResult(buildid)
+}
+
+// GetLastBuildID will get the last build ID added to a lab assignment.
+func (m *Member) GetLastBuildID(course string, lab int) int {
+	if _, ok := m.Courses[course]; !ok {
+		return -1
+	}
+
+	g := m.Courses[course]
+
+	if assignment, ok := g.Assignments[lab]; !ok {
+		if assignment.Builds == nil {
+			return -1
+		}
+		if len(assignment.Builds) == 0 {
+			return -1
+		}
+
+		return assignment.Builds[len(assignment.Builds)-1]
+	}
+
+	return -1
+}
+
 // ListOrgs will list all organisations the user is a member of on github.
 func (m *Member) ListOrgs() (ls []string, err error) {
 	err = m.connectToGithub()

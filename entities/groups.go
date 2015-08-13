@@ -40,7 +40,7 @@ type Group struct {
 	Members map[string]interface{}
 
 	CurrentLabNum int
-	Assignments   map[int]LabAssignmentOptions
+	Assignments   map[int]*LabAssignmentOptions
 
 	lock sync.Mutex
 }
@@ -55,7 +55,7 @@ func NewGroup(org string, groupid int, readonly bool) (g *Group, err error) {
 		Active:        false,
 		Course:        org,
 		Members:       make(map[string]interface{}),
-		Assignments:   make(map[int]LabAssignmentOptions),
+		Assignments:   make(map[int]*LabAssignmentOptions),
 		CurrentLabNum: 1,
 	}
 
@@ -155,6 +155,35 @@ func (g *Group) RemoveMember(user string) {
 	delete(g.Members, user)
 }
 
+// AddBuildResult will add a build result to the group.
+func (g *Group) AddBuildResult(lab, buildid int) {
+	if g.Assignments == nil {
+		g.Assignments = make(map[int]*LabAssignmentOptions)
+	}
+
+	if _, ok := g.Assignments[lab]; !ok {
+		g.Assignments[lab] = NewLabAssignmentOptions()
+	}
+
+	g.Assignments[lab].AddBuildResult(buildid)
+}
+
+// GetLastBuildID will get the last build ID added to a lab assignment.
+func (g *Group) GetLastBuildID(lab int) int {
+	if assignment, ok := g.Assignments[lab]; !ok {
+		if assignment.Builds == nil {
+			return -1
+		}
+		if len(assignment.Builds) == 0 {
+			return -1
+		}
+
+		return assignment.Builds[len(assignment.Builds)-1]
+	}
+
+	return -1
+}
+
 // Lock will put a writers lock on the group.
 func (g *Group) Lock() {
 	g.lock.Lock()
@@ -219,6 +248,8 @@ func (g *Group) Delete() error {
 			}
 		}
 	}
+
+	delete(InMemoryGroups, g.ID)
 
 	return database.GetPureDB().Update(func(tx *bolt.Tx) error {
 		return tx.Bucket([]byte(GroupsBucketName)).Delete([]byte(strconv.Itoa(g.ID)))
