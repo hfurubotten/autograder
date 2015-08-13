@@ -3,9 +3,8 @@ package ci
 import (
 	"bufio"
 	"bytes"
-	"encoding/gob"
 	"encoding/json"
-	"errors"
+	// "errors"
 	"fmt"
 	"log"
 	"strings"
@@ -14,21 +13,18 @@ import (
 
 	"github.com/hfurubotten/ag-scoring/score"
 	git "github.com/hfurubotten/autograder/entities"
-	"github.com/hfurubotten/autograder/global"
-	"github.com/hfurubotten/diskv"
 )
-
-func init() {
-	gob.Register(Result{})
-}
 
 // DaemonOptions represent the options needed to start the testing daemon.
 type DaemonOptions struct {
-	Org        string
-	User       string
+	Org   string
+	User  string
+	Group int
+
 	Repo       string
 	BaseFolder string
 	LabFolder  string
+	LabNumber  int
 	AdminToken string
 	DestFolder string
 	Secret     string
@@ -85,30 +81,34 @@ func StartTesterDaemon(opt DaemonOptions) {
 		{"/bin/sh -c \"(cd \"" + opt.BaseFolder + opt.DestFolder + "/" + opt.LabFolder + "/\" && ./test.sh)\"", false},
 	}
 
-	r := Result{
-		Log:        logarray,
-		Course:     opt.Org,
-		Timestamp:  time.Now(),
-		PushTime:   time.Now(),
-		User:       opt.User,
-		Status:     "Active lab assignment",
-		TestScores: make([]score.Score, 0),
+	r, err := NewBuildResult()
+	if err != nil {
+		log.Println(err)
+		return
 	}
 
+	r.Log = logarray
+	r.Course = opt.Org
+	r.Timestamp = time.Now()
+	r.PushTime = time.Now()
+	r.User = opt.User
+	r.Status = "Active lab assignment"
+
+	// executes build commands
 	for _, cmd := range cmds {
-		err = execute(&env, cmd.Cmd, &r, opt)
+		err = execute(&env, cmd.Cmd, r, opt)
 		if err != nil {
-			logOutput(err.Error(), &r, opt)
+			logOutput(err.Error(), r, opt)
 			log.Println(err)
 			if cmd.Breakable {
-				logOutput("Unexpected end of integration.", &r, opt)
+				logOutput("Unexpected end of integration.", r, opt)
 				break
 			}
 		}
 	}
 
 	// parsing the results
-	SimpleParsing(&r)
+	SimpleParsing(r)
 	if len(r.TestScores) > 0 {
 		r.TotalScore = CalculateTestScore(r.TestScores)
 	} else {
@@ -121,22 +121,65 @@ func StartTesterDaemon(opt DaemonOptions) {
 		r.TotalScore = 0
 	}
 
-	teststore := GetCIStorage(opt.Org, opt.User)
+	// saves the build results
+	if err := r.Save(); err != nil {
+		log.Println("Error saving build results:", err)
+		return
+	}
 
-	if teststore.Has(opt.LabFolder) {
-		oldr := Result{}
-		err = teststore.ReadGob(opt.LabFolder, &oldr, false)
-		r.Status = oldr.Status
-		if !opt.IsPush {
-			r.PushTime = oldr.PushTime
+	// Build for group assignment. Stores build ID in group.
+	if opt.Group > 0 {
+		group, err := git.NewGroup(opt.Org, opt.Group, false)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		oldbuildID := group.GetLastBuildID(opt.LabNumber)
+		if oldbuildID > 0 {
+			oldr, err := GetBuildResult(oldbuildID)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			r.Status = oldr.Status
+			if !opt.IsPush {
+				r.PushTime = oldr.PushTime
+			}
+		}
+
+		group.AddBuildResult(opt.LabNumber, r.ID)
+
+		if err := group.Save(); err != nil {
+			log.Println(err)
+		}
+		// build for single user. Stores build ID to user.
+	} else {
+		user, err := git.NewMember(opt.User, false)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		oldbuildID := user.GetLastBuildID(opt.Org, opt.LabNumber)
+		if oldbuildID > 0 {
+			oldr, err := GetBuildResult(oldbuildID)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			r.Status = oldr.Status
+			if !opt.IsPush {
+				r.PushTime = oldr.PushTime
+			}
+		}
+
+		user.AddBuildResult(opt.Org, opt.LabNumber, r.ID)
+
+		if err := user.Save(); err != nil {
+			log.Println(err)
 		}
 	}
-
-	err = teststore.WriteGob(opt.LabFolder, r)
-	if err != nil {
-		panic(err)
-	}
-
 }
 
 // CalculateTestScore uses a array of Score objects to calculate a total score between 0 and 100.
@@ -164,7 +207,7 @@ func CalculateTestScore(s []score.Score) (total int) {
 }
 
 // SimpleParsing will do a simple parsing of the test results. It looks for the strings "--- PASS", "--- FAIL" and "build failed".
-func SimpleParsing(r *Result) {
+func SimpleParsing(r *BuildResult) {
 	key := "--- PASS"
 	negkey := "--- FAIL"
 	bfkey := "build failed"
@@ -177,15 +220,7 @@ func SimpleParsing(r *Result) {
 	log.Println("Found ", r.NumPasses, " passed tests.")
 }
 
-// GetCIStorage will create a Diskv object used to store the test results.
-func GetCIStorage(course, user string) *diskv.Diskv {
-	return diskv.New(diskv.Options{
-		BasePath:     global.Basepath + "diskv/CI/" + course + "/" + user,
-		CacheSizeMax: 1024 * 1024 * 256,
-	})
-}
-
-func execute(v *Virtual, cmd string, l *Result, opt DaemonOptions) (err error) {
+func execute(v *Virtual, cmd string, l *BuildResult, opt DaemonOptions) (err error) {
 
 	buf := bytes.NewBuffer(make([]byte, 0))
 	bufw := bufio.NewWriter(buf)
@@ -204,7 +239,7 @@ func execute(v *Virtual, cmd string, l *Result, opt DaemonOptions) (err error) {
 	return
 }
 
-func logOutput(s string, l *Result, opt DaemonOptions) {
+func logOutput(s string, l *BuildResult, opt DaemonOptions) {
 	if !utf8.ValidString(s) {
 		v := make([]rune, 0, len(s))
 		for i, r := range s {
@@ -245,32 +280,32 @@ func logOutput(s string, l *Result, opt DaemonOptions) {
 	fmt.Println(s)
 }
 
-// GetIntegationResults will find a test result for a user or group.
-func GetIntegationResults(org, user, lab string) (logs Result, err error) {
-	teststore := GetCIStorage(org, user)
-
-	if !teststore.Has(lab) {
-		err = errors.New("Doesn't have any CI logs yet.")
-		return
-	}
-
-	err = teststore.ReadGob(lab, &logs, false)
-	return
-}
-
-// GetIntegationResultSummary will return a summary of the test results for a user or a group.
-func GetIntegationResultSummary(org, user string) (summary map[string]Result, err error) {
-	summary = make(map[string]Result)
-	teststore := GetCIStorage(org, user)
-	keys := teststore.Keys()
-	for key := range keys {
-		var res Result
-		err = teststore.ReadGob(key, &res, false)
-		if err != nil {
-			return
-		}
-		res.Log = make([]string, 0)
-		summary[key] = res
-	}
-	return
-}
+// // GetIntegationResults will find a test result for a user or group.
+// func GetIntegationResults(org, user, lab string) (logs Result, err error) {
+// 	teststore := GetCIStorage(org, user)
+//
+// 	if !teststore.Has(lab) {
+// 		err = errors.New("Doesn't have any CI logs yet.")
+// 		return
+// 	}
+//
+// 	err = teststore.ReadGob(lab, &logs, false)
+// 	return
+// }
+//
+// // GetIntegationResultSummary will return a summary of the test results for a user or a group.
+// func GetIntegationResultSummary(org, user string) (summary map[string]Result, err error) {
+// 	summary = make(map[string]Result)
+// 	teststore := GetCIStorage(org, user)
+// 	keys := teststore.Keys()
+// 	for key := range keys {
+// 		var res Result
+// 		err = teststore.ReadGob(key, &res, false)
+// 		if err != nil {
+// 			return
+// 		}
+// 		res.Log = make([]string, 0)
+// 		summary[key] = res
+// 	}
+// 	return
+// }
