@@ -29,3 +29,4 @@ diskv/*
 main
 
 *.db
+*.config
