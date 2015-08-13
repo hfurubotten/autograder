@@ -33,21 +33,8 @@ var InMemoryOrgsLock sync.Mutex
 
 func init() {
 	gob.Register(Organization{})
-	gob.Register(CodeReview{})
 
 	database.RegisterBucket(OrganizationBucketName)
-}
-
-// CodeReview represent a code review stored in autograder.
-type CodeReview struct {
-	Title string
-	Ext   string
-	Desc  string
-	Code  string
-	User  string
-
-	// Data from Github
-	URL string
 }
 
 // Organization represent a course and a organization on github.
@@ -78,7 +65,7 @@ type Organization struct {
 	Teachers    map[string]interface{}
 
 	CodeReview     bool
-	CodeReviewlist []CodeReview
+	CodeReviewlist []int
 
 	AdminToken  string
 	githubadmin *github.Client
@@ -117,7 +104,7 @@ func NewOrganization(name string, readonly bool) (org *Organization, err error) 
 		Teachers:             make(map[string]interface{}),
 		IndividualDeadlines:  make(map[int]time.Time),
 		GroupDeadlines:       make(map[int]time.Time),
-		CodeReviewlist:       make([]CodeReview, 0),
+		CodeReviewlist:       make([]int, 0),
 		CI: CIOptions{
 			Basepath: "/testground/src/github.com/" + name + "/",
 			Secret:   fmt.Sprintf("%x", md5.Sum([]byte(name+time.Now().String()))),
@@ -262,11 +249,11 @@ func (o *Organization) AddCodeReview(cr *CodeReview) (err error) {
 
 	var path string
 	if labname != "" {
-		path = fmt.Sprintf("%s/%d-%s-%s.%s", labname, len(o.CodeReviewlist)+1, strings.Replace(cr.Title, " ", "", -1), cr.User, cr.Ext)
+		path = fmt.Sprintf("%s/%d-%s-%s.%s", labname, cr.ID, strings.Replace(cr.Title, " ", "", -1), cr.User, cr.Ext)
 	} else {
-		path = fmt.Sprintf("%d-%s-%s.%s", len(o.CodeReviewlist)+1, strings.Replace(cr.Title, " ", "", -1), cr.User, cr.Ext)
+		path = fmt.Sprintf("%d-%s-%s.%s", cr.ID, strings.Replace(cr.Title, " ", "", -1), cr.User, cr.Ext)
 	}
-	commitmsg := fmt.Sprintf("%d %s: %s", len(o.CodeReviewlist)+1, cr.User, cr.Title)
+	commitmsg := fmt.Sprintf("%d %s: %s", cr.ID, cr.User, cr.Title)
 
 	// Creates the review file
 	SHA, err := o.CreateFile(CodeReviewRepoName, path, cr.Code+"\n", commitmsg)
@@ -275,7 +262,7 @@ func (o *Organization) AddCodeReview(cr *CodeReview) (err error) {
 	}
 
 	commentmsg := fmt.Sprintf("Code Review %d: %s\n\n%s\n\nHey, could someone look through this and give me some feedback conserning this? \nSincerely @%s\n\n---------\n@%s, follow this tread for feedback.\n",
-		len(o.CodeReviewlist)+1, cr.Title, cr.Desc, cr.User, cr.User)
+		cr.ID, cr.Title, cr.Desc, cr.User, cr.User)
 
 	// Makes a comment on the commit.
 	comment := new(github.RepositoryComment)
@@ -288,7 +275,7 @@ func (o *Organization) AddCodeReview(cr *CodeReview) (err error) {
 
 	cr.URL = fmt.Sprintf("https://github.com/%s/%s/commit/%s", o.Name, CodeReviewRepoName, SHA)
 
-	o.CodeReviewlist = append(o.CodeReviewlist, *cr)
+	o.CodeReviewlist = append(o.CodeReviewlist, cr.ID)
 	return nil
 }
 
