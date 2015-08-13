@@ -95,16 +95,27 @@ func PublishReviewHandler(w http.ResponseWriter, r *http.Request) {
 	title = reg.ReplaceAllString(title, "")
 	title = strings.TrimSpace(title)
 
-	cr := git.CodeReview{
-		Title: title,
-		Ext:   ext,
-		Desc:  r.FormValue("desc"),
-		Code:  r.FormValue("code"),
-		User:  member.Username,
+	cr, err := git.NewCodeReview()
+	if err != nil {
+		view.Errormsg = "Couldn't create code review: " + err.Error()
+		enc.Encode(view)
+		return
 	}
 
-	err = org.AddCodeReview(&cr)
+	cr.Title = title
+	cr.Ext = ext
+	cr.Desc = r.FormValue("desc")
+	cr.Code = r.FormValue("code")
+	cr.User = member.Username
+
+	err = org.AddCodeReview(cr)
 	if err != nil {
+		view.Errormsg = err.Error()
+		enc.Encode(view)
+		return
+	}
+
+	if err := cr.Save(); err != nil {
 		view.Errormsg = err.Error()
 		enc.Encode(view)
 		return
@@ -122,7 +133,7 @@ var ListReviewsURL = "/review/list"
 type ListReviewsView struct {
 	Error    bool
 	Errormsg string
-	Reviews  []git.CodeReview
+	Reviews  []*git.CodeReview
 }
 
 // ListReviewsHandler will write back a list of all the code reviews
@@ -168,7 +179,14 @@ func ListReviewsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	crlist := []*git.CodeReview{}
+	for _, crid := range org.CodeReviewlist {
+		if cr, err := git.GetCodeReview(crid); err == nil {
+			crlist = append(crlist, cr)
+		}
+	}
+
 	view.Error = false
-	view.Reviews = org.CodeReviewlist
+	view.Reviews = crlist
 	enc.Encode(view)
 }
