@@ -69,7 +69,7 @@ func ApproveLabHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	var labfolder string
+	var latestbuild int
 	if isgroup {
 		gnum, err := strconv.Atoi(username[len("group"):])
 		if err != nil {
@@ -91,42 +91,56 @@ func ApproveLabHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}()
 
+		latestbuild = group.GetLastBuildID(labnum)
+		if latestbuild < 0 {
+			http.Error(w, "No build registered on lab.", 500)
+			return
+		}
+
 		if group.CurrentLabNum <= labnum {
 			group.CurrentLabNum = labnum + 1
 		}
-
-		labfolder = org.GroupLabFolders[labnum]
 	} else {
-		user, err := git.NewMemberFromUsername(username, true)
+		user, err := git.NewMemberFromUsername(username, false)
 		if err != nil {
 			log.Println(err.Error())
 			http.Error(w, err.Error(), 500)
 			return
 		}
 
-		copt := user.Courses[course]
-		if copt.CurrentLabNum <= labnum {
-			user.Lock()
-			copt.CurrentLabNum = labnum + 1
-			user.Courses[course] = copt
-			user.Save()
+		defer func() {
+			if err := user.Save(); err != nil {
+				user.Unlock()
+				log.Println(err)
+			}
+		}()
+
+		latestbuild = user.GetLastBuildID(course, labnum)
+		if latestbuild < 0 {
+			http.Error(w, "No build registered on lab.", 500)
+			return
 		}
 
-		labfolder = org.IndividualLabFolders[labnum]
+		copt := user.Courses[course]
+		copt.Assignments[labnum].ApprovedBuild = latestbuild
+		if copt.CurrentLabNum <= labnum {
+			copt.CurrentLabNum = labnum + 1
+			user.Courses[course] = copt
+		}
 	}
 
-	teststore := ci.GetCIStorage(org.Name, username)
-	// TODO: Fix new storage for builds
-	res := ci.Result{}
-	err = teststore.ReadGob(labfolder, &res, false)
+	res, err := ci.GetBuildResult(latestbuild)
 	if err != nil {
 		log.Println(err)
+		http.Error(w, err.Error(), 500)
 		return
 	}
+
 	res.Status = "Approved"
 
-	err = teststore.WriteGob(labfolder, res)
-	if err != nil {
+	if err := res.Save(); err != nil {
 		log.Println(err)
+		http.Error(w, err.Error(), 500)
+		return
 	}
 }

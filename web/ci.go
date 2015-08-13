@@ -95,7 +95,7 @@ var CIResultURL = "/course/ciresutls"
 // a build. This handler writes back the results as JSON data.
 func CIResultHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
-	_, err := checkMemberApproval(w, r, false)
+	member, err := checkMemberApproval(w, r, false)
 	if err != nil {
 		http.Error(w, err.Error(), 404)
 		log.Println(err)
@@ -107,10 +107,91 @@ func CIResultHandler(w http.ResponseWriter, r *http.Request) {
 	username := r.FormValue("Username")
 	labname := r.FormValue("Labname")
 
-	res, err := ci.GetIntegationResults(orgname, username, labname)
+	org, err := git.NewOrganization(orgname, true)
 	if err != nil {
-		http.Error(w, err.Error(), 404)
+		http.Error(w, err.Error(), 500)
 		return
+	}
+
+	if !org.IsMember(member) {
+		http.Error(w, "Not a member for this course.", 404)
+		return
+	}
+
+	var res *ci.BuildResult
+
+	if strings.HasPrefix(username, git.GroupRepoPrefix) {
+		labnum := -1
+		for i, name := range org.GroupLabFolders {
+			if name == labname {
+				labnum = i
+				break
+			}
+		}
+
+		if labnum < 0 {
+			http.Error(w, "No lab with that name found.", 404)
+			return
+		}
+
+		groupid, err := strconv.Atoi(username[len(git.GroupRepoPrefix):])
+		if err != nil {
+			http.Error(w, "Could not convert the group ID.", 404)
+			return
+		}
+
+		group, err := git.NewGroup(orgname, groupid, true)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), 404)
+			return
+		}
+
+		buildid := group.GetLastBuildID(labnum)
+		if buildid < 0 {
+			http.Error(w, "Could not find the build.", 404)
+			return
+		}
+
+		res, err = ci.GetBuildResult(buildid)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), 404)
+			return
+		}
+	} else {
+		labnum := -1
+		for i, name := range org.IndividualLabFolders {
+			if name == labname {
+				labnum = i
+				break
+			}
+		}
+
+		if labnum < 0 {
+			http.Error(w, "No lab with that name found.", 404)
+			return
+		}
+
+		user, err := git.NewMemberFromUsername(username, true)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), 404)
+			return
+		}
+
+		buildid := user.GetLastBuildID(orgname, labnum)
+		if buildid < 0 {
+			http.Error(w, "Could not find the build.", 404)
+			return
+		}
+
+		res, err = ci.GetBuildResult(buildid)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), 404)
+			return
+		}
 	}
 
 	enc := json.NewEncoder(w)
@@ -126,7 +207,7 @@ func CIResultHandler(w http.ResponseWriter, r *http.Request) {
 type SummaryView struct {
 	Course  string
 	User    string
-	Summary map[string]ci.Result
+	Summary map[string]*ci.BuildResult
 }
 
 // CIResultSummaryURL is the URL used to call CIResultSummaryURL.
@@ -137,14 +218,13 @@ var CIResultSummaryURL = "/course/cisummary"
 // as JSON data.
 func CIResultSummaryHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
-	_, err := checkTeacherApproval(w, r, false)
+	teacher, err := checkTeacherApproval(w, r, false)
 	if err != nil {
 		http.Error(w, err.Error(), 404)
 		log.Println(err)
 		return
 	}
 
-	// TODO: add more security
 	orgname := r.FormValue("Course")
 	username := r.FormValue("Username")
 
@@ -153,10 +233,73 @@ func CIResultSummaryHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := ci.GetIntegationResultSummary(orgname, username)
+	org, err := git.NewOrganization(orgname, true)
 	if err != nil {
-		http.Error(w, err.Error(), 404)
+		http.Error(w, err.Error(), 500)
 		return
+	}
+
+	if !org.IsTeacher(teacher) {
+		http.Error(w, "Not a teacher for this course.", 404)
+		return
+	}
+
+	res := make(map[string]*ci.BuildResult)
+	//if group ...
+	if strings.HasPrefix(username, git.GroupRepoPrefix) {
+		groupid, err := strconv.Atoi(username[len(git.GroupRepoPrefix):])
+		if err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), 500)
+			return
+		}
+
+		group, err := git.NewGroup(orgname, groupid, true)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), 500)
+			return
+		}
+
+		for labnum := range group.Assignments {
+			labname := org.GroupLabFolders[labnum]
+			buildid := group.GetLastBuildID(labnum)
+			if buildid < 0 {
+				continue
+			}
+
+			build, err := ci.GetBuildResult(buildid)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			res[labname] = build
+		}
+	} else {
+		user, err := git.NewMemberFromUsername(username, true)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), 500)
+			return
+		}
+
+		courseopt, ok := user.Courses[orgname]
+		if ok {
+			for labnum := range courseopt.Assignments {
+				labname := org.IndividualLabFolders[labnum]
+				buildid := user.GetLastBuildID(orgname, labnum)
+				if buildid < 0 {
+					continue
+				}
+
+				build, err := ci.GetBuildResult(buildid)
+				if err != nil {
+					log.Println(err)
+					continue
+				}
+				res[labname] = build
+			}
+		}
 	}
 
 	view := SummaryView{

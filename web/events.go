@@ -266,8 +266,9 @@ func StartTestBuildProcess(load github.PushPayload) (err error) {
 	var destfolder string
 	var labnum int
 	var username string
+	var gnum = -1
 	if isgroup {
-		gnum, err := strconv.Atoi(reponame[len("group"):])
+		gnum, err = strconv.Atoi(reponame[len("group"):])
 		if err != nil {
 			log.Println(err)
 			return err
@@ -299,9 +300,11 @@ func StartTestBuildProcess(load github.PushPayload) (err error) {
 	opt := ci.DaemonOptions{
 		Org:        org.Name,
 		User:       username,
+		Group:      gnum,
 		Repo:       reponame,
 		BaseFolder: org.CI.Basepath,
 		LabFolder:  labfolder,
+		LabNumber:  labnum,
 		AdminToken: org.AdminToken,
 		DestFolder: destfolder,
 		IsPush:     true,

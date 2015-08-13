@@ -380,14 +380,6 @@ func RemovePendingGroupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	defer func() {
-		err := group.Save()
-		if err != nil {
-			group.Unlock()
-			log.Println(err)
-		}
-	}()
-
 	group.Delete()
 }
 
