@@ -11,7 +11,7 @@ to code or language just as much as larger ones.
 Normal procedure for code contributions:
 - Fork the main repository
 - If you are working on one of the issues, mark the issue with an assignment or
-  leave a comment about it. 
+  leave a comment about it.
 - Implement your changes/additions
 - Open a pull request to the main repository
 
@@ -25,8 +25,8 @@ The import paths when forking can be a bit tricky to handle. More advanced ways
 to fix this are possible, but follow these steps for a easy solution to the
 import problem:
 - Fork the main repository to you github account.
-- Use 'go get' on your fork.
-- Change the folder named after your github username to 'hfurubotten' in the go
+- Use `go get` on your fork. `go get github.com/yourusername/autograder`
+- Change the folder named after your github username to `hfurubotten` in the go
 source path structure.  
 - Implement your changes/addidtions.
 - Upload as normal. The link to your fork on github will still be in your git
