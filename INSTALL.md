@@ -29,6 +29,7 @@ Note that this will also pull in several libraries on which autograder depends.
 1. Shut down the currently running autograder instance.
 2. Run the command
 
+
     go get -u github.com/hfurubotten/autograder
 
 
