@@ -27,6 +27,7 @@ _testmain.go
 experiments/*
 diskv/*
 main
+diskvtobolt
 
 *.db
 *.config
