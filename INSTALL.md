@@ -26,12 +26,11 @@ Note that this will also pull in several libraries on which autograder depends.
 
 ## Upgrading ##
 
-1. Shut down the currently running autograder instance.
-2. Run the command
-
+Shut down the currently running autograder instance, and run the command:
 
     go get -u github.com/hfurubotten/autograder
 
+Restart according to instructions above.
 
 
 ## Configuration ##
