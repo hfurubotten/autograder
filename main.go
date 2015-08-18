@@ -4,14 +4,13 @@ import (
 	"flag"
 	"log"
 	"os"
-	"path/filepath"
+	"os/signal"
 	"runtime"
-	"strings"
 
-	"github.com/hfurubotten/autograder/git"
-	"github.com/hfurubotten/autograder/global"
+	"github.com/hfurubotten/autograder/config"
+	"github.com/hfurubotten/autograder/database"
+	git "github.com/hfurubotten/autograder/entities"
 	"github.com/hfurubotten/autograder/web"
-	"github.com/hfurubotten/diskv"
 )
 
 var (
@@ -20,161 +19,116 @@ var (
 	clientID     = flag.String("clientid", "", "The application ID used in the OAuth process against Github. This can be generated at your settings page at Github.")
 	clientSecret = flag.String("secret", "", "The secret application code used in the OAuth process against Github. This can be generated at your settings page at Github.")
 	help         = flag.Bool("help", false, "List the startup options for the autograder.")
+	configfile   = flag.String("configfile", "", "Path to a custom config file location. Used when a config file not stored in the standard file location is prefered.")
+	basepath     = flag.String("basepath", "", "A custom file path for storing autograder files.")
 )
-
-var optionstore = diskv.New(diskv.Options{
-	BasePath:     "diskv/options/",
-	CacheSizeMax: 1024 * 1024 * 256,
-})
 
 func main() {
 	// enables multi core use.
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	var err error
+	// Parse flags
 	flag.Parse()
 
 	// prints the available flags to use on start
 	if *help {
 		flag.Usage()
+		log.Println("First start up details:")
+		log.Println("First time you start the system you need to supply OAuth details, domain name and an admin.")
+		log.Println("To register a new application at GitHub, go to this address to generate OAuth tokens: https://github.com/settings/applications/new")
+		log.Println("If you already have OAuth codes, you can find then on this address: https://github.com/settings/applications")
+		log.Println("The Homepage URL is the domain name you are using to serve the system.")
+		log.Fatal("The Authorization callback URL is your domainname with the path /oauth. (http://example.com/oauth)")
 		return
 	}
 
-	// checks for a domain name
-	if *hostname != "" {
-		if !strings.HasPrefix(*hostname, "http://") && !strings.HasPrefix(*hostname, "https://") {
-			log.Fatal("The domain url is not a valid url.")
+	// loads config file either from custom path or standard file path and validates.
+	var conf *config.Configuration
+	var err error
+	if *configfile != "" {
+		conf, err = config.LoadConfigFile(*configfile)
+		if err != nil {
+			log.Fatal(err)
 		}
-
-		domain := *hostname
-
-		if strings.HasSuffix(domain, "/") {
-			domain = domain[:len(domain)-1]
-		}
-
-		optionstore.WriteGob("hostname", domain)
-		global.Hostname = domain
-	} else {
-		if !optionstore.Has("hostname") {
-			log.Fatal("Missing domain name, set this the first time you start the system.")
-		}
-
-		var hname string
-		err = optionstore.ReadGob("hostname", &hname, false)
+	} else if *basepath != "" {
+		conf, err = config.LoadConfigFile(*basepath + config.ConfigFileName)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		global.Hostname = hname
+		conf.BasePath = *basepath
+	} else {
+		conf, err = config.LoadStandardConfigFile()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	// Updates config with evt. new information
+
+	// checks for a domain name
+	if *hostname != "" {
+		conf.Hostname = *hostname
 	}
 
 	// checks for the application codes to GitHub
 	if *clientID != "" && *clientSecret != "" {
-		optionstore.WriteGob("OAuthID", *clientID)
-		optionstore.WriteGob("OAuthSecret", *clientSecret)
-		global.OAuthClientID = *clientID
-		global.OAuthClientSecret = *clientSecret
-	} else {
-		if !optionstore.Has("OAuthID") && !optionstore.Has("OAuthSecret") {
-			log.Println("Missing OAuth details, set this the first time you start the system.")
-			log.Println("To register a new application at GitHub, go to this address to generate OAuth tokens: https://github.com/settings/applications/new")
-			log.Println("If you already have OAuth codes, you can find then on this address: https://github.com/settings/applications")
-			log.Println("The Homepage URL is the domain name you are using to serve the system.")
-			log.Fatal("The Authorization callback URL is your domainname with the path /oauth. (http://example.com/oauth)")
+		conf.OAuthID = *clientID
+		conf.OAuthSecret = *clientSecret
+	}
 
-			// stop := make(chan int)
-
-			// go web.FakeServer(80, stop)
-
-			// fmt.Print("OAuth ID: ")
-			// scanner := bufio.NewScanner(os.Stdin)
-			// scanner.Scan()
-			// id = strings.TrimSpace(scanner.Text())
-
-			// fmt.Print("OAuth secret: ")
-			// scanner = bufio.NewScanner(os.Stdin)
-			// scanner.Scan()
-			// secret = strings.TrimSpace(scanner.Text())
-
-			// stop <- 1
-
-			// //store them
-			// optionstore.WriteGob("OAuthID", id)
-			// optionstore.WriteGob("OAuthSecret", secret)
-		}
-
-		var id string
-		var secret string
-		err = optionstore.ReadGob("OAuthID", &id, false)
-		if err != nil {
+	// validates the configurations
+	if conf.Validate() != nil {
+		if err := conf.QuickFix(); err != nil {
 			log.Fatal(err)
 		}
+	}
 
-		err = optionstore.ReadGob("OAuthSecret", &secret, false)
-		if err != nil {
-			log.Fatal(err)
-		}
+	conf.ExportToGlobalVars()
 
-		global.OAuthClientID = id
-		global.OAuthClientSecret = secret
+	// saves configurations
+	if err := conf.Save(); err != nil {
+		log.Fatal(err)
 	}
 
 	// checks for an admin username
 	if *admin != "" {
 		log.Println("New admin added to the system: ", *admin)
-		m, err := git.NewMemberFromUsername(*admin)
+		m, err := git.NewMemberFromUsername(*admin, false)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		m.Lock()
-		defer m.Unlock()
-
 		m.IsAdmin = true
 		err = m.Save()
 		if err != nil {
+			m.Unlock()
 			log.Println("Couldn't store admin user in system:", err)
 		}
 	}
 
-	// checks if the system should be set up as a deamon that starts on system startup.
+	// TODO: checks if the system should be set up as a deamon that starts on system startup.
 
-	// checks for docker installation
-	// install on supported systems
-	// give notice for those systems not supported
-
-	// determins the path to additional files
-	execdir, err := filepath.Abs(filepath.Dir(os.Args[0]))
-	if err != nil {
-		log.Println("Couldn't determin the path to the executable.")
-		log.Fatal(err)
-	}
-	dirOne := filepath.Join(execdir, "../src/github.com/hfurubotten/autograder/")
-	dirTwo := filepath.Join(execdir, "/")
-	if info, err := os.Stat(dirOne); err == nil {
-		if info.Mode().IsDir() {
-			global.Basepath = dirOne + "/"
-		} else {
-			log.Fatal("Path found to source files is not a directory.")
-		}
-
-	} else if info, err := os.Stat(dirTwo); err == nil {
-		if info.Mode().IsDir() {
-			global.Basepath = dirTwo + "/"
-		} else {
-			log.Fatal("Path found to source files is not a directory.")
-		}
-	} else {
-		log.Println("Couldn't determin the path ")
-		log.Fatal("")
-	}
+	// TODO: checks for docker installation
+	// TODO: install on supported systems
+	// TODO: give notice for those systems not supported
 
 	// log print appearance
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+
+	// starting database
+	database.Start(conf.BasePath + "autograder.db")
+	defer database.Close()
 
 	// starts up the webserver
 	log.Println("Server starting")
 
 	server := web.NewWebServer(80)
 	server.Start()
+
+	// Prevent main from returning immediately. Wait for interrupt.
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, os.Kill, os.Interrupt)
+	<-signalChan
+	log.Println("Application closed by user.")
 }
