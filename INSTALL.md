@@ -1,33 +1,37 @@
+# Pre-requisits #
+
+To install autograder, you'll need to install Go and set the `GOPATH`
+environment variable appropriately. See [here](http://golang.org/doc/install).
+
 # Installation #
 
-## Installing from source ##
-When installing from source you need to have Go compiler installed and a GOPATH
-set up. When cloning the Autograder repository, the dependent libraries need to
-be cloned as well.
+To install autograder, complete these steps:
 
-Follow these steps to complile and run Autograder:
-- Run the `go get` command on the main repository to clone the Autograder repository.
+    go get github.com/hfurubotten/autograder
 
-	   go get github.com/hfurubotten/autograder
+This will produce an executable file in `$GOPATH/bin/autograder`.
+Note that this will also pull in several libraries on which autograder depends.
 
-     This will also download all dependent libraries.
-- This process will also compile the source code into a runnable file. This file
-  can be found at `$GOPATH/bin/autograder`.
-- Set the go bin folder as current working directory. Run `cd $GOPATH/bin/`
-- Run Autograder with "sudo ./autograder". Add the needed first time time
-  configurations described below as flags after the command to set its behavior.
-- Optional: To let the autograder application to run while the terminal window
-  is closed, it can be opened in a screen session. Run the command
-  `screen -S autograder sudo ./autograder`. Disconnect from the screen session
-  with `ctrl+a, d`.
+## Running (first time: configure) ##
 
-## Updating from source ##
-- Close down the current running Autograder instance.
-- Run the command
+1. `cd $GOPATH/bin/`
+2. Run `sudo autograder`.
+3. Optional (replaces step 2): `screen -S autograder sudo autograder`. This lets you run the autograder in the background allowing you to close the terminal window. To disconnect from the screen session, use `ctrl+a, d`.
 
-      go get -u github.com/hfurubotten/autograder
+## Running (configuration completed) ##
 
-    in the first step in the installation and go through the steps again.
+1. `cd $GOPATH/bin/`
+2. Run `sudo autograder`.
+3. Optional (replaces step 2): `screen -S autograder sudo autograder`. This lets you run the autograder in the background allowing you to close the terminal window. To disconnect from the screen session, use `ctrl+a, d`.
+
+## Upgrading ##
+
+Shut down the currently running autograder instance, and run the command:
+
+    go get -u github.com/hfurubotten/autograder
+
+Restart according to instructions above.
+
 
 ## Configuration ##
 
