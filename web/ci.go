@@ -33,7 +33,7 @@ func ManualCITriggerHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	org, err := git.NewOrganization(course, false)
+	org, err := git.NewOrganization(course, true)
 	if err != nil {
 		http.Error(w, "Organization Error", 404)
 		return
@@ -58,6 +58,30 @@ func ManualCITriggerHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	groupid := -1
+	labnum := -1
+	if strings.Contains(user, "group") {
+		groupid, err = strconv.Atoi(user[len("group"):])
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+
+		for i, name := range org.GroupLabFolders {
+			if name == lab {
+				labnum = i
+				break
+			}
+		}
+	} else {
+		for i, name := range org.IndividualLabFolders {
+			if name == lab {
+				labnum = i
+				break
+			}
+		}
+	}
+
 	var repo string
 	var destfolder string
 	if _, ok := org.Members[user]; ok {
@@ -72,11 +96,14 @@ func ManualCITriggerHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	opt := ci.DaemonOptions{
-		Org:        org.Name,
-		User:       user,
+		Org:   org.Name,
+		User:  user,
+		Group: groupid,
+
 		Repo:       repo,
 		BaseFolder: org.CI.Basepath,
 		LabFolder:  lab,
+		LabNumber:  labnum,
 		AdminToken: org.AdminToken,
 		DestFolder: destfolder,
 		Secret:     org.CI.Secret,
