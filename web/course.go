@@ -119,6 +119,7 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 		err = org.Save()
 		if err != nil {
 			org.Unlock()
+			member.Unlock()
 			log.Println(err)
 			return
 		}
@@ -131,8 +132,11 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
+	log.Println("Creating Course")
+
 	org.AdminToken = member.GetToken()
 	org.Private = r.FormValue("private") == "on"
+	org.ScreenName = org.Name
 	org.Description = r.FormValue("desc")
 	groups, err := strconv.Atoi(r.FormValue("groups"))
 	if err != nil {
@@ -189,10 +193,16 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	log.Println("Created ", org.Name, "/", git.CourseInfoName)
+
 	// creates the lab assignment repo
-	labsl := make(chan int)
+	labsl := make(chan int, 1)
 	if _, ok := currepos[git.StandardRepoName]; !ok {
 		go func(l chan int) {
+			defer func() {
+				log.Println("Created ", org.Name, "/", git.StandardRepoName)
+				l <- 1
+			}()
 			if _, ok = templaterepos[git.StandardRepoName]; ok {
 				err = org.Fork(r.FormValue("template"), git.StandardRepoName)
 				if err != nil {
@@ -205,6 +215,7 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 					Name:     git.StandardRepoName,
 					Private:  org.Private,
 					AutoInit: true,
+					Issues:   true,
 				}
 				err = org.CreateRepo(repo)
 				if err != nil {
@@ -222,14 +233,19 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 					}
 				}
 			}
-			//l <- 1
 		}(labsl)
+	} else {
+		labsl <- 1
 	}
 
 	// creates test repo
-	testl := make(chan int)
+	testl := make(chan int, 1)
 	if _, ok := currepos[git.TestRepoName]; !ok {
 		go func(l chan int) {
+			defer func() {
+				log.Println("Created ", org.Name, "/", git.TestRepoName)
+				l <- 1
+			}()
 			if _, ok = templaterepos[git.TestRepoName]; ok {
 				err = org.Fork(r.FormValue("template"), git.TestRepoName)
 				if err != nil {
@@ -242,6 +258,7 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 					Name:     git.TestRepoName,
 					Private:  org.Private,
 					AutoInit: true,
+					Issues:   true,
 					//Hook:     "push", // TODO: uncomment when CI rebuilds all on new test.
 				}
 				err = org.CreateRepo(repo)
@@ -260,9 +277,21 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 						log.Println(err)
 					}
 				}
+
+				for i := 0; i < org.GroupAssignments; i++ {
+					path := "grouplab" + strconv.Itoa(i+1) + "/README.md"
+					commitmessage := "Adding readme file for lab assignment " + strconv.Itoa(i+1)
+					content := "# Lab assignment " + strconv.Itoa(i+1)
+					_, err = org.CreateFile(git.TestRepoName, path, content, commitmessage)
+					content = "# Lab assignment " + strconv.Itoa(i+1) + " test"
+					if err != nil {
+						log.Println(err)
+					}
+				}
 			}
-			//l <- 1
 		}(testl)
+	} else {
+		testl <- 1
 	}
 
 	// creates the group assignment repo, if number of assignments are larger than 0.
@@ -270,6 +299,10 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 	if org.GroupAssignments > 0 {
 		if _, ok := currepos[git.GroupsRepoName]; !ok {
 			go func(l chan int) {
+				defer func() {
+					log.Println("Created ", org.Name, "/", git.GroupsRepoName)
+					l <- 1
+				}()
 				if _, ok = templaterepos[git.GroupsRepoName]; ok {
 					err = org.Fork(r.FormValue("template"), git.GroupsRepoName)
 					if err != nil {
@@ -282,6 +315,7 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 						Name:     git.GroupsRepoName,
 						Private:  org.Private,
 						AutoInit: true,
+						Issues:   true,
 					}
 					err = org.CreateRepo(repo)
 					if err != nil {
@@ -289,8 +323,8 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 						return
 					}
 
-					for i := 0; i < org.IndividualAssignments; i++ {
-						path := "lab" + strconv.Itoa(i+1) + "/README.md"
+					for i := 0; i < org.GroupAssignments; i++ {
+						path := "grouplab" + strconv.Itoa(i+1) + "/README.md"
 						commitmessage := "Adding readme file for lab assignment " + strconv.Itoa(i+1)
 						content := "# Lab assignment " + strconv.Itoa(i+1)
 						_, err = org.CreateFile(git.GroupsRepoName, path, content, commitmessage)
@@ -300,12 +334,19 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 						}
 					}
 				}
-				//l <- 1
 			}(glabsl)
+		} else {
+			glabsl <- 1
 		}
 	} else {
-		//glabsl <- 1
+		glabsl <- 1
 	}
+
+	// wait on github completion of repos
+	// TODO: fix correct channel use further up.
+	<-labsl
+	<-testl
+	<-glabsl
 
 	// Creates the student team
 	// TODO: put this in a seperate go rutine and check if the team exsists already.
@@ -325,13 +366,9 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 	}
 
-	org.AddTeacher(member)
+	log.Println("Created team ", org.Name, "/", "students")
 
-	// wait on github completion
-	// TODO: fix correct channel use further up.
-	// <-labsl
-	// <-testl
-	// <-glabsl
+	org.AddTeacher(member)
 
 	member.AddTeachingOrganization(org)
 
@@ -505,6 +542,7 @@ func ApproveCourseMembershipHandler(w http.ResponseWriter, r *http.Request) {
 			Name:     username + "-" + git.StandardRepoName,
 			Private:  org.Private,
 			AutoInit: true,
+			Issues:   true,
 			Hook:     "*",
 		}
 		err = org.CreateRepo(repo)
