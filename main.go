@@ -91,6 +91,10 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// starting database
+	database.Start(conf.BasePath + "autograder.db")
+	defer database.Close()
+
 	// checks for an admin username
 	if *admin != "" {
 		log.Println("New admin added to the system: ", *admin)
@@ -115,10 +119,6 @@ func main() {
 
 	// log print appearance
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
-
-	// starting database
-	database.Start(conf.BasePath + "autograder.db")
-	defer database.Close()
 
 	// starts up the webserver
 	log.Println("Server starting")
