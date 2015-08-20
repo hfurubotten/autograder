@@ -1,68 +1,3 @@
-
-
-// loads lab results from server and updates html.
-var loadLabResult = function(user, lab){
-  $('span#lab-headline').text(lab);
-  $.getJSON("/course/ciresutls", {"Labname": lab, "Course": course, "Username": user}, function(data){
-    // updates text fields
-    $("#status").text("Status: ").append(data.Status);
-    $("#passes").text("Number of passed tests: ").append(data.NumPasses);
-    $("#fails").text("Number of failed tests: ").append(data.NumFails);
-
-    // updates code
-    $("code#logs").text("");
-    data.Log.forEach(function(t, i) {
-      $("code#logs").append(" # ").append($(document.createTextNode(t))).append("<br>");
-    });
-
-    // updates build and push times.
-    var timeformat = "DD/MM/YYYY HH:mm:ss"
-    var buildtime = moment(data.Timestamp).format(timeformat);
-    $("p#timedate").text("Build time: ").append(buildtime);
-    var pushtime = moment(data.PushTime).format(timeformat);
-    $("#pushtime").text("Code delievered: ").append(pushtime);
-
-    // updates processbar
-    var pbar = $("div.progress > div.progress-bar");
-    pbar.removeClass("progress-bar-success progress-bar-warning progress-bar-danger progress-bar-striped");
-    if(data.NumBuildFailure == 0) {
-      pbar.text(data.TotalScore+"%").attr("aria-valuenow", data.TotalScore).css("width", data.TotalScore + "%");
-      if(data.TotalScore < 40 && data.TotalScore >= 6){
-        pbar.addClass("progress-bar-danger");
-      } else if(data.TotalScore < 6) {
-        pbar.addClass("progress-bar-danger");
-        pbar.attr("aria-valuenow", 6).css("width", "6%");
-      } else if(data.TotalScore >= 40 && data.TotalScore < 60){
-        pbar.addClass("progress-bar-warning");
-      }
-    } else {
-      pbar.text("Build Failure!");
-      pbar.attr("aria-valuenow", 100).css("width", "100%");
-      pbar.addClass("progress-bar-danger progress-bar-striped");
-    }
-
-    // update test table
-    $("table#testresultlist > tfoot > tr > .totalscore").text(data.TotalScore+"%");
-    var testtable = $("table#testresultlist > tbody");
-    testtable.text("");
-    if(data.TestScores != null){
-      data.TestScores.forEach(function(data, i){
-        testtable.append("<tr><td>" + (i + 1) + "</td><td>" + data.TestName + "</td><td>" + data.Score + "/" + data.MaxScore + " pts</td><td>" + data.Weight + " pts</td></tr>\n");
-      });
-    }
-  }).fail(function(){
-    $("#status").text("Status: Nothing built yet.");
-    $("#passes").text("Number of passed tests: -");
-    $("#fails").text("Number of failed tests: -");
-    $("p#timedate").text("Build time: -");
-    $("#pushtime").text("Code delievered: -");
-    $("div.progress > div.progress-bar").removeClass("progress-bar-success progress-bar-warning progress-bar-danger progress-bar-striped").attr("aria-valuenow", 6).css("width", "6%").text("0%");
-    $("code#logs").text("# There is no build for this lab yet.");
-    $("table#testresultlist > tfoot > tr > .totalscore").text("0%");
-    $("table#testresultlist > tbody").html("");
-  });
-}
-
 $("#rebuild").click(function(event){
   var lab = curlab;
   var user = username;
@@ -88,12 +23,82 @@ $("#approve").click(function(){
   return false
 });
 
-
 $(".labtab").click(function(){
-  $(".labtab").removeClass("active");
+  $('a.list-group-item').removeClass('active');
   $(this).addClass("active");
   curlab = $(this).attr("lab");
   curlabnum = $(this).attr("labnum");
 
   loadLabResult(username, curlab);
 });
+
+$(".summary").click(function(){
+  $('a.list-group-item').removeClass('active');
+  $(".summary").addClass("active");
+  updatesummary();
+});
+
+
+$(window).on('hashchange', function(){
+  $('section').hide();
+  $(location.hash).show();
+  //$('a.list-group-item').removeClass('active');
+  //$('a[href=' + location.hash + ']').addClass('active');
+});
+
+var addtosummarypanel = function(labname, status, score, notes, tablebody){
+  $("#summarypanel").append("<div class=\"panel panel-default\">" +
+    "<div class=\"panel-heading\">" +
+      "<h3 class=\"panel-title\"><strong>"+labname+"</strong> <span class=\"pull-right\">Score: "+score+"% | Status: "+status+"</span></h3>"+
+    "</div>" +
+    "<div class=\"panel-body\">"+
+      "<p><strong>Notes:</strong></b></p>"+
+      "<p>"+notes+"</p>"+
+
+      "<hr>"+
+
+      "<table id=\"testresultlist\" class=\"table table-striped\">"+
+        "<thead>"+
+          "<tr>"+
+            "<th>#</th>"+
+            "<th>Test name</th>"+
+            "<th>Score</th>"+
+            "<th>Weight</th>"+
+          "</tr>"+
+        "</thead>"+
+        "<tbody>"+
+          tablebody +
+        "</tbody>"+
+        "<tfoot>"+
+          "<tr>"+
+            "<td></td>"+
+            "<td>Total score:</td>"+
+            "<td class=\"totalscore\">"+score+"%</td>"+
+            "<td>100%</td>"+
+          "</tr>"+
+        "</tfoot>"+
+      "</table>"+
+    "</div>"+
+  "</div>");
+}
+
+var updatesummary = function(){
+  $.getJSON("/course/cisummary", {"Course": course, "Username": username}, function(data){
+    $("#summarypanel").text("");
+    $.each(data.Summary, function(labname, s){
+      if(labname == "") {
+        return
+      }
+
+      // update test table
+      tablebody = ""
+      if(s.TestScores != null){
+        s.TestScores.forEach(function(data, i){
+          tablebody = tablebody + "<tr><td>" + (i + 1) + "</td><td>" + data.TestName + "</td><td>" + data.Score + "/" + data.MaxScore + " pts</td><td>" + data.Weight + " pts</td></tr>\n";
+        });
+      }
+
+      addtosummarypanel(labname, s.Status, s.TotalScore, "", tablebody)
+    });
+  });
+}

@@ -34,11 +34,15 @@ $(function(){
   $("table#groupresults > tbody > tr").each(updatesummary);
 });
 
-// updatesummary is a finction that will load a summary for a course and update the student or group list. 
+// updatesummary is a finction that will load a summary for a course and update the student or group list.
 var updatesummary = function(index, element){
   var username = $(element).attr("id");
   $.getJSON("/course/cisummary", {"Course": course, "Username": username}, function(data){
     $.each(data.Summary, function(labname, s){
+      if(labname == "") {
+        return
+      }
+      
       $("tr#" + data.User + " > td." + labname).text(s.TotalScore + "%")
       if(s.Status.toLowerCase() == "Active lab assignment".toLowerCase()){
         $("tr#" + data.User + " > td." + labname).addClass("info");
@@ -51,7 +55,7 @@ var updatesummary = function(index, element){
   });
 }
 
-// addassistant will send a request to the server for adding a student to the list of teaching assistants. 
+// addassistant will send a request to the server for adding a student to the list of teaching assistants.
 function addassistant(username, remove){
   if(confirm("Are you sure you want to make " + username + " a teaching assistant?")){
     $.post("/course/addassistant", {"course": course, "assistant": username}, function(base){
@@ -65,7 +69,7 @@ function addassistant(username, remove){
   }
 }
 
-// addassistant will send a request to the server for adding a student to the list of teaching assistants. 
+// addassistant will send a request to the server for adding a student to the list of teaching assistants.
 function removeassistant(username, remove){
   if(confirm("Are you sure you want to remove " + username + " from the teaching staff?")){
     $.post("/course/removeassistant", {"course": course, "assistant": username}, function(base){
@@ -79,7 +83,7 @@ function removeassistant(username, remove){
   }
 }
 
-// removependinguser will send a request to the server and remove a pending user. 
+// removependinguser will send a request to the server and remove a pending user.
 function removependinguser(username){
   $.post("/course/removepending", {"course": course, "user": username}, function(base){
       $("tr#" + username).slideUp(500);
@@ -89,7 +93,7 @@ function removependinguser(username){
     });
 }
 
-// approveuser will send a request to the server to approve a user. 
+// approveuser will send a request to the server to approve a user.
 function approveuser(username) {
   $.post("/course/approvemember/" + course, {"user": username}, function(base){
     var data = jQuery.parseJSON(base);
@@ -102,7 +106,7 @@ function approveuser(username) {
   });
 }
 
-// removeuserfromcourse will send a request to the server for removing a student from a course. 
+// removeuserfromcourse will send a request to the server for removing a student from a course.
 function removeuserfromcourse(username, remove){
   if(confirm("Are you sure you want to remove " + username + " from the course?")){
     $.post("/course/removemember", {"course": course, "user": username}, function(base){
@@ -129,7 +133,7 @@ function approvegroup(groupid) {
   });
 }
 
-// removegroup will send a request to the server to remove a group. 
+// removegroup will send a request to the server to remove a group.
 function removegroup(groupid){
   if(confirm("Are you sure you want to remove this group?")){
 
@@ -146,7 +150,7 @@ function removegroup(groupid){
   }
 }
 
-// addtoexistinggroup will send a request to the server to add additional members to a existing group. 
+// addtoexistinggroup will send a request to the server to add additional members to a existing group.
 function addtoexistinggroup(groupid) {
   $('form#groupselection > input[name=groupid]').val(groupid);
   var input = $('form#groupselection').serialize()

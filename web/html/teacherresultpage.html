@@ -21,11 +21,19 @@
             <a class="list-group-item labtab" href="#result" lab="{{.}}" labnum="{{$index}}">{{.}} <span class="pull-right glyphicon glyphicon-chevron-right" aria-hidden="true"></span></a>
             {{end}}
           {{end}}
+          <a class="list-group-item summary" href="#summary">Summary <span class="pull-right glyphicon glyphicon-chevron-right" aria-hidden="true"></span></a>
 
         </div>
       </div>
 
       <div class="col-md-9">
+
+        <section id="summary">
+          <h1>Summary</h1>
+          <div id="summarypanel">
+
+          </div>
+        </section>
 
         <section id="result">
           <div class="row">
@@ -76,7 +84,9 @@
               <h2>Latest build</h2>
               <p id="passes">Number of passed tests: ?</p>
               <p id="fails">Number of failed tests: ?</p>
-              <p id="timedate">Build time: No build yet</p>
+              <p id="buildtime">Execution time: No build yet</p>
+              <p id="timedate">Build date: No build yet</p>
+              <p id="buildid">Build ID: #</p>
             </div>
             <div class="col-lg-4 hidden-print">
               <h2>Actions</h2>
@@ -113,7 +123,9 @@
 
     $(function(){
       $('.labtab[labnum={{.Labnum}}]').click();
+      $('#summary').hide()
     });
   </script>
+  <script type="text/javascript" src="/js/resultloader.js"></script>
   <script type="text/javascript" src="/js/teacher.result.page.js"></script>
 {{end}}

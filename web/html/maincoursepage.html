@@ -75,7 +75,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                          
+
                 </tbody>
                 <tfoot>
                   <tr>
@@ -88,13 +88,15 @@
               </table>
             </div>
           </div>
-          <!-- Build logs --> 
+          <!-- Build logs -->
           <div class="row">
             <div class="col-lg-8">
               <h2>Latest build</h2>
               <p id="passes">Number of passed tests: ?</p>
               <p id="fails">Number of failed tests: ?</p>
-              <p id="timedate">Build time: No build yet</p>
+              <p id="buildtime">Execution time: No build yet</p>
+              <p id="timedate">Build date: No build yet</p>
+              <p id="buildid">Build ID: #</p>
             </div>
             <div class="col-lg-4 hidden-print">
               <h2>Actions</h2>
@@ -109,9 +111,9 @@
           </div>
 
           <div class="alert alert-success" role="alert" style="display: none"></div>
-            <div class="well">            
+            <div class="well">
               <code id="logs">
-                
+
               </code>
           </div>
         </div>
@@ -271,6 +273,7 @@
       });
     {{end}}
   </script>
+  <script src="/js/resultloader.js" type="text/javascript" charset="utf-8"></script>
   <script src="/js/user.page.js" type="text/javascript" charset="utf-8"></script>
   <script src="/js/codereview.js" type="text/javascript" charset="utf-8"></script>
 {{end}}
