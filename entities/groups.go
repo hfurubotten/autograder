@@ -170,7 +170,7 @@ func (g *Group) AddBuildResult(lab, buildid int) {
 
 // GetLastBuildID will get the last build ID added to a lab assignment.
 func (g *Group) GetLastBuildID(lab int) int {
-	if assignment, ok := g.Assignments[lab]; !ok {
+	if assignment, ok := g.Assignments[lab]; ok {
 		if assignment.Builds == nil {
 			return -1
 		}

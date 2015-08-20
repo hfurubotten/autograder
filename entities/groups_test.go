@@ -1,10 +1,7 @@
 package git
 
 import (
-	"os"
 	"testing"
-
-	"github.com/hfurubotten/autograder/global"
 )
 
 var testNewGroup = []struct {
@@ -110,8 +107,6 @@ func TestNewGroup(t *testing.T) {
 		}
 
 		compareGroups(g1, g2, t)
-
-		cleanUpGroupStorage(tcase.inCourse)
 	}
 }
 
@@ -197,11 +192,13 @@ func TestActivate(t *testing.T) {
 			u, err := NewMemberFromUsername(username, false)
 			if err != nil {
 				t.Errorf("Error getting user: %v", err)
+				continue
 			}
 
 			org, err := NewOrganization(tcase.want.Course, true)
 			if err != nil {
 				t.Errorf("Error creating org: %v", err)
+				continue
 			}
 
 			u.AddOrganization(org)
@@ -227,9 +224,6 @@ func TestActivate(t *testing.T) {
 				t.Errorf("User not updated with group membership. Got %t for IsGroupMember field, want true.", u.Courses[tcase.want.Course].IsGroupMember)
 			}
 		}
-
-		cleanUpMemberStorage()
-		cleanUpGroupStorage(tcase.in.Course)
 	}
 }
 
@@ -400,11 +394,7 @@ func TestSaveHasAndDelete(t *testing.T) {
 		if HasGroup(tcase.in.ID) {
 			t.Error("Found the group after save.")
 		}
-
-		cleanUpMemberStorage()
-		cleanUpGroupStorage(tcase.in.Course)
 	}
-
 }
 
 var testGetNextGroupIDIterations = 100
@@ -416,10 +406,6 @@ func TestGetNextGroupID(t *testing.T) {
 			t.Errorf("Error with counting in getting next group ID. Got %d, want %d.", nextID, i)
 		}
 	}
-}
-
-func cleanUpGroupStorage(course string) error {
-	return os.RemoveAll(global.Basepath + "diskv/groups/" + course + "/")
 }
 
 func compareGroups(in, want *Group, t *testing.T) {
