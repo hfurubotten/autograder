@@ -600,6 +600,7 @@ func (o *Organization) CreateRepo(opt RepositoryOptions) (err error) {
 	repo.Name = github.String(opt.Name)
 	repo.Private = github.Bool(opt.Private)
 	repo.AutoInit = github.Bool(opt.AutoInit)
+	repo.HasIssues = github.Bool(opt.Issues)
 	if opt.TeamID != 0 {
 		repo.TeamID = github.Int(opt.TeamID)
 	}

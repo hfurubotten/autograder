@@ -6,6 +6,7 @@ type RepositoryOptions struct {
 	Private  bool
 	TeamID   int
 	AutoInit bool
+	Issues   bool
 	Hook     string
 }
 
