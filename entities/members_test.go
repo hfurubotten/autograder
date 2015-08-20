@@ -2,18 +2,116 @@ package git
 
 import (
 	"net/mail"
-	"os"
 	"testing"
 
-	"github.com/hfurubotten/autograder/global"
 	"github.com/hfurubotten/github-gamification/entities"
 )
 
-func cleanUpMemberStorage() error {
-	if err := os.RemoveAll(global.Basepath + "diskv/users/"); err != nil {
-		return err
+var testNewMemberInput = []struct {
+	token    string
+	username string
+	studid   int
+}{
+	{
+		"123456789abcdef",
+		"user100",
+		123456789,
+	},
+	{
+		"12345674489abcdef",
+		"user101",
+		987654321,
+	},
+	{
+		"12345655789abcdef",
+		"user102",
+		156789,
+	},
+}
+
+func TestNewMember(t *testing.T) {
+	for _, in := range testNewMemberInput {
+		tok := NewToken(in.token)
+		if err := tok.SetUsernameToTokenInStore(in.username); err != nil {
+			t.Error("Error storing tokens with username:", err)
+			continue
+		}
+
+		m, err := NewMember(in.token, false)
+		if err != nil {
+			t.Error("Error creating new member:", err)
+			continue
+		}
+
+		if m.Username != in.username {
+			t.Errorf("Username does not match. %v != %v", m.Username, in.username)
+			continue
+		}
+
+		m.StudentID = in.studid
+
+		if err = m.Save(); err != nil {
+			t.Error("Could not save user:", err)
+		}
+
+		testListAllMembersInput = append(testListAllMembersInput, in.username)
+
+		m2, err := NewMember(in.token, false)
+		if err != nil {
+			t.Error("Error creating new member:", err)
+			continue
+		}
+
+		if m2.Username != in.username {
+			t.Errorf("Username does not match. %v != %v", m.Username, in.username)
+			continue
+		}
+
+		if m2.StudentID != in.studid {
+			t.Errorf("StudentID does not match. %v != %v", m.StudentID, in.studid)
+			continue
+		}
+
+		m.StudentID = in.studid + 1
+
+		if err = m.Save(); err != nil {
+			t.Error("Could not save user:", err)
+		}
+
+		m3, err := NewMember(in.token, true)
+		if err != nil {
+			t.Error("Error creating new member:", err)
+			continue
+		}
+
+		if m3.Username != in.username {
+			t.Errorf("Username does not match. %v != %v", m.Username, in.username)
+			continue
+		}
+
+		if m3.StudentID != in.studid+1 {
+			t.Errorf("StudentID does not match. %v != %v", m.StudentID, in.studid)
+			continue
+		}
+
+		// checks again with loading from DB and not just memory caches
+		delete(InMemoryMembers, in.username)
+		m4, err := NewMember(in.token, true)
+		if err != nil {
+			t.Error("Error creating new member:", err)
+			continue
+		}
+
+		if m4.Username != in.username {
+			t.Errorf("Username does not match. %v != %v", m.Username, in.username)
+			continue
+		}
+
+		if m4.StudentID != in.studid+1 {
+			t.Errorf("StudentID does not match. %v != %v", m.StudentID, in.studid)
+			continue
+		}
 	}
-	return os.RemoveAll(global.Basepath + "diskv/tokens/")
 }
 
 var testIsComplete = []struct {
@@ -126,7 +224,7 @@ func TestAddOrganization(t *testing.T) {
 		for _, cname := range tcase.in {
 			org, err := NewOrganization(cname, true)
 			if err != nil {
-				t.Errorf("Error creating org", err)
+				t.Error("Error creating org", err)
 			}
 			user.AddOrganization(org)
 		}
@@ -150,7 +248,7 @@ func TestAddTeachingOrganization(t *testing.T) {
 		for _, cname := range tcase.in {
 			org, err := NewOrganization(cname, true)
 			if err != nil {
-				t.Errorf("Error creating org", err)
+				t.Error("Error creating org", err)
 			}
 			user.AddTeachingOrganization(org)
 		}
@@ -174,7 +272,7 @@ func TestAddAssistingOrganization(t *testing.T) {
 		for _, cname := range tcase.in {
 			org, err := NewOrganization(cname, true)
 			if err != nil {
-				t.Errorf("Error creating org", err)
+				t.Error("Error creating org", err)
 			}
 			user.AddAssistingOrganization(org)
 		}
@@ -221,8 +319,7 @@ func TestListAllMembers(t *testing.T) {
 	}
 
 	if len(testListAllMembersInput) != i {
-		t.Error("Missing members when listing the members. %d != %d", len(testListAllMembersInput), i)
+		t.Errorf("Missing members when listing the members. %d != %d", len(testListAllMembersInput), i)
 	}
 
-	cleanUpMemberStorage()
 }
