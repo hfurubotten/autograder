@@ -46,8 +46,12 @@ type BuildResult struct {
 	TestScores []score.Score
 	TotalScore int
 
-	CommitID   string
-	CommitText string
+	HeadCommitID   string
+	HeadCommitText string
+	CommitIDs      []string
+	CommitTexts    []string
+
+	BuildTime time.Duration
 
 	Contributions map[string]int
 

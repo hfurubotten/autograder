@@ -172,10 +172,13 @@ func compareBuildResults(br1, br2 *BuildResult, t *testing.T) {
 	if br1.TotalScore != br2.TotalScore {
 		t.Errorf("Field values for TotalScore does not match. %v != %v.", br1.TotalScore, br2.TotalScore)
 	}
-	if br1.CommitID != br2.CommitID {
-		t.Errorf("Field values for CommitID does not match. %v != %v.", br1.CommitID, br2.CommitID)
+	if br1.HeadCommitID != br2.HeadCommitID {
+		t.Errorf("Field values for HeadCommitID does not match. %v != %v.", br1.HeadCommitID, br2.HeadCommitID)
 	}
-	if br1.CommitText != br2.CommitText {
-		t.Errorf("Field values for CommitText does not match. %v != %v.", br1.CommitText, br2.CommitText)
+	if br1.HeadCommitText != br2.HeadCommitText {
+		t.Errorf("Field values for HeadCommitText does not match. %v != %v.", br1.HeadCommitText, br2.HeadCommitText)
+	}
+	if br1.BuildTime != br2.BuildTime {
+		t.Errorf("Field values for BuildTime does not match. %v != %v.", br1.BuildTime, br2.BuildTime)
 	}
 }

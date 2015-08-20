@@ -93,6 +93,9 @@ func StartTesterDaemon(opt DaemonOptions) {
 	r.PushTime = time.Now()
 	r.User = opt.User
 	r.Status = "Active lab assignment"
+	r.Labnum = opt.LabNumber
+
+	starttime := time.Now()
 
 	// executes build commands
 	for _, cmd := range cmds {
@@ -106,6 +109,8 @@ func StartTesterDaemon(opt DaemonOptions) {
 			}
 		}
 	}
+
+	r.BuildTime = time.Since(starttime)
 
 	// parsing the results
 	SimpleParsing(r)
@@ -151,11 +156,12 @@ func StartTesterDaemon(opt DaemonOptions) {
 		group.AddBuildResult(opt.LabNumber, r.ID)
 
 		if err := group.Save(); err != nil {
+			group.Unlock()
 			log.Println(err)
 		}
 		// build for single user. Stores build ID to user.
 	} else {
-		user, err := git.NewMember(opt.User, false)
+		user, err := git.NewMemberFromUsername(opt.User, false)
 		if err != nil {
 			log.Println(err)
 			return
@@ -177,6 +183,7 @@ func StartTesterDaemon(opt DaemonOptions) {
 		user.AddBuildResult(opt.Org, opt.LabNumber, r.ID)
 
 		if err := user.Save(); err != nil {
+			user.Unlock()
 			log.Println(err)
 		}
 	}
