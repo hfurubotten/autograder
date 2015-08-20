@@ -2,19 +2,29 @@ package web
 
 import (
 	"errors"
-	"io"
+	//"io"
 	"log"
 	//"net"
 	"net/http"
-	"os"
+	//"os"
 	"strconv"
+	"strings"
 
 	"github.com/hfurubotten/autograder/auth"
 	git "github.com/hfurubotten/autograder/entities"
 	"github.com/hfurubotten/autograder/global"
 	"github.com/hfurubotten/autograder/web/pages"
 	"github.com/hfurubotten/autograder/web/sessions"
+	"github.com/hfurubotten/autograder/web/staticfiles"
 )
+
+// Using go generate to build in all static files into a go file. Each time the
+// static files are changed/removed/added the go generate command need to be
+// executed. And need to be added together with the commit for the changed
+// static files.
+// the go-bindata program can be obtained by running go get -u github.com/jteeuwen/go-bindata/go-bindata
+//
+//go:generate $GOPATH/bin/go-bindata -o=staticfiles/staticfiles.go -pkg=staticfiles css/ fonts/ html/... img/... js/
 
 var htmlBase string
 
@@ -32,7 +42,7 @@ func NewWebServer(port int) WebServer {
 // method blocks, and will call os.Exit(1) if server error occures.
 func (ws WebServer) Start() {
 	// setting html base path
-	htmlBase = global.Basepath + "web/html/"
+	htmlBase = "html/"
 
 	// OAuth process
 	http.Handle("/login", http.RedirectHandler(global.OAuthRedirectURL+"?client_id="+global.OAuthClientID, 307))
@@ -80,10 +90,14 @@ func (ws WebServer) Start() {
 	http.HandleFunc(AddGroupMemberURL, AddGroupMemberHandler)
 
 	// static files
-	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("web/js/"))))
-	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("web/css/"))))
-	http.Handle("/img/", http.StripPrefix("/img/", http.FileServer(http.Dir("web/img/"))))
-	http.Handle("/fonts/", http.StripPrefix("/fonts/", http.FileServer(http.Dir("web/fonts/"))))
+	// http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("web/js/"))))
+	// http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("web/css/"))))
+	// http.Handle("/img/", http.StripPrefix("/img/", http.FileServer(http.Dir("web/img/"))))
+	// http.Handle("/fonts/", http.StripPrefix("/fonts/", http.FileServer(http.Dir("web/fonts/"))))
+	http.HandleFunc("/js/", StaticfilesHandler)
+	http.HandleFunc("/css/", StaticfilesHandler)
+	http.HandleFunc("/img/", StaticfilesHandler)
+	http.HandleFunc("/fonts/", StaticfilesHandler)
 
 	// catch all not matched wth other patterns
 	http.HandleFunc(CatchAllURL, CatchAllHandler)
@@ -106,18 +120,48 @@ func CatchAllHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		index, err := os.Open(htmlBase + "index.html")
+		data, err := staticfiles.Asset(htmlBase + "index.html")
 		if err != nil {
-			log.Fatal(err)
+			http.Error(w, "Page not found", 404)
+			return
 		}
-		//err :=indextemplate.Execute(w, nil)
-		_, err = io.Copy(w, index)
-		if err != nil {
-			log.Println("Error sending frontpage:", err)
+
+		if _, err = w.Write(data); err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), 404)
 		}
+
+		// index, err := os.Open(htmlBase + "index.html")
+		// if err != nil {
+		// 	log.Fatal(err)
+		// }
+		// //err :=indextemplate.Execute(w, nil)
+		// _, err = io.Copy(w, index)
+		// if err != nil {
+		// 	log.Println("Error sending frontpage:", err)
+		// }
 
 	} else {
 		http.Error(w, "This is not the page you are looking for!\n", 404)
+	}
+}
+
+// StaticfilesHandler handles finding static files for the server.
+func StaticfilesHandler(w http.ResponseWriter, r *http.Request) {
+	uri := r.URL.RequestURI()
+	if strings.HasPrefix(uri, "/") {
+		uri = uri[1:]
+	}
+
+	data, err := staticfiles.Asset(uri)
+	if err != nil {
+		http.Error(w, "File not found", 404)
+		return
+	}
+
+	if _, err = w.Write(data); err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), 500)
 	}
 }
 
