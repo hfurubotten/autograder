@@ -53,6 +53,10 @@ type Member struct {
 // user stored on disk/memory. If not found it will load user
 // data from github and make a new user.
 func NewMember(oauthtoken string, readonly bool) (m *Member, err error) {
+	if oauthtoken == "" {
+		return nil, errors.New("Cannot have empty oauth token")
+	}
+
 	InMemoryMembersLock.Lock()
 	defer InMemoryMembersLock.Unlock()
 
@@ -82,19 +86,16 @@ func NewMember(oauthtoken string, readonly bool) (m *Member, err error) {
 
 	if _, ok := InMemoryMembers[m.Username]; ok {
 		m = InMemoryMembers[m.Username]
+		if !readonly {
+			m.Lock()
+		}
 	} else {
 		err = m.loadStoredData(!readonly)
 		if err != nil {
-			if err.Error() != "No data in database" {
-				return nil, err
-			}
+			return nil, err
 		}
 
 		InMemoryMembers[m.Username] = m
-	}
-
-	if !readonly {
-		m.Lock()
 	}
 
 	if m.IsTeacher {
@@ -159,9 +160,7 @@ func NewMemberFromUsername(username string, readonly bool) (m *Member, err error
 
 	err = m.loadStoredData(!readonly)
 	if err != nil {
-		if err.Error() != "No data in database" {
-			return nil, err
-		}
+		return nil, err
 	}
 
 	InMemoryMembers[m.Username] = m
@@ -192,6 +191,11 @@ func (m *Member) loadDataFromGithub() (err error) {
 // loadData loads data from storage if it exists.
 func (m *Member) loadStoredData(lock bool) (err error) {
 	err = database.GetPureDB().View(func(tx *bolt.Tx) error {
+		// locks the object directly in order to ensure consistent info from DB.
+		if lock {
+			m.Lock()
+		}
+
 		b := tx.Bucket([]byte(MemberBucketName))
 		if b == nil {
 			return errors.New("Bucket not found. Are you sure the bucket was registered correctly?")
@@ -219,9 +223,10 @@ func (m *Member) loadStoredData(lock bool) (err error) {
 		return nil
 	})
 
-	// locks the object directly in order to ensure consistent info from DB.
-	if lock {
-		m.Lock()
+	if err != nil {
+		if err.Error() == "No data in database" {
+			err = nil
+		}
 	}
 
 	if !m.accessToken.HasTokenInStore() {
@@ -320,7 +325,7 @@ func (m *Member) GetLastBuildID(course string, lab int) int {
 
 	g := m.Courses[course]
 
-	if assignment, ok := g.Assignments[lab]; !ok {
+	if assignment, ok := g.Assignments[lab]; ok {
 		if assignment.Builds == nil {
 			return -1
 		}
