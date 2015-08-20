@@ -86,7 +86,7 @@ func githubOauthHandler(w http.ResponseWriter, r *http.Request) {
 		if scope != "" {
 			m, err := git.NewMember(accessToken, false)
 			if err != nil {
-				log.Println("Could not open Member object.")
+				log.Println("Could not open Member object:", err)
 				http.Redirect(w, r, pages.FRONTPAGE, 307)
 				return
 			}
@@ -101,7 +101,6 @@ func githubOauthHandler(w http.ResponseWriter, r *http.Request) {
 		sessions.SetSessions(w, r, sessions.AuthSession, sessions.ApprovedSessionKey, approved)
 		sessions.SetSessionsAndRedirect(w, r, sessions.AuthSession, sessions.AccessTokenSessionKey, accessToken, pages.HOMEPAGE)
 	} else {
-		redirect := http.RedirectHandler(pages.FRONTPAGE, 400)
-		redirect.ServeHTTP(w, r)
+		http.Redirect(w, r, pages.FRONTPAGE, 400)
 	}
 }
