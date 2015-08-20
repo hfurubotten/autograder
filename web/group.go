@@ -255,19 +255,36 @@ func ApproveGroupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	orgrepos, err := org.ListRepos()
+	if err != nil {
+		log.Println(err)
+		view.ErrorMsg = err.Error()
+		enc.Encode(view)
+	}
+
+	orgteams, err := org.ListTeams()
+	if err != nil {
+		log.Println(err)
+		view.ErrorMsg = err.Error()
+		enc.Encode(view)
+	}
+
 	if org.GroupAssignments > 0 {
 		repo := git.RepositoryOptions{
 			Name:     git.GroupRepoPrefix + r.FormValue("groupid"),
 			Private:  org.Private,
 			AutoInit: true,
+			Issues:   true,
 			Hook:     "*",
 		}
-		err = org.CreateRepo(repo)
-		if err != nil {
-			log.Println(err)
-			view.ErrorMsg = "Error communicating with Github. Couldn't create repository."
-			enc.Encode(view)
-			return
+		if _, ok := orgrepos[repo.Name]; !ok {
+			err = org.CreateRepo(repo)
+			if err != nil {
+				log.Println(err)
+				view.ErrorMsg = "Error communicating with Github. Couldn't create repository."
+				enc.Encode(view)
+				return
+			}
 		}
 
 		newteam := git.TeamOptions{
@@ -276,12 +293,17 @@ func ApproveGroupHandler(w http.ResponseWriter, r *http.Request) {
 			RepoNames:  []string{git.GroupRepoPrefix + r.FormValue("groupid")},
 		}
 
-		teamID, err := org.CreateTeam(newteam)
-		if err != nil {
-			log.Println(err)
-			view.ErrorMsg = "Error communicating with Github. Can't create team."
-			enc.Encode(view)
-			return
+		var teamID int
+		if team, ok := orgteams[newteam.Name]; ok {
+			teamID = team.ID
+		} else {
+			teamID, err = org.CreateTeam(newteam)
+			if err != nil {
+				log.Println(err)
+				view.ErrorMsg = "Error communicating with Github. Can't create team."
+				enc.Encode(view)
+				return
+			}
 		}
 
 		group.TeamID = teamID
@@ -292,7 +314,7 @@ func ApproveGroupHandler(w http.ResponseWriter, r *http.Request) {
 				log.Println(err)
 				view.ErrorMsg = "Error communicating with Github. Can't add member to team."
 				enc.Encode(view)
-				return
+				continue
 			}
 		}
 	}
