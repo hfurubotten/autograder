@@ -610,7 +610,6 @@ func (o *Organization) CreateRepo(opt RepositoryOptions) (err error) {
 		return
 	}
 
-	// TODO: make the string determin what gets sent back from hook.
 	if opt.Hook != "" {
 		config := make(map[string]interface{})
 		config["url"] = global.Hostname + "/event/hook"
@@ -619,6 +618,9 @@ func (o *Organization) CreateRepo(opt RepositoryOptions) (err error) {
 		hook := github.Hook{
 			Name:   github.String("web"),
 			Config: config,
+			Events: []string{
+				opt.Hook,
+			},
 		}
 
 		_, _, err = o.githubadmin.Repositories.CreateHook(o.Name, opt.Name, &hook)
