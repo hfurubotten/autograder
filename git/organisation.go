@@ -11,11 +11,11 @@ import (
 	"strings"
 	"time"
 
-	"code.google.com/p/goauth2/oauth"
 	"github.com/google/go-github/github"
 	"github.com/hfurubotten/autograder/global"
 	"github.com/hfurubotten/diskv"
 	"github.com/hfurubotten/github-gamification/entities"
+	"golang.org/x/oauth2"
 )
 
 func init() {
@@ -140,10 +140,11 @@ func (o *Organization) connectAdminToGithub() error {
 		return errors.New("Missing AccessToken to the memeber. Can't contact github.")
 	}
 
-	t := &oauth.Transport{
-		Token: &oauth.Token{AccessToken: o.AdminToken},
-	}
-	o.githubadmin = github.NewClient(t.Client())
+	ts := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: o.AdminToken},
+	)
+	tc := oauth2.NewClient(oauth2.NoContext, ts)
+	o.githubadmin = github.NewClient(tc)
 	return nil
 }
 
