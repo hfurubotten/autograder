@@ -9,6 +9,7 @@ from, open a issue or pull request. We appreciate small changes or optimizations
 to code or language just as much as larger ones.
 
 Normal procedure for code contributions:
+
 1. Fork the main repository
 2. If you are working on one of the issues, mark the issue with an assignment or
   leave a comment about it.
@@ -34,6 +35,7 @@ quality will be pulled into the main repository through a pull request.
 The import paths when forking can be a bit tricky to handle. More advanced ways
 to fix this are possible, but follow these steps for a easy solution to the
 import problem:
+
 1. Fork the main repository to you github account.
 2. Use `go get` on your fork. `go get github.com/yourusername/autograder`
 3. Change the folder named after your github username to `hfurubotten` in the go
