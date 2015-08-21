@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -33,12 +34,12 @@ func main() {
 	// prints the available flags to use on start
 	if *help {
 		flag.Usage()
-		log.Println("First start up details:")
-		log.Println("First time you start the system you need to supply OAuth details, domain name and an admin.")
-		log.Println("To register a new application at GitHub, go to this address to generate OAuth tokens: https://github.com/settings/applications/new")
-		log.Println("If you already have OAuth codes, you can find then on this address: https://github.com/settings/applications")
-		log.Println("The Homepage URL is the domain name you are using to serve the system.")
-		log.Fatal("The Authorization callback URL is your domainname with the path /oauth. (http://example.com/oauth)")
+		fmt.Println("First start up details:")
+		fmt.Println("First time you start the system you need to supply OAuth details, domain name and an admin.")
+		fmt.Println("To register a new application at GitHub, go to this address to generate OAuth tokens: https://github.com/settings/applications/new")
+		fmt.Println("If you already have OAuth codes, you can find then on this address: https://github.com/settings/applications")
+		fmt.Println("The Homepage URL is the domain name you are using to serve the system.")
+		fmt.Println("The Authorization callback URL is your domainname with the path /oauth. (http://example.com/oauth)")
 		return
 	}
 
