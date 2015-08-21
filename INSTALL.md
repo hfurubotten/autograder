@@ -15,14 +15,20 @@ Note that this will also pull in several libraries on which autograder depends.
 ## Running (first time: configure) ##
 
 1. `cd $GOPATH/bin/`
-2. Run `sudo autograder`.
-3. Optional (replaces step 2): `screen -S autograder sudo autograder`. This lets you run the autograder in the background allowing you to close the terminal window. To disconnect from the screen session, use `ctrl+a, d`.
+2. Run `sudo ./autograder -admin=<githubusername> -clientid=<OAuth ID> -secret=<OAuth secret token> -domain=<http://your.domain.com>`. Where you put in your system details after the equal sign.
+
+3. Optional (replaces step 2): You can configure the details in a config file and
+  run `sudo ./autograder -configfile=/path/to/config.json`. This is explained in
+  more details in the [config package](https://github.com/hfurubotten/autograder/tree/master/config).
+4. Optional (replaces step 2): `screen -S autograder sudo autograder`. This lets
+  you run the autograder in the background allowing you to close the terminal
+  window. To disconnect from the screen session, use `ctrl+a, d`.
 
 ## Running (configuration completed) ##
 
 1. `cd $GOPATH/bin/`
 2. Run `sudo autograder`.
-3. Optional (replaces step 2): `screen -S autograder sudo autograder`. This lets you run the autograder in the background allowing you to close the terminal window. To disconnect from the screen session, use `ctrl+a, d`.
+3. Optional (replaces step 2): `screen -S autograder sudo ./autograder`. This lets you run the autograder in the background allowing you to close the terminal window. To disconnect from the screen session, use `ctrl+a, d`.
 
 ## Upgrading ##
 
