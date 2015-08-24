@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	//"github.com/autograde/kit/score"
 	"github.com/hfurubotten/autograder/ci"
 	git "github.com/hfurubotten/autograder/entities"
 )
@@ -235,6 +236,8 @@ type SummaryView struct {
 	Course  string
 	User    string
 	Summary map[string]*ci.BuildResult
+	Notes   map[string]string
+	//ExtraCredit map[string]score.Score
 }
 
 // CIResultSummaryURL is the URL used to call CIResultSummaryURL.
@@ -272,6 +275,8 @@ func CIResultSummaryHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	res := make(map[string]*ci.BuildResult)
+	notes := make(map[string]string)
+	//credit := make(map[string]score.Score)
 	//if group ...
 	if strings.HasPrefix(username, git.GroupRepoPrefix) {
 		groupid, err := strconv.Atoi(username[len(git.GroupRepoPrefix):])
@@ -288,7 +293,7 @@ func CIResultSummaryHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		for labnum := range group.Assignments {
+		for labnum, lab := range group.Assignments {
 			labname := org.GroupLabFolders[labnum]
 			buildid := group.GetLastBuildID(labnum)
 			if buildid < 0 {
@@ -301,6 +306,8 @@ func CIResultSummaryHandler(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 			res[labname] = build
+			notes[labname] = lab.Notes
+			//credit[labname] = lab.ExtraCredit
 		}
 	} else {
 		user, err := git.NewMemberFromUsername(username, true)
@@ -312,7 +319,7 @@ func CIResultSummaryHandler(w http.ResponseWriter, r *http.Request) {
 
 		courseopt, ok := user.Courses[orgname]
 		if ok {
-			for labnum := range courseopt.Assignments {
+			for labnum, lab := range courseopt.Assignments {
 				labname := org.IndividualLabFolders[labnum]
 				buildid := user.GetLastBuildID(orgname, labnum)
 				if buildid < 0 {
@@ -325,6 +332,8 @@ func CIResultSummaryHandler(w http.ResponseWriter, r *http.Request) {
 					continue
 				}
 				res[labname] = build
+				notes[labname] = lab.Notes
+				//credit[labname] = lab.ExtraCredit
 			}
 		}
 	}
@@ -333,10 +342,146 @@ func CIResultSummaryHandler(w http.ResponseWriter, r *http.Request) {
 		Course:  orgname,
 		User:    username,
 		Summary: res,
+		Notes:   notes,
+		//ExtraCredit: credit,
 	}
 
 	enc := json.NewEncoder(w)
 
+	err = enc.Encode(view)
+	if err != nil {
+		http.Error(w, err.Error(), 404)
+	}
+}
+
+// CIResultListURL is the url used to call CIResultListHandler.
+var CIResultListURL = "/course/buildlist"
+
+// CIResultListview is the JSON layout returned from CIResultListHandler.
+type CIResultListview struct {
+	Course   string
+	Username string
+	Group    int
+	Labnum   int
+	Length   int
+	Offset   int
+	Builds   []*ci.BuildResult
+}
+
+// CIResultListHandler returns a list of a given number of build results for a
+// group or user.
+// Required input:
+// - Course string
+// - Username string //or
+// - Group int       // if Group value is higher than 0 it defaults to group selection.
+// - Labnum int
+// - Length int      // number of results to find, defoult 10
+// - Offset int      // default 0
+func CIResultListHandler(w http.ResponseWriter, r *http.Request) {
+	// Checks if the user is signed in and a teacher.
+	teacher, err := checkTeacherApproval(w, r, false)
+	if err != nil {
+		http.Error(w, err.Error(), 404)
+		log.Println(err)
+		return
+	}
+
+	course := r.FormValue("Course")
+	username := r.FormValue("Username")
+	groupid, _ := strconv.Atoi(r.FormValue("Group"))
+	labnum, err := strconv.Atoi(r.FormValue("Labnum"))
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), 404)
+		return
+	}
+	length, err := strconv.Atoi(r.FormValue("Length"))
+	if err != nil {
+		length = 10
+	}
+	offset, _ := strconv.Atoi(r.FormValue("Offset"))
+
+	org, err := git.NewOrganization(course, true)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	if !org.IsTeacher(teacher) {
+		log.Println(err)
+		http.Error(w, "Not a teacher of this course", 404)
+		return
+	}
+
+	view := CIResultListview{
+		Course:   course,
+		Username: username,
+		Group:    groupid,
+		Labnum:   labnum,
+		Length:   length,
+		Offset:   offset,
+		Builds:   make([]*ci.BuildResult, 0),
+	}
+
+	if groupid > 0 {
+		group, err := git.NewGroup(org.Name, groupid, true)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), 500)
+			return
+		}
+
+		if group.Course != org.Name {
+			log.Println(err)
+			http.Error(w, "Not a group in this course", 404)
+			return
+		}
+
+		if lab, ok := group.Assignments[labnum]; ok {
+			buildlength := len(lab.Builds) - offset
+			for i := buildlength; i > buildlength && i >= 0; i-- {
+				build, err := ci.GetBuildResult(lab.Builds[i])
+				if err != nil {
+					log.Println(err)
+					continue
+				}
+
+				view.Builds = append(view.Builds, build)
+			}
+		}
+
+	} else {
+		user, err := git.NewMemberFromUsername(username, true)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), 500)
+			return
+		}
+
+		if !org.IsMember(user) {
+			log.Println(err)
+			http.Error(w, "Not a member of this course", 404)
+			return
+		}
+
+		if courseopt, ok := user.Courses[org.Name]; ok {
+			if lab, ok := courseopt.Assignments[labnum]; ok {
+				buildlength := len(lab.Builds) - offset
+				for i := buildlength; i > buildlength && i >= 0; i-- {
+					build, err := ci.GetBuildResult(lab.Builds[i])
+					if err != nil {
+						log.Println(err)
+						continue
+					}
+
+					view.Builds = append(view.Builds, build)
+				}
+			}
+		}
+	}
+
+	enc := json.NewEncoder(w)
 	err = enc.Encode(view)
 	if err != nil {
 		http.Error(w, err.Error(), 404)

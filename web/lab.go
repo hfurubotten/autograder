@@ -1,6 +1,7 @@
 package web
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"strconv"
@@ -142,5 +143,140 @@ func ApproveLabHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		http.Error(w, err.Error(), 500)
 		return
+	}
+}
+
+// NotesURL is the url used to call AddNotesHandler.
+var NotesURL = "/course/notes"
+
+// NotesView is the object which is returned when NotesHandler is called with
+// POST header.
+type NotesView struct {
+	Course   string
+	Username string
+	Group    int
+	Labnum   int
+	Notes    string
+}
+
+// NotesHandler will add a note to a lab for a given user.
+// Page requested with method GET will return latest note and POST will store a
+// new note to the user or group.
+// required input:
+// - Course
+// - Username //or
+// - Group
+// - labnum
+// - Notes
+func NotesHandler(w http.ResponseWriter, r *http.Request) {
+	// Checks if the user is signed in and a teacher.
+	teacher, err := checkTeacherApproval(w, r, false)
+	if err != nil {
+		http.Error(w, err.Error(), 404)
+		log.Println(err)
+		return
+	}
+
+	course := r.FormValue("Course")
+	username := r.FormValue("Username")
+	notes := r.FormValue("Notes")
+	groupid, _ := strconv.Atoi(r.FormValue("Group"))
+	labnum, err := strconv.Atoi(r.FormValue("Labnum"))
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), 404)
+		return
+	}
+
+	org, err := git.NewOrganization(course, true)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	if !org.IsTeacher(teacher) {
+		log.Println(err)
+		http.Error(w, "Not a teacher of this course", 404)
+		return
+	}
+
+	if groupid > 0 {
+		group, err := git.NewGroup(org.Name, groupid, false)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), 500)
+			return
+		}
+
+		if group.Course != org.Name {
+			log.Println(err)
+			http.Error(w, "Not a group in this course", 404)
+			return
+		}
+
+		if r.Method == "POST" {
+			group.AddNotes(labnum, notes)
+		} else {
+			view := &NotesView{
+				Course: course,
+				Group:  groupid,
+				Labnum: labnum,
+				Notes:  group.GetNotes(labnum),
+			}
+
+			enc := json.NewEncoder(w)
+			if err = enc.Encode(view); err != nil {
+				log.Println(err)
+				http.Error(w, err.Error(), 500)
+				return
+			}
+		}
+
+		if err = group.Save(); err != nil {
+			group.Unlock()
+			log.Println(err)
+			http.Error(w, err.Error(), 500)
+			return
+		}
+
+	} else {
+		user, err := git.NewMemberFromUsername(username, false)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), 500)
+			return
+		}
+
+		if !org.IsMember(user) {
+			log.Println(err)
+			http.Error(w, "Not a member of this course", 404)
+			return
+		}
+
+		if r.Method == "POST" {
+			user.AddNotes(org.Name, labnum, notes)
+		} else {
+			view := &NotesView{
+				Course:   course,
+				Username: username,
+				Labnum:   labnum,
+				Notes:    user.GetNotes(course, labnum),
+			}
+
+			enc := json.NewEncoder(w)
+			if err = enc.Encode(view); err != nil {
+				log.Println(err)
+				http.Error(w, err.Error(), 500)
+				return
+			}
+		}
+
+		if err = user.Save(); err != nil {
+			user.Unlock()
+			log.Println(err)
+			http.Error(w, err.Error(), 500)
+			return
+		}
 	}
 }

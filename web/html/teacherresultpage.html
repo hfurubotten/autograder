@@ -28,6 +28,7 @@
 
       <div class="col-md-9">
 
+        <!-- Summary -->
         <section id="summary">
           <h1>Summary</h1>
           <div id="summarypanel">
@@ -35,6 +36,7 @@
           </div>
         </section>
 
+        <!-- Result panel -->
         <section id="result">
           <div class="row">
             <div class="col-lg-12">
@@ -78,6 +80,27 @@
               </table>
             </div>
           </div>
+
+          <div class="row">
+            <div class="col-lg-12">
+              <h2>Notes:</h2>
+              <form id="notes">
+                <div class="form-group">
+                  <input type="hidden" name="Course" value="{{.Org.Name}}">
+                  <input type="hidden" name="Username" value="{{.Org.Name}}">
+                  <input type="hidden" name="Group" value="{{.Org.Name}}">
+                  <input type="hidden" name="Labnum" value="{{.Org.Name}}">
+                  <div class="form-group">
+                    <textarea class="form-control labnotes" rows="3" name="Notes"></textarea>
+                  </div>
+                  <div class="form-group">
+                    <button type="submit" class="pull-right btn btn-primary" id="notessubmit">Save new notes</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+
           <!-- Build logs -->
           <div class="row">
             <div class="col-lg-8">
@@ -120,6 +143,7 @@
 
     var course = "{{.Org.Name}}";
     var username = "{{.Username}}";
+    var groupid = {{.GroupID}};
 
     $(function(){
       $('.labtab[labnum={{.Labnum}}]').click();

@@ -30,6 +30,7 @@ $(".labtab").click(function(){
   curlabnum = $(this).attr("labnum");
 
   loadLabResult(username, curlab);
+  loadNotes()
 });
 
 $(".summary").click(function(){
@@ -45,6 +46,33 @@ $(window).on('hashchange', function(){
   //$('a.list-group-item').removeClass('active');
   //$('a[href=' + location.hash + ']').addClass('active');
 });
+
+var loadNotes = function(){
+  $.getJSON("/course/notes",
+    {"Course": course, "Username": username, "Group": groupid, "Labnum": curlabnum},
+    function(data){
+      $(".labnotes").val(data.Notes);
+      $("button#notessubmit").removeClass("btn-primary").addClass("btn-success")
+    }).fail(function(){
+      $(".labnotes").val("");
+    });
+}
+
+$("form#notes").submit(function(event){
+  var notes = $("textarea[name=Notes]").val();
+  $.post("/course/notes",
+    {"Course": course, "Username": username, "Group": groupid, "Labnum": curlabnum, "Notes": notes},
+    function(){
+      loadLabResult(username, curlab);
+  });
+
+  event.preventDefault();
+  return false
+});
+
+$("textarea[name=Notes]").focus(function(){
+  $("button#notessubmit").removeClass("btn-success").addClass("btn-primary")
+})
 
 var addtosummarypanel = function(labname, status, score, notes, tablebody){
   $("#summarypanel").append("<div class=\"panel panel-default\">" +
@@ -90,6 +118,8 @@ var updatesummary = function(){
         return
       }
 
+      notes = data.Notes[labname]
+
       // update test table
       tablebody = ""
       if(s.TestScores != null){
@@ -98,7 +128,7 @@ var updatesummary = function(){
         });
       }
 
-      addtosummarypanel(labname, s.Status, s.TotalScore, "", tablebody)
+      addtosummarypanel(labname, s.Status, s.TotalScore, notes, tablebody)
     });
   });
 }

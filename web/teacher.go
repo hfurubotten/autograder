@@ -144,6 +144,7 @@ type ShowResultView struct {
 	Username string
 	Labnum   int
 	IsGroup  bool
+	GroupID  int
 }
 
 // ShowResultURL is the URL used to call ShowResultHandler.
@@ -189,6 +190,7 @@ func ShowResultHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	isgroup := false
+	groupid := -1
 	labnum := 0
 	if !git.HasMember(username) {
 		groupnum, err := strconv.Atoi(username[len("group"):])
@@ -203,6 +205,9 @@ func ShowResultHandler(w http.ResponseWriter, r *http.Request) {
 				http.Redirect(w, r, pages.HOMEPAGE, 307)
 				return
 			}
+
+			groupid = group.ID
+
 			if group.CurrentLabNum >= org.GroupAssignments {
 				labnum = org.GroupAssignments
 			} else {
@@ -234,6 +239,7 @@ func ShowResultHandler(w http.ResponseWriter, r *http.Request) {
 		Username: username,
 		Labnum:   labnum,
 		IsGroup:  isgroup,
+		GroupID:  groupid,
 	}
 	execTemplate("teacherresultpage.html", w, view)
 }
