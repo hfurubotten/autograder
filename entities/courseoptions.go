@@ -4,7 +4,7 @@ import (
 	"encoding/gob"
 	"time"
 
-	"github.com/hfurubotten/ag-scoring/score"
+	"github.com/autograde/kit/score"
 )
 
 func init() {

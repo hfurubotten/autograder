@@ -11,7 +11,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/hfurubotten/ag-scoring/score"
+	"github.com/autograde/kit/score"
 	git "github.com/hfurubotten/autograder/entities"
 )
 

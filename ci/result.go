@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/autograde/kit/score"
 	"github.com/boltdb/bolt"
-	"github.com/hfurubotten/ag-scoring/score"
 	"github.com/hfurubotten/autograder/database"
 )
 
