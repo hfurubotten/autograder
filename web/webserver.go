@@ -159,6 +159,14 @@ func StaticfilesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if strings.HasSuffix(uri, ".css") {
+		w.Header().Add("content-type", "text/css")
+	} else if strings.HasSuffix(uri, ".js") {
+		w.Header().Add("content-type", "text/javascript")
+	} else if strings.HasSuffix(uri, ".woff") {
+		w.Header().Add("content-type", "application/font-woff")
+	}
+
 	if _, err = w.Write(data); err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), 500)
