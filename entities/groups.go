@@ -184,6 +184,32 @@ func (g *Group) GetLastBuildID(lab int) int {
 	return -1
 }
 
+// AddNotes will add notes to a lab assignment.
+func (g *Group) AddNotes(lab int, notes string) {
+	if g.Assignments == nil {
+		g.Assignments = make(map[int]*LabAssignmentOptions)
+	}
+
+	if _, ok := g.Assignments[lab]; !ok {
+		g.Assignments[lab] = NewLabAssignmentOptions()
+	}
+
+	g.Assignments[lab].Notes = notes
+}
+
+// GetNotes will get notes from a lab assignment.
+func (g *Group) GetNotes(lab int) string {
+	if g.Assignments == nil {
+		g.Assignments = make(map[int]*LabAssignmentOptions)
+	}
+
+	if _, ok := g.Assignments[lab]; !ok {
+		g.Assignments[lab] = NewLabAssignmentOptions()
+	}
+
+	return g.Assignments[lab].Notes
+}
+
 // Lock will put a writers lock on the group.
 func (g *Group) Lock() {
 	g.lock.Lock()

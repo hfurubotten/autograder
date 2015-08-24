@@ -340,6 +340,46 @@ func (m *Member) GetLastBuildID(course string, lab int) int {
 	return -1
 }
 
+// AddNotes will add notes to a lab assignment.
+func (m *Member) AddNotes(course string, lab int, notes string) {
+	if _, ok := m.Courses[course]; !ok {
+		return
+	}
+
+	g := m.Courses[course]
+
+	if g.Assignments == nil {
+		g.Assignments = make(map[int]*LabAssignmentOptions)
+	}
+
+	if _, ok := g.Assignments[lab]; !ok {
+		g.Assignments[lab] = NewLabAssignmentOptions()
+		m.Courses[course] = g
+	}
+
+	g.Assignments[lab].Notes = notes
+}
+
+// GetNotes will get notes from a lab assignment.
+func (m *Member) GetNotes(course string, lab int) string {
+	if _, ok := m.Courses[course]; !ok {
+		return ""
+	}
+
+	g := m.Courses[course]
+
+	if g.Assignments == nil {
+		g.Assignments = make(map[int]*LabAssignmentOptions)
+	}
+
+	if _, ok := g.Assignments[lab]; !ok {
+		g.Assignments[lab] = NewLabAssignmentOptions()
+		m.Courses[course] = g
+	}
+
+	return g.Assignments[lab].Notes
+}
+
 // ListOrgs will list all organisations the user is a member of on github.
 func (m *Member) ListOrgs() (ls []string, err error) {
 	err = m.connectToGithub()

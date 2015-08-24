@@ -408,6 +408,203 @@ func TestGetNextGroupID(t *testing.T) {
 	}
 }
 
+var testAddGroupBuildResultInput = []struct {
+	groupid int
+	builds  [][]int
+}{
+	{
+		groupid: 24,
+		builds: [][]int{
+			{
+				1,
+				2,
+				3,
+			},
+			{
+				4,
+				5,
+				6,
+				7,
+			},
+			{
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+			},
+			{
+				14,
+			},
+		},
+	},
+	{
+		groupid: 25,
+		builds: [][]int{
+			{
+				101,
+				102,
+				103,
+			},
+			{
+				104,
+				105,
+				106,
+				107,
+			},
+			{
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+			},
+			{
+				14,
+			},
+			{
+				15,
+				16,
+				18,
+				19,
+				55,
+				66,
+				78,
+			},
+			{
+				100,
+				153,
+				188,
+			},
+			{
+				20000,
+				22211,
+			},
+		},
+	},
+}
+
+func TestAddAndGetGroupBuildResult(t *testing.T) {
+	for _, in := range testAddGroupBuildResultInput {
+		group, err := NewGroup("", in.groupid, true)
+		if err != nil {
+			t.Error(err)
+			continue
+		}
+
+		for labnum, buildids := range in.builds {
+			if group.GetLastBuildID(labnum) > 0 {
+				t.Error("Found a build id before adding one")
+			}
+
+			for _, buildid := range buildids {
+				group.AddBuildResult(labnum, buildid)
+			}
+
+			if len(group.Assignments[labnum].Builds) != len(buildids) {
+				t.Errorf("The number of build IDs in group does not match number added. %d != %d",
+					len(group.Assignments[labnum].Builds),
+					len(buildids))
+			}
+
+			if group.GetLastBuildID(labnum) != buildids[len(buildids)-1] {
+				t.Errorf("Build ID does not match last one added in GetLastBuildID. %d != %d",
+					group.GetLastBuildID(labnum),
+					buildids[len(buildids)-1])
+			}
+		}
+
+	}
+}
+
+var testAddAndGetGroupNotesInput = []struct {
+	groupid int
+	notes   [][]string
+}{
+	{
+		groupid: 26,
+		notes: [][]string{
+			{
+				"note 1",
+				"note 2",
+				"note 3",
+			},
+			{
+				"note 4",
+				"note 5",
+				"note 6",
+				"note 7 abcdefg",
+			},
+			{
+				"note 8",
+				"note 9",
+				"note 10",
+				"notes some thing something 11",
+				"12",
+				"note 13",
+			},
+			{
+				"notes 14",
+			},
+		},
+	},
+	{
+		groupid: 27,
+		notes: [][]string{
+			{
+				"asvasfdasd asd",
+				"aga gths t",
+				"sdr gs dr dsr",
+			},
+			{
+				"srd r ahrtsth",
+				"dsfg y s sdf",
+				"sdfg sdfsrtjhety",
+				"note notes notes",
+			},
+			{
+				"sdgfsgunlgrunlrueg",
+				"arkønjaksjfnlakjsdmnrgu",
+				"This is a real note",
+				"akgrnøakgrøn",
+				"æøåäè",
+				"Good solution, but a bit bad implementation. Could have made the solution run faster",
+			},
+			{
+				"heyhey",
+			},
+		},
+	},
+}
+
+func TestAddAndGetGroupNotes(t *testing.T) {
+	for _, in := range testAddAndGetGroupNotesInput {
+		group, err := NewGroup("", in.groupid, true)
+		if err != nil {
+			t.Error(err)
+			continue
+		}
+
+		for labnum, notes := range in.notes {
+			if group.GetNotes(labnum) != "" {
+				t.Error("Found a note before adding one")
+			}
+
+			for _, note := range notes {
+				group.AddNotes(labnum, note)
+			}
+
+			if group.GetNotes(labnum) != notes[len(notes)-1] {
+				t.Errorf("Build ID does not match last one added in GetLastBuildID. %s != %s",
+					group.GetNotes(labnum),
+					notes[len(notes)-1])
+			}
+		}
+	}
+}
+
 func compareGroups(in, want *Group, t *testing.T) {
 	if in.Active != want.Active {
 		t.Errorf("Error while comparing groups: got %t for active field value, want %t", in.Active, want.Active)
