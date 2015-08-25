@@ -2,6 +2,7 @@ package git
 
 import (
 	"encoding/gob"
+	"math"
 	"time"
 
 	"github.com/autograde/kit/score"
@@ -11,7 +12,7 @@ func init() {
 	gob.Register(CourseOptions{})
 }
 
-// LabAssignmentOptions represents a lab assignments teacher set results.
+// LabAssignmentOptions represents a lab assignments results.
 type LabAssignmentOptions struct {
 	Notes         string      // Teachers notes on a lab.
 	ExtraCredit   score.Score // extra credit from the teacher.
@@ -20,6 +21,7 @@ type LabAssignmentOptions struct {
 	Builds        []int
 }
 
+// NewLabAssignmentOptions will create a new LabAssignmentOptions object.
 func NewLabAssignmentOptions() *LabAssignmentOptions {
 	return &LabAssignmentOptions{
 		ApprovedBuild: -1,
@@ -41,6 +43,7 @@ type CourseOptions struct {
 	Course        string
 	CurrentLabNum int
 	Assignments   map[int]*LabAssignmentOptions
+	UsedSlipDays  int
 
 	// Group link
 	IsGroupMember bool
@@ -54,4 +57,46 @@ func NewCourseOptions(course string) CourseOptions {
 		CurrentLabNum: 1,
 		Assignments:   make(map[int]*LabAssignmentOptions),
 	}
+}
+
+// RecalculateSlipDays will calculate and set the number of slipdays used on the
+// specified course.
+func (co *CourseOptions) RecalculateSlipDays() error {
+	org, err := NewOrganization(co.Course, true)
+	if err != nil {
+		return err
+	}
+
+	days := 0
+
+	for i, lab := range co.Assignments {
+		if _, ok := org.IndividualDeadlines[i]; !ok {
+			continue
+		}
+
+		if lab.ApproveDate.After(org.IndividualDeadlines[i]) {
+			days += int(math.Floor((lab.ApproveDate.Sub(org.IndividualDeadlines[i]).Hours() - 3) / 24))
+		}
+	}
+
+	if co.IsGroupMember {
+		group, err := NewGroup(co.Course, co.GroupNum, true)
+		if err != nil {
+			return err
+		}
+
+		for i, lab := range group.Assignments {
+			if _, ok := org.GroupDeadlines[i]; !ok {
+				continue
+			}
+
+			if lab.ApproveDate.After(org.GroupDeadlines[i]) {
+				days += int(math.Floor((lab.ApproveDate.Sub(org.GroupDeadlines[i]).Hours() - 3) / 24))
+			}
+		}
+	}
+
+	co.UsedSlipDays = days
+
+	return nil
 }
