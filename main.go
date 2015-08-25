@@ -124,7 +124,7 @@ func main() {
 	// starts up the webserver
 	log.Println("Server starting")
 
-	server := web.NewWebServer(80)
+	server := web.NewServer(80)
 	server.Start()
 
 	// Prevent main from returning immediately. Wait for interrupt.

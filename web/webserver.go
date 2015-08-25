@@ -28,19 +28,19 @@ import (
 
 var htmlBase string
 
-// WebServer represent a webserver serving the autograder web pages.
-type WebServer struct {
+// Server represent a webserver serving the autograder web pages.
+type Server struct {
 	Port int
 }
 
 // NewWebServer will return a new Webserver object with possibility to listen to given port.
-func NewWebServer(port int) WebServer {
-	return WebServer{port}
+func NewServer(port int) Server {
+	return Server{port}
 }
 
 // Start will start up a new server listening on ws.Port. This
 // method blocks, and will call os.Exit(1) if server error occures.
-func (ws WebServer) Start() {
+func (ws Server) Start() {
 	// setting html base path
 	htmlBase = "html/"
 
