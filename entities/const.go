@@ -35,6 +35,7 @@ const IgnoreFileContent = "# Compiled source #\n" +
 	"*.exe\n" +
 	"*.o\n" +
 	"*.so\n" +
+	"**/main\n" +
 	"\n" +
 	"# Packages #\n" +
 	"############\n" +
