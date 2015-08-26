@@ -353,6 +353,9 @@ func (m *Member) SetApprovedBuild(course string, labnum, buildid int, date time.
 
 	opt.Assignments[labnum].ApproveDate = date
 	opt.Assignments[labnum].ApprovedBuild = buildid
+	if opt.CurrentLabNum <= labnum {
+		opt.CurrentLabNum = labnum + 1
+	}
 	m.Courses[course] = opt
 }
 

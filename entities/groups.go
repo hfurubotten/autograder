@@ -193,6 +193,10 @@ func (g *Group) SetApprovedBuild(labnum, buildid int, date time.Time) {
 
 	g.Assignments[labnum].ApproveDate = date
 	g.Assignments[labnum].ApprovedBuild = buildid
+
+	if g.CurrentLabNum <= labnum {
+		g.CurrentLabNum = labnum + 1
+	}
 }
 
 // AddNotes will add notes to a lab assignment.
