@@ -2,6 +2,7 @@ package git
 
 import (
 	"testing"
+	"time"
 )
 
 var testNewGroup = []struct {
@@ -601,6 +602,69 @@ func TestAddAndGetGroupNotes(t *testing.T) {
 					group.GetNotes(labnum),
 					notes[len(notes)-1])
 			}
+		}
+	}
+}
+
+var testGroupSetApprovedBuildInput = []struct {
+	Course  string
+	Group   int
+	Labnum  int
+	BuildID int
+	Date    time.Time
+}{
+	{
+		Course:  "approvecourse4",
+		Group:   1051,
+		Labnum:  1,
+		BuildID: 2153,
+		Date:    time.Date(2015, time.January, 12, 12, 12, 12, 0, time.FixedZone("unnamed", 1)),
+	},
+	{
+		Course:  "approvecourse5",
+		Group:   5553,
+		Labnum:  2,
+		BuildID: 2483,
+		Date:    time.Date(2015, time.January, 2, 2, 12, 12, 0, time.FixedZone("unnamed", 1)),
+	},
+	{
+		Course:  "approvecourse6",
+		Group:   4579,
+		Labnum:  4,
+		BuildID: 21553,
+		Date:    time.Date(2015, time.January, 1, 1, 12, 12, 0, time.FixedZone("unnamed", 1)),
+	},
+	{
+		Course:  "approvecourse7",
+		Group:   579,
+		Labnum:  6,
+		BuildID: 2153,
+		Date:    time.Date(2015, time.January, 10, 1, 1, 12, 0, time.FixedZone("unnamed", 1)),
+	},
+}
+
+func TestGroupSetApprovedBuild(t *testing.T) {
+	for _, in := range testGroupSetApprovedBuildInput {
+		group, err := NewGroup(in.Course, in.Group, true)
+		if err != nil {
+			t.Error(err)
+			continue
+		}
+
+		group.SetApprovedBuild(in.Labnum, in.BuildID, in.Date)
+
+		if group.Assignments[in.Labnum].ApproveDate != in.Date {
+			t.Errorf("Approved date not set correctly. want %s, got %s for user %d",
+				in.Date,
+				group.Assignments[in.Labnum].ApproveDate,
+				in.Group)
+		}
+
+		if group.Assignments[in.Labnum].ApprovedBuild != in.BuildID {
+			t.Errorf("Approved date not set correctly. want %d, got %d for user %d",
+				in.BuildID,
+				group.Assignments[in.Labnum].ApprovedBuild,
+				in.Group)
 		}
 	}
 }
