@@ -71,6 +71,7 @@ func ApproveLabHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var latestbuild int
+	var res *ci.BuildResult
 	if isgroup {
 		gnum, err := strconv.Atoi(username[len("group"):])
 		if err != nil {
@@ -98,9 +99,14 @@ func ApproveLabHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if group.CurrentLabNum <= labnum {
-			group.CurrentLabNum = labnum + 1
+		res, err = ci.GetBuildResult(latestbuild)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), 500)
+			return
 		}
+
+		group.SetApprovedBuild(res.Labnum, res.ID, res.PushTime)
 	} else {
 		user, err := git.NewMemberFromUsername(username, false)
 		if err != nil {
@@ -122,19 +128,14 @@ func ApproveLabHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		copt := user.Courses[course]
-		copt.Assignments[labnum].ApprovedBuild = latestbuild
-		if copt.CurrentLabNum <= labnum {
-			copt.CurrentLabNum = labnum + 1
-			user.Courses[course] = copt
+		res, err = ci.GetBuildResult(latestbuild)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), 500)
+			return
 		}
-	}
 
-	res, err := ci.GetBuildResult(latestbuild)
-	if err != nil {
-		log.Println(err)
-		http.Error(w, err.Error(), 500)
-		return
+		user.SetApprovedBuild(org.Name, res.Labnum, res.ID, res.PushTime)
 	}
 
 	res.Status = "Approved"
