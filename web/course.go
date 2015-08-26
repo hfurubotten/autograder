@@ -223,6 +223,11 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 
+				_, err = org.CreateFile(git.StandardRepoName, ".gitignore", git.IgnoreFileContent, "Standard .gitignore file")
+				if err != nil {
+					log.Println(err)
+				}
+
 				for i := 0; i < org.IndividualAssignments; i++ {
 					path := "lab" + strconv.Itoa(i+1) + "/README.md"
 					commitmessage := "Adding readme file for lab assignment " + strconv.Itoa(i+1)
@@ -321,6 +326,11 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 					if err != nil {
 						log.Println(err)
 						return
+					}
+
+					_, err = org.CreateFile(git.GroupsRepoName, ".gitignore", git.IgnoreFileContent, "Standard .gitignore file")
+					if err != nil {
+						log.Println(err)
 					}
 
 					for i := 0; i < org.GroupAssignments; i++ {
