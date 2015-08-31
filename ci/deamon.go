@@ -126,11 +126,13 @@ func StartTesterDaemon(opt DaemonOptions) {
 		r.TotalScore = 0
 	}
 
-	// saves the build results
-	if err := r.Save(); err != nil {
-		log.Println("Error saving build results:", err)
-		return
-	}
+	defer func() {
+		// saves the build results
+		if err := r.Save(); err != nil {
+			log.Println("Error saving build results:", err)
+			return
+		}
+	}()
 
 	// Build for group assignment. Stores build ID in group.
 	if opt.Group > 0 {
