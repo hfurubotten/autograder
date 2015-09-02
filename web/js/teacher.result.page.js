@@ -111,6 +111,11 @@ var addtosummarypanel = function(labname, status, score, notes, tablebody){
 }
 
 var updatesummary = function(){
+  $.getJSON("/course/slipdays", {"Course": course, "Username": username}, function(data){
+    $("#UsedSlipdays").text(data.UsedSlipdays)
+    $("#MaxSlipdays").text(data.MaxSlipdays)
+  });
+
   $.getJSON("/course/cisummary", {"Course": course, "Username": username}, function(data){
     $("#summarypanel").text("");
     $.each(data.Summary, function(labname, s){
