@@ -107,6 +107,23 @@ func ApproveLabHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		group.SetApprovedBuild(res.Labnum, res.ID, res.PushTime)
+
+		if org.Slipdays {
+			for username := range group.Members {
+				user, err := git.NewMemberFromUsername(username, false)
+				if err != nil {
+					log.Println(err)
+					continue
+				}
+
+				copt := user.Courses[org.Name]
+				err = copt.RecalculateSlipDays()
+				if err != nil {
+					log.Println(err)
+				}
+				user.Courses[org.Name] = copt
+			}
+		}
 	} else {
 		user, err := git.NewMemberFromUsername(username, false)
 		if err != nil {
@@ -136,6 +153,15 @@ func ApproveLabHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		user.SetApprovedBuild(org.Name, res.Labnum, res.ID, res.PushTime)
+
+		if org.Slipdays {
+			copt := user.Courses[org.Name]
+			err = copt.RecalculateSlipDays()
+			if err != nil {
+				log.Println(err)
+			}
+			user.Courses[org.Name] = copt
+		}
 	}
 
 	res.Status = "Approved"
@@ -279,5 +305,78 @@ func NotesHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), 500)
 			return
 		}
+	}
+}
+
+// SlipdaysView is the structure returned when
+type SlipdaysView struct {
+	Course       string
+	Username     string
+	UsedSlipdays int
+	MaxSlipdays  int
+}
+
+// SlipdaysURL is the url used to call SlipdaysHandler.
+var SlipdaysURL = "/course/slipdays"
+
+// SlipdaysHandler is used to get used slipdays for a user in a course.
+func SlipdaysHandler(w http.ResponseWriter, r *http.Request) {
+	// Checks if the user is signed in and a teacher.
+	member, err := checkMemberApproval(w, r, false)
+	if err != nil {
+		http.Error(w, err.Error(), 404)
+		log.Println(err)
+		return
+	}
+
+	orgname := r.FormValue("Course")
+
+	org, err := git.NewOrganization(orgname, true)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	view := SlipdaysView{
+		Course:      orgname,
+		MaxSlipdays: org.SlipdaysMax,
+	}
+
+	if org.IsTeacher(member) {
+		username := r.FormValue("Username")
+
+		user, err := git.NewMemberFromUsername(username, true)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), 404)
+			return
+		}
+
+		if !org.IsMember(member) {
+			http.Error(w, "Unknown member of course.", 404)
+			return
+		}
+
+		courseopt := user.Courses[org.Name]
+
+		view.UsedSlipdays = courseopt.UsedSlipDays
+		view.Username = user.Username
+	} else if org.IsMember(member) {
+		courseopt := member.Courses[org.Name]
+
+		view.UsedSlipdays = courseopt.UsedSlipDays
+		view.Username = member.Username
+	} else {
+		http.Error(w, "Unknown member of course.", 404)
+		return
+	}
+
+	enc := json.NewEncoder(w)
+	err = enc.Encode(view)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), 404)
+		return
 	}
 }
