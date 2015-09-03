@@ -11,6 +11,7 @@
         <div class="list-group">
           <a class="list-group-item disabled">Course</a>
           <a class="list-group-item" href="/scoreboard/{{.Org.Name}}">Scoreboard <span class="pull-right glyphicon glyphicon-chevron-right"></span></a>
+          <a class="list-group-item courseinfo" href="#info">Course Info <span class="pull-right glyphicon glyphicon-chevron-right"></span></a>
           <a class="list-group-item disabled">Individual labs</a>
           <a class="list-group-item" href="https://github.com/{{.Org.Name}}/{{.Member.Username}}-labs" target="_blank">Github Repository <span class="pull-right glyphicon glyphicon-link"></span></a>
           {{range .Org.IndividualLabFolders}}
@@ -243,6 +244,39 @@
             </div>
           </section>
         {{end}}
+
+        <section id="info">
+          <div class="result-content" id="infoview" style="display: none">
+            <h1>Course Info</h1>
+            <p class="lead">Used slip days: <span id="UsedSlipdays"></span>/<span id="MaxSlipdays"></span></p>
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>Lab</th>
+                  <th>Type</th>
+                  <th>Deadline</th>
+                </tr>
+              </thead>
+              <tbody>
+                {{$org := .Org}}
+                {{range $i, $labname := .Org.IndividualLabFolders}}
+                <tr>
+                  <td>{{$labname}}</td>
+                  <td>Individual</td>
+                  <td class="deadline" deadline="{{index $org.IndividualDeadlines $i}}"></td>
+                </tr>
+                {{end}}
+                {{range $i, $labname := .Org.GroupLabFolders}}
+                <tr>
+                  <td>{{$labname}}</td>
+                  <td>Group</td>
+                  <td class="deadline" deadline="{{index $org.GroupDeadlines $i}}"></td>
+                </tr>
+                {{end}}
+              </tbody>
+            </table>
+          </div>
+        </section>
       </div>
 
     </div>
