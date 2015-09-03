@@ -8,6 +8,7 @@ import (
 	"log"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/boltdb/bolt"
 	"github.com/hfurubotten/autograder/database"
@@ -182,6 +183,20 @@ func (g *Group) GetLastBuildID(lab int) int {
 	}
 
 	return -1
+}
+
+// SetApprovedBuild will put the approved build results in
+func (g *Group) SetApprovedBuild(labnum, buildid int, date time.Time) {
+	if _, ok := g.Assignments[labnum]; !ok {
+		g.Assignments[labnum] = NewLabAssignmentOptions()
+	}
+
+	g.Assignments[labnum].ApproveDate = date
+	g.Assignments[labnum].ApprovedBuild = buildid
+
+	if g.CurrentLabNum <= labnum {
+		g.CurrentLabNum = labnum + 1
+	}
 }
 
 // AddNotes will add notes to a lab assignment.

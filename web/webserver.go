@@ -89,6 +89,7 @@ func (ws Server) Start() {
 	http.HandleFunc(LeaderboardDataURL, LeaderboardDataHandler)
 	http.HandleFunc(CIResultListURL, CIResultListHandler)
 	http.HandleFunc(NotesURL, NotesHandler)
+	http.HandleFunc(SlipdaysURL, SlipdaysHandler)
 
 	// static files
 	// http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("web/js/"))))

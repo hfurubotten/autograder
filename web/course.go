@@ -763,6 +763,14 @@ func UpdateCourseHandler(w http.ResponseWriter, r *http.Request) {
 	org.Private = r.FormValue("private") == "on"
 	org.CodeReview = r.FormValue("codereview") == "on"
 
+	org.Slipdays = r.FormValue("slipdays") == "on"
+	maxslipdays, err := strconv.Atoi(r.FormValue("maxslipdays"))
+	if err != nil {
+		http.Error(w, "Cant use the max slip days format.", 415)
+		return
+	}
+	org.SlipdaysMax = maxslipdays
+
 	basepath := r.FormValue("basepath")
 	if basepath != "" {
 		org.CI.Basepath = basepath

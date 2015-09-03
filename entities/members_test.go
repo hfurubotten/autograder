@@ -3,6 +3,7 @@ package git
 import (
 	"net/mail"
 	"testing"
+	"time"
 
 	"github.com/hfurubotten/github-gamification/entities"
 )
@@ -543,6 +544,66 @@ func TestAddAndGetMemberNotes(t *testing.T) {
 					user.GetNotes(in.course, labnum),
 					notes[len(notes)-1])
 			}
+		}
+	}
+}
+
+var testMemberSetApprovedBuildInput = []struct {
+	Course  string
+	User    string
+	Labnum  int
+	BuildID int
+	Date    time.Time
+}{
+	{
+		Course:  "approvecourse1",
+		User:    "approveuser1",
+		Labnum:  1,
+		BuildID: 2153,
+		Date:    time.Date(2015, time.January, 12, 12, 12, 12, 0, time.FixedZone("unnamed", 1)),
+	},
+	{
+		Course:  "approvecourse2",
+		User:    "approveuser2",
+		Labnum:  2,
+		BuildID: 2483,
+		Date:    time.Date(2015, time.January, 2, 2, 12, 12, 0, time.FixedZone("unnamed", 1)),
+	},
+	{
+		Course:  "approvecourse3",
+		User:    "approveuser3",
+		Labnum:  4,
+		BuildID: 21553,
+		Date:    time.Date(2015, time.January, 1, 1, 12, 12, 0, time.FixedZone("unnamed", 1)),
+	},
+}
+
+func TestMemberSetApprovedBuild(t *testing.T) {
+	for _, in := range testMemberSetApprovedBuildInput {
+		user, err := NewMemberFromUsername(in.User, true)
+		if err != nil {
+			t.Error(err)
+			continue
+		}
+
+		user.Courses[in.Course] = NewCourseOptions(in.Course)
+
+		user.SetApprovedBuild(in.Course, in.Labnum, in.BuildID, in.Date)
+
+		opt := user.Courses[in.Course]
+
+		if opt.Assignments[in.Labnum].ApproveDate != in.Date {
+			t.Errorf("Approved date not set correctly. want %s, got %s for user %s",
+				in.Date,
+				opt.Assignments[in.Labnum].ApproveDate,
+				in.User)
+		}
+
+		if opt.Assignments[in.Labnum].ApprovedBuild != in.BuildID {
+			t.Errorf("Approved date not set correctly. want %d, got %d for user %s",
+				in.BuildID,
+				opt.Assignments[in.Labnum].ApprovedBuild,
+				in.User)
 		}
 	}
 }

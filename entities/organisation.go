@@ -67,6 +67,9 @@ type Organization struct {
 	CodeReview     bool
 	CodeReviewlist []int
 
+	Slipdays    bool
+	SlipdaysMax int
+
 	AdminToken  string
 	githubadmin *github.Client
 

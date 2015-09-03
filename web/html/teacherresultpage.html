@@ -31,6 +31,9 @@
         <!-- Summary -->
         <section id="summary">
           <h1>Summary</h1>
+          {{if .Org.Slipdays}}
+          <p class="lead">Used slipdays <span id="UsedSlipdays"></span>/<span id="MaxSlipdays"></span></p>
+          {{end}}
           <div id="summarypanel">
 
           </div>

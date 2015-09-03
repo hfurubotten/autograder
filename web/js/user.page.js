@@ -72,4 +72,24 @@ $(function(){
       alert("You have been added to the list over people who wants random groups assignment.");
     });
   });
+
+  $("a.courseinfo").click(function(){
+    $('div.result-content').hide();
+    $('div#infoview').show();
+
+    // nav active marking
+    $('a.list-group-item').removeClass("active");
+    $(this).addClass("active");
+
+    $.getJSON("/course/slipdays", {"Course": course, "Username": username}, function(data){
+      $("#UsedSlipdays").text(data.UsedSlipdays)
+      $("#MaxSlipdays").text(data.MaxSlipdays)
+    });
+  });
+
+  $(".deadline").each(function(){
+    var texttime = $(this).attr("deadline");
+    var timeformat = "DD/MM/YYYY HH:mm:ss";
+    $(this).text(moment(texttime, 'YYYY-MM-DD HH:mm:ss.SSSSSSSSS').format(timeformat));
+  });
 });

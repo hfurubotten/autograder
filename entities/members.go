@@ -340,6 +340,25 @@ func (m *Member) GetLastBuildID(course string, lab int) int {
 	return -1
 }
 
+// SetApprovedBuild will put the approved build results in
+func (m *Member) SetApprovedBuild(course string, labnum, buildid int, date time.Time) {
+	if _, ok := m.Courses[course]; !ok {
+		return
+	}
+
+	opt := m.Courses[course]
+	if _, ok := opt.Assignments[labnum]; !ok {
+		opt.Assignments[labnum] = NewLabAssignmentOptions()
+	}
+
+	opt.Assignments[labnum].ApproveDate = date
+	opt.Assignments[labnum].ApprovedBuild = buildid
+	if opt.CurrentLabNum <= labnum {
+		opt.CurrentLabNum = labnum + 1
+	}
+	m.Courses[course] = opt
+}
+
 // AddNotes will add notes to a lab assignment.
 func (m *Member) AddNotes(course string, lab int, notes string) {
 	if _, ok := m.Courses[course]; !ok {
