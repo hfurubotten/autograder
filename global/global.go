@@ -4,6 +4,11 @@ import (
 	"net/http"
 )
 
+// Global names used in html pages
+const (
+	AppName = "Autograder"
+)
+
 var (
 	// Hostname globally stores the hostname autograder is running under.
 	Hostname string
@@ -30,4 +35,7 @@ var (
 
 	// Basepath globally stores the basepath for the code directory.
 	Basepath string
+
+	// the version control system name used in html pages
+	VersionSystemName string
 )

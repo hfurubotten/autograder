@@ -11,6 +11,7 @@ import (
 	"github.com/hfurubotten/autograder/config"
 	"github.com/hfurubotten/autograder/database"
 	git "github.com/hfurubotten/autograder/entities"
+	"github.com/hfurubotten/autograder/global"
 	"github.com/hfurubotten/autograder/web"
 )
 
@@ -22,6 +23,7 @@ var (
 	help         = flag.Bool("help", false, "List the startup options for the autograder.")
 	configfile   = flag.String("configfile", "", "Path to a custom config file location. Used when a config file not stored in the standard file location is prefered.")
 	basepath     = flag.String("basepath", "", "A custom file path for storing autograder files.")
+	versionsys   = flag.String("GitHub", "", "The version control system to use.")
 )
 
 func main() {
@@ -64,6 +66,7 @@ func main() {
 			log.Fatal(err)
 		}
 	}
+	global.VersionSystemName = *versionsys
 
 	// Updates config with evt. new information
 

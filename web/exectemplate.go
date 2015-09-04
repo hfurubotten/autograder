@@ -11,8 +11,10 @@ import (
 )
 
 type StdTemplate struct {
-	OptinalHeadline bool
-	Member          *git.Member
+	OptinalHeadline   bool
+	AppName           string
+	VersionSystemName string
+	Member            *git.Member
 }
 
 var funcMap = template.FuncMap{

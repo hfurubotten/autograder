@@ -3,6 +3,8 @@ package web
 import (
 	"net/http"
 	"strings"
+
+	"github.com/hfurubotten/autograder/global"
 )
 
 // HelpURL is the URL used to call HelpHandler.
@@ -20,7 +22,9 @@ func HelpHandler(w http.ResponseWriter, r *http.Request) {
 	member, err := checkMemberApproval(w, r, false)
 	if err == nil {
 		view := StdTemplate{
-			Member: member,
+			Member:            member,
+			AppName:           global.AppName,
+			VersionSystemName: global.VersionSystemName,
 		}
 
 		execTemplate(addr+".html", w, view)
