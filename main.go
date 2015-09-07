@@ -23,7 +23,7 @@ var (
 	help         = flag.Bool("help", false, "List the startup options for the autograder.")
 	configfile   = flag.String("configfile", "", "Path to a custom config file location. Used when a config file not stored in the standard file location is prefered.")
 	basepath     = flag.String("basepath", "", "A custom file path for storing autograder files.")
-	versionsys   = flag.String("GitHub", "", "The version control system to use.")
+	vcs          = flag.String("vcs", "GitHub", "The version control system to use.")
 )
 
 func main() {
@@ -66,7 +66,10 @@ func main() {
 			log.Fatal(err)
 		}
 	}
-	global.VersionSystemName = *versionsys
+	if *vcs != "GitHub" {
+		log.Fatalln(global.AppName + " currently only supports GitHub")
+	}
+	global.VersionSystemName = *vcs
 
 	// Updates config with evt. new information
 
