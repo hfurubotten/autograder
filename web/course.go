@@ -693,6 +693,20 @@ func UserCoursePageHandler(w http.ResponseWriter, r *http.Request) {
 			log.Println(err)
 			return
 		}
+
+		if group.Course != orgname {
+			member.Lock()
+			opt := member.Courses[orgname]
+			opt.IsGroupMember = false
+			opt.GroupNum = 0
+			member.Courses[orgname] = opt
+			err = member.Save()
+			if err != nil {
+				log.Println(err)
+				member.Unlock()
+			}
+		}
+
 		view.Group = group
 		if group.CurrentLabNum >= org.GroupAssignments {
 			view.GroupLabnum = org.GroupAssignments - 1
