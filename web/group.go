@@ -86,7 +86,7 @@ func NewGroupHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	org.GroupCount = org.GroupCount + 1
+	//org.GroupCount = org.GroupCount + 1
 
 	gid := git.GetNextGroupID()
 	if gid < 0 {
