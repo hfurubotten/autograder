@@ -86,7 +86,7 @@ func NewGroupHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	org.GroupCount = org.GroupCount + 1
+	//org.GroupCount = org.GroupCount + 1
 
 	gid := git.GetNextGroupID()
 	if gid < 0 {
@@ -136,7 +136,7 @@ func NewGroupHandler(w http.ResponseWriter, r *http.Request) {
 		if !opt.IsGroupMember {
 			user.Lock()
 			opt.IsGroupMember = true
-			opt.GroupNum = org.GroupCount
+			opt.GroupNum = group.ID
 			user.Courses[course] = opt
 			err := user.Save()
 			if err != nil {
@@ -149,7 +149,7 @@ func NewGroupHandler(w http.ResponseWriter, r *http.Request) {
 		delete(org.PendingRandomGroup, username)
 	}
 
-	org.PendingGroup[org.GroupCount] = nil
+	org.PendingGroup[group.ID] = nil
 
 	if member.IsTeacher {
 		http.Redirect(w, r, "/course/teacher/"+org.Name+"#groups", 307)
