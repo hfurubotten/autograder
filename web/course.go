@@ -951,3 +951,18 @@ func RemoveUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+// ListStudentsView is the struct used to return values from ListStudentsHandler.
+type ListStudentsView struct {
+	course string
+
+	students []*git.Member
+}
+
+// ListStudentsURL is the url used to call ListStudentsHandler.
+var ListStudentsURL = "/course/students"
+
+// ListStudentsHandler will get all the members of a course.
+func ListStudentsHandler(w http.ResponseWriter, r *http.Request) {
+
+}
