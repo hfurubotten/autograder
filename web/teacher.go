@@ -105,10 +105,23 @@ func TeachersPanelHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Println(err)
 		}
+
+		if group.Course != org.Name {
+			org.Lock()
+			delete(org.PendingGroup, groupID)
+			err := org.Save()
+			if err != nil {
+				log.Println(err)
+				org.Unlock()
+			}
+			continue
+		}
+
 		for key := range group.Members {
 			groupmember, _ := git.NewMemberFromUsername(key, true)
 			group.Members[key] = groupmember
 		}
+
 		pendinggroups[groupID] = group
 	}
 
