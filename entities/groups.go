@@ -149,7 +149,7 @@ func (g *Group) AddMember(user string) {
 
 // RemoveMember will remove a member from the group.
 func (g *Group) RemoveMember(user string) {
-	if len(g.Members) <= 2 {
+	if len(g.Members) <= 1 {
 		g.Delete()
 	}
 
