@@ -693,6 +693,20 @@ func UserCoursePageHandler(w http.ResponseWriter, r *http.Request) {
 			log.Println(err)
 			return
 		}
+
+		if group.Course != orgname {
+			member.Lock()
+			opt := member.Courses[orgname]
+			opt.IsGroupMember = false
+			opt.GroupNum = 0
+			member.Courses[orgname] = opt
+			err = member.Save()
+			if err != nil {
+				log.Println(err)
+				member.Unlock()
+			}
+		}
+
 		view.Group = group
 		if group.CurrentLabNum >= org.GroupAssignments {
 			view.GroupLabnum = org.GroupAssignments - 1
@@ -950,4 +964,19 @@ func RemoveUserHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Couldn't find this user in this course. ", 404)
 		return
 	}
+}
+
+// ListStudentsView is the struct used to return values from ListStudentsHandler.
+type ListStudentsView struct {
+	course string
+
+	students []*git.Member
+}
+
+// ListStudentsURL is the url used to call ListStudentsHandler.
+var ListStudentsURL = "/course/students"
+
+// ListStudentsHandler will get all the members of a course.
+func ListStudentsHandler(w http.ResponseWriter, r *http.Request) {
+
 }

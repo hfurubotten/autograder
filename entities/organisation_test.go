@@ -170,9 +170,9 @@ func compareOrganizations(org1, org2 *Organization, t *testing.T) {
 	if org1.Private != org2.Private {
 		t.Errorf("Two organizations do not have equal Private field. %v != %v", org1.Private, org2.Private)
 	}
-	if org1.GroupCount != org2.GroupCount {
-		t.Errorf("Two organizations do not have equal GroupCount field. %v != %v", org1.GroupCount, org2.GroupCount)
-	}
+	//if org1.GroupCount != org2.GroupCount {
+	//	t.Errorf("Two organizations do not have equal GroupCount field. %v != %v", org1.GroupCount, org2.GroupCount)
+	//}
 	if org1.CodeReview != org2.CodeReview {
 		t.Errorf("Two organizations do not have equal CodeReview field. %v != %v", org1.CodeReview, org2.CodeReview)
 	}

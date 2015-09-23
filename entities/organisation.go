@@ -54,7 +54,7 @@ type Organization struct {
 	OwnerTeamID   int
 	Private       bool
 
-	GroupCount         int
+	//GroupCount         int
 	PendingGroup       map[int]interface{}
 	PendingRandomGroup map[string]interface{}
 	// TODO: change the groups field to ActiveGroups map[int]interface{}
