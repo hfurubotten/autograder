@@ -3,7 +3,7 @@ package events
 import (
 	"testing"
 
-	"github.com/hfurubotten/github-gamification/entities"
+	"github.com/hfurubotten/autograder/game/entities"
 )
 
 var distributeScoresTest = []struct {

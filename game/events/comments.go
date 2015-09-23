@@ -3,9 +3,9 @@ package events
 import (
 	"log"
 
-	"github.com/hfurubotten/github-gamification/entities"
-	. "github.com/hfurubotten/github-gamification/githubobjects"
-	"github.com/hfurubotten/github-gamification/points"
+	"github.com/hfurubotten/autograder/game/entities"
+	. "github.com/hfurubotten/autograder/game/githubobjects"
+	"github.com/hfurubotten/autograder/game/points"
 )
 
 func HandlePullRequestComments(b []byte) {

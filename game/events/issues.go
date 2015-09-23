@@ -4,10 +4,10 @@ import (
 	"errors"
 	"log"
 
-	"github.com/hfurubotten/github-gamification/entities"
-	. "github.com/hfurubotten/github-gamification/githubobjects"
-	"github.com/hfurubotten/github-gamification/points"
-	"github.com/hfurubotten/github-gamification/trophies"
+	"github.com/hfurubotten/autograder/game/entities"
+	. "github.com/hfurubotten/autograder/game/githubobjects"
+	"github.com/hfurubotten/autograder/game/points"
+	"github.com/hfurubotten/autograder/game/trophies"
 )
 
 func FindIssuesPointsAndTrophyAction(payload IssuesPayload) (int, int, error) {

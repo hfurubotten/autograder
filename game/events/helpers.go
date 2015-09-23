@@ -5,9 +5,9 @@ import (
 	"log"
 	"runtime/debug"
 
-	"github.com/hfurubotten/github-gamification/entities"
-	"github.com/hfurubotten/github-gamification/points"
-	"github.com/hfurubotten/github-gamification/trophies"
+	"github.com/hfurubotten/autograder/game/entities"
+	"github.com/hfurubotten/autograder/game/points"
+	"github.com/hfurubotten/autograder/game/trophies"
 )
 
 // DistributeScores is a helper function which update the scores on repos and users.

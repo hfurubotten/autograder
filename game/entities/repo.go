@@ -6,8 +6,8 @@ import (
 	"sync"
 
 	"github.com/google/go-github/github"
-	"github.com/hfurubotten/github-gamification/githubobjects"
-	"github.com/hfurubotten/github-gamification/points"
+	"github.com/hfurubotten/autograder/game/githubobjects"
+	"github.com/hfurubotten/autograder/game/points"
 )
 
 func init() {

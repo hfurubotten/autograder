@@ -10,10 +10,10 @@ import (
 
 	ci "github.com/hfurubotten/autograder/ci"
 	git "github.com/hfurubotten/autograder/entities"
-	"github.com/hfurubotten/github-gamification/events"
-	github "github.com/hfurubotten/github-gamification/githubobjects"
-	"github.com/hfurubotten/github-gamification/points"
-	"github.com/hfurubotten/github-gamification/trophies"
+	"github.com/hfurubotten/autograder/game/events"
+	github "github.com/hfurubotten/autograder/game/githubobjects"
+	"github.com/hfurubotten/autograder/game/points"
+	"github.com/hfurubotten/autograder/game/trophies"
 )
 
 var (

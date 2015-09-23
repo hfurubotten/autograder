@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/google/go-github/github"
-	"github.com/hfurubotten/github-gamification/levels"
-	"github.com/hfurubotten/github-gamification/trophies"
+	"github.com/hfurubotten/autograder/game/levels"
+	"github.com/hfurubotten/autograder/game/trophies"
 	"golang.org/x/oauth2"
 )
 

@@ -10,7 +10,7 @@ import (
 	git "github.com/hfurubotten/autograder/entities"
 	"github.com/hfurubotten/autograder/web/pages"
 	"github.com/hfurubotten/autograder/web/sessions"
-	"github.com/hfurubotten/github-gamification/levels"
+	"github.com/hfurubotten/autograder/game/levels"
 )
 
 // ProfileView is the view passed to the html template compiler for ProfileHandler.
