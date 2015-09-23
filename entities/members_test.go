@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hfurubotten/github-gamification/entities"
+	"github.com/hfurubotten/autograder/game/entities"
 )
 
 var testNewMemberInput = []struct {

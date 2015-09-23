@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/hfurubotten/autograder/global"
-	"github.com/hfurubotten/github-gamification/entities"
+	"github.com/hfurubotten/autograder/game/entities"
 )
 
 func cleanUpMemberStorage() error {

@@ -14,7 +14,7 @@ import (
 	"github.com/google/go-github/github"
 	"github.com/hfurubotten/autograder/global"
 	"github.com/hfurubotten/diskv"
-	"github.com/hfurubotten/github-gamification/entities"
+	"github.com/hfurubotten/autograder/game/entities"
 	"golang.org/x/oauth2"
 )
 

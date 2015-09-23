@@ -13,7 +13,7 @@ import (
 	"github.com/boltdb/bolt"
 	"github.com/google/go-github/github"
 	"github.com/hfurubotten/autograder/database"
-	"github.com/hfurubotten/github-gamification/entities"
+	"github.com/hfurubotten/autograder/game/entities"
 	"golang.org/x/oauth2"
 )
 
