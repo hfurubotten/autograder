@@ -282,7 +282,7 @@ func (u *User) ImportGithubData(gu *github.User) {
 // loadStoredData fetches the user data stored on disk or in cached memory.
 // ATM a NO-OP
 func (u *User) loadStoredData() (err error) {
-	return errors.New("method is a NO-OP")
+	return nil
 }
 
 // loadDataFromGithub attempts to load user data from
@@ -334,7 +334,8 @@ func (u *User) Unlock() {
 // will be called.
 // ATM a NO-OP
 func (u *User) Save() error {
-	return errors.New("method is a NO-OP")
+	u.Unlock()
+	return nil
 }
 
 // HasUser checks if there is registered a user with the given login name.

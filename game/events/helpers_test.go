@@ -16,22 +16,32 @@ var distributeScoresTest = []struct {
 	{"user1", 20, 61},
 }
 
+var userList = make(map[string]*entities.User)
+
 func TestDistributeScores(t *testing.T) {
+	// Does not test if stored correctly, only the point calculation.
+	var user *entities.User
+	var ok bool
+
+	repo, err := entities.NewRepo("testorg", "testrepo")
+        if err != nil {
+                t.Error("Failed to open new repo:", err)
+                return
+        }
+        org, err := entities.NewOrganization("testorg")
+        if err != nil {
+                t.Error("Failed to open new org:", err)
+                return
+        }
+	
 	for _, dst := range distributeScoresTest {
-		user, err := entities.NewUser(dst.inUser)
-		if err != nil {
-			t.Error("Failed to open new user:", err)
-			continue
-		}
-		repo, err := entities.NewRepo("testorg", "testrepo")
-		if err != nil {
-			t.Error("Failed to open new repo:", err)
-			continue
-		}
-		org, err := entities.NewOrganization("testorg")
-		if err != nil {
-			t.Error("Failed to open new org:", err)
-			continue
+		if user, ok = userList[dst.inUser]; !ok {
+			user, err = entities.NewUser(dst.inUser)
+			if err != nil {
+				t.Error("Failed to open new user:", err)
+				continue
+			}
+			userList[dst.inUser] = user
 		}
 
 		err = DistributeScores(dst.inScore, user, repo, org)

@@ -125,7 +125,7 @@ func (r *Repo) ImportGithubData(gr *github.Repository) {
 // loadStoredData fetches the repository data stored on disk or in cached memory.
 // ATM a NO-OP
 func (r *Repo) loadStoredData() (err error) {
-	return errors.New("method is a NO-OP")
+	return nil
 }
 
 // Lock will lock the user name from being written to by
@@ -144,7 +144,8 @@ func (r *Repo) Unlock() {
 // Save stores the repo object to memory cache and disk.
 // ATM a NO-OP
 func (r *Repo) Save() (err error) {
-	return errors.New("method is a NO-OP")
+	r.Unlock()
+	return nil
 }
 
 // HasRepo checks if there is registered a repo with the given login name.

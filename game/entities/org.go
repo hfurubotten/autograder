@@ -2,7 +2,7 @@ package entities
 
 import (
 	"encoding/gob"
-	"errors"
+//	"errors"
 	"sync"
 	"time"
 
@@ -78,7 +78,7 @@ func (o *Organization) ImportGithubData(gorg *github.Organization) {
 // LoadStoredData fetches the organization data stored on disk or in cached memory.
 // ATM a NO-OP
 func (o *Organization) LoadStoredData() (err error) {
-	return errors.New("method is a NO-OP")
+	return nil
 }
 
 // Lock will lock the organization name from being written to by
@@ -100,7 +100,8 @@ func (o *Organization) Unlock() {
 // will be called.
 // ATM a NO-OP
 func (o *Organization) Save() error {
-	return errors.New("method is a NO-OP")
+	o.Unlock()
+	return nil
 }
 
 // HasOrganization checks if the organization is know to the system or not.
