@@ -266,9 +266,10 @@ func logOutput(s string, l *BuildResult, opt DaemonOptions) {
 	s = strings.Trim(s, string(0))
 	s = strings.TrimSpace(s)
 
-	var testscore score.Score
+	//TODO: Move this code to a new function in kit/score package? Reason: easier to test.
 	if strings.Contains(s, opt.Secret) {
-		// TODO: must be a better way of detecting JSON data!
+		// TODO: must be a better way of detecting JSON data!  TODO: Hein@Heine: Why?
+		var testscore score.Score
 		err := json.Unmarshal([]byte(s), &testscore)
 		if err == nil {
 			if testscore.Secret == opt.Secret {
@@ -277,13 +278,12 @@ func logOutput(s string, l *BuildResult, opt DaemonOptions) {
 			}
 			return
 		}
-
-		s = strings.Replace(s, opt.Secret, "Sanitized", -1)
+		// ensure that the error message does not reveal the secret token
+		es := strings.Replace(err.Error(), opt.Secret, "Sanitized", -1)
+		log.Printf("Parse error: %s\n", es)
 	}
-
-	if strings.Contains(s, opt.AdminToken) {
-		s = strings.Replace(s, opt.AdminToken, "Sanitized", -1)
-	}
+	s = strings.Replace(s, opt.Secret, "Sanitized", -1)
+	s = strings.Replace(s, opt.AdminToken, "Sanitized", -1)
 
 	l.Log = append(l.Log, strings.TrimSpace(s))
 	fmt.Println(s)
