@@ -110,6 +110,8 @@ func (g *Group) loadStoredData(lock bool) error {
 		return nil
 	})
 
+	//TODO: What is this?? Why have an option to lock or not?? Bad practice.
+
 	// locks the object directly in order to ensure consistent info from DB.
 	if lock {
 		g.Lock()
@@ -224,6 +226,8 @@ func (g *Group) GetNotes(lab int) string {
 
 	return g.Assignments[lab].Notes
 }
+
+//TODO: We should never export lock functions. That's asking for trouble!!
 
 // Lock will put a writers lock on the group.
 func (g *Group) Lock() {

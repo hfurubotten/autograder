@@ -176,7 +176,9 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 
 		err = StartTestBuildProcess(payload)
 		if err != nil {
+			log.Println("Error starting test: ", err)
 
+			//TODO: what? no error handling?
 		}
 
 	case events.PULL_REQUEST:
@@ -243,40 +245,40 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 
 // StartTestBuildProcess will use the payload from github to start the ci build.
 func StartTestBuildProcess(load github.PushPayload) (err error) {
-	userlogin := *load.Pusher.Name
-	reponame := *load.Repo.Name
-	orgname := *load.Organization.Login
+	userLogin := *load.Pusher.Name
+	repoName := *load.Repo.Name
+	orgName := *load.Organization.Login
 
-	if !git.HasMember(userlogin) {
-		log.Println("Not a valid user: ", userlogin)
-		return
+	if !git.HasMember(userLogin) {
+		return errors.New("invalid user login: " + userLogin)
 	}
-
-	if !git.HasOrganization(orgname) {
-		log.Println("Not a valid org: ", orgname)
-		return errors.New("Not a valid org: " + orgname)
+	if !git.HasOrganization(orgName) {
+		return errors.New("invalid organization name: " + orgName)
 	}
-
-	org, err := git.NewOrganization(orgname, true)
-	user, err := git.NewMemberFromUsername(userlogin, true)
-
-	isgroup := !strings.Contains(reponame, "-"+git.StandardRepoName)
+	org, err := git.NewOrganization(orgName, true)
+	user, err := git.NewMemberFromUsername(userLogin, true)
+	//TODO these erros will be returned at the end. Is that intentional??
+	// Shouldn't they be handled here?
 
 	var labfolder string
 	var destfolder string
 	var labnum int
 	var username string
 	var gnum = -1
+
+	// TODO: Clean up this logic:
+	// Make func: isGroupRepository()
+	// Can this function instead check the number of student members of the repo
+	// to determine if it's a group repo? Then we can avoid complicated logic.
+	isgroup := !strings.Contains(repoName, "-"+git.StandardRepoName)
 	if isgroup {
-		gnum, err = strconv.Atoi(reponame[len("group"):])
+		gnum, err = strconv.Atoi(repoName[len("group"):])
 		if err != nil {
-			log.Println(err)
 			return err
 		}
 
 		group, err := git.NewGroup(org.Name, gnum, true)
 		if err != nil {
-			log.Println(err)
 			return err
 		}
 
@@ -285,7 +287,7 @@ func StartTestBuildProcess(load github.PushPayload) (err error) {
 			labnum = org.GroupAssignments
 		}
 		labfolder = org.GroupLabFolders[labnum]
-		username = reponame
+		username = repoName
 		destfolder = git.GroupsRepoName
 	} else {
 		labnum = user.Courses[org.Name].CurrentLabNum
@@ -293,7 +295,7 @@ func StartTestBuildProcess(load github.PushPayload) (err error) {
 			labnum = org.IndividualAssignments
 		}
 		labfolder = org.IndividualLabFolders[labnum]
-		username = strings.TrimRight(reponame, "-"+git.StandardRepoName)
+		username = strings.TrimRight(repoName, "-"+git.StandardRepoName)
 		destfolder = git.StandardRepoName
 	}
 
@@ -301,7 +303,7 @@ func StartTestBuildProcess(load github.PushPayload) (err error) {
 		Org:        org.Name,
 		User:       username,
 		Group:      gnum,
-		Repo:       reponame,
+		Repo:       repoName,
 		BaseFolder: org.CI.Basepath,
 		LabFolder:  labfolder,
 		LabNumber:  labnum,
@@ -313,5 +315,5 @@ func StartTestBuildProcess(load github.PushPayload) (err error) {
 
 	go ci.StartTesterDaemon(opt)
 
-	return
+	return //TODO This will return err; is that intentional??
 }
