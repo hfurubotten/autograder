@@ -1,16 +1,9 @@
 package entities
 
 import (
-	"crypto/sha256"
-	"fmt"
-
-	"github.com/hfurubotten/diskv"
+	//"crypto/sha256"
+	//"fmt"
 )
-
-var tokenstore = diskv.New(diskv.Options{
-	BasePath:     "diskv/tokens",
-	CacheSizeMax: 1024 * 1024 * 128, // 128 MB memory use.
-})
 
 type token struct {
 	accessToken string
@@ -21,24 +14,26 @@ func NewToken(oauthtoken string) token {
 }
 
 func (m *token) HasTokenInStore() bool {
-	hash := sha256.Sum256([]byte(m.accessToken))
-	return tokenstore.Has(fmt.Sprintf("%x", hash))
+	//hash := sha256.Sum256([]byte(m.accessToken))
+	//return tokenstore.Has(fmt.Sprintf("%x", hash))
+	return false
 }
 
 func (m *token) GetUsernameFromTokenInStore() (user string, err error) {
-	hash := sha256.Sum256([]byte(m.accessToken))
-	err = tokenstore.ReadGob(fmt.Sprintf("%x", hash), &user, false)
+	//hash := sha256.Sum256([]byte(m.accessToken))
+	//err = tokenstore.ReadGob(fmt.Sprintf("%x", hash), &user, false)
 	return user, err
 }
 
 func (m *token) SetUsernameToTokenInStore(username string) (err error) {
-	hash := sha256.Sum256([]byte(m.accessToken))
-	err = tokenstore.WriteGob(fmt.Sprintf("%x", hash), username)
+	//hash := sha256.Sum256([]byte(m.accessToken))
+	//err = tokenstore.WriteGob(fmt.Sprintf("%x", hash), username)
 	return
 }
 
 func (m *token) RemoveTokenInStore() (err error) {
-	return tokenstore.Erase(m.accessToken)
+	//return tokenstore.Erase(m.accessToken)
+	return nil
 }
 
 func (t token) HasToken() bool {
