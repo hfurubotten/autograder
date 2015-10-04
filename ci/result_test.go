@@ -19,28 +19,29 @@ func TestMain(m *testing.M) {
 	if err := database.Close(); err != nil {
 		log.Println("Failed to close database after testing:", err)
 	}
-
 	if err := os.RemoveAll("test.db"); err != nil {
 		log.Println("Unable to clean up database file from filesystem")
 	}
 }
 
+var iter = 100
+
 func TestNewBuildResult(t *testing.T) {
-	startpoint := GetNextBuildID()
-	for i := 1 + startpoint; i <= testGetNextBuildIDIterations; i++ {
+	first, err := NewBuildResult()
+	if err != nil {
+		t.Error(err)
+	}
+	for i := first.ID + 1; i <= iter; i++ {
 		build, err := NewBuildResult()
 		if err != nil {
 			t.Error("Error creating a new build result object:", err)
 		}
-
 		if build.ID != i {
-			t.Errorf("Error while generating build ID. Got %d, want %d.", build.ID, i)
+			t.Errorf("Error generating build ID. Got %d, wanted %d.", build.ID, i)
 		}
-
 		if build.TestScores == nil {
 			t.Error("Field TestScores cannot be nil")
 		}
-
 		if build.Log == nil {
 			t.Error("Field Log cannot be nil")
 		}
@@ -123,18 +124,6 @@ func TestGetAndSaveBuildResult(t *testing.T) {
 			t.Error("Failed to get a build result from DB:", err)
 		}
 		compareBuildResults(br, br2, t)
-	}
-}
-
-var testGetNextBuildIDIterations = 100
-
-func TestGetNextBuildID(t *testing.T) {
-	startpoint := GetNextBuildID()
-	for i := 1 + startpoint; i <= testGetNextBuildIDIterations; i++ {
-		nextid := GetNextBuildID()
-		if nextid != i {
-			t.Errorf("Error while couting up to next build ID. Got %d, want %d.", nextid, i)
-		}
 	}
 }
 

@@ -15,16 +15,13 @@ import (
 )
 
 func init() {
-	gob.Register(BuildResult{})
-
+	// gob.Register(BuildResult{})
+	//
 	database.RegisterBucket(BuildBucketName)
 }
 
 // BuildBucketName is the bucket/table name used in the database.
 var BuildBucketName = "buildresults"
-
-// BuildLengthKey is the key name used to increment build IDs.
-var BuildLengthKey = "lenght"
 
 // BuildResult represent a result from a test build.
 type BuildResult struct {
@@ -60,12 +57,12 @@ type BuildResult struct {
 
 // NewBuildResult will create a new build result object.
 func NewBuildResult() (*BuildResult, error) {
-	nextid := GetNextBuildID()
-	if nextid < 0 {
-		return nil, errors.New("Error occured while generating Build ID")
+	nextid, err := database.NextID(BuildBucketName)
+	if err != nil {
+		return nil, err
 	}
 	return &BuildResult{
-		ID:         nextid,
+		ID:         int(nextid),
 		TestScores: make([]score.Score, 0),
 		Log:        make([]string, 0),
 	}, nil
@@ -153,46 +150,4 @@ func (br *BuildResult) Save() error {
 
 		return nil
 	})
-}
-
-// GetNextBuildID will find the next available build ID.
-// returns -1 on error
-func GetNextBuildID() int {
-	nextid := -1
-	if err := database.GetPureDB().Update(func(tx *bolt.Tx) error {
-		// open the bucket
-		b := tx.Bucket([]byte(BuildBucketName))
-
-		// Checks if the bucket was opened, and creates a new one if not existing. Returns error on any other situation.
-		if b == nil {
-			return errors.New("Missing bucket")
-		}
-
-		var err error
-		data := b.Get([]byte(BuildLengthKey))
-		if data == nil {
-			nextid = 0
-		} else {
-			nextid, err = strconv.Atoi(string(data))
-			if err != nil {
-				return err
-			}
-		}
-
-		nextid++
-
-		data = []byte(strconv.Itoa(nextid))
-
-		err = b.Put([]byte(BuildLengthKey), data)
-		if err != nil {
-			return err
-		}
-
-		return nil
-
-	}); err != nil {
-		return -1
-	}
-
-	return nextid
 }
