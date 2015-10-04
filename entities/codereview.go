@@ -10,9 +10,6 @@ import (
 // CodeReviewBucketName is the bucket name in the database
 var CodeReviewBucketName = "codereviews"
 
-// CodeReviewCounter is the key used to count the ID for code reviews.
-var CodeReviewCounter = "counter"
-
 func init() {
 	//TODO Is this necessary?
 	// gob.Register(CodeReview{})
