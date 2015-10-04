@@ -500,36 +500,27 @@ func (m *Member) String() string {
 	return fmt.Sprintf("Student: %s %s, Student ID: %d, Github: %s", m.Name, m.Email, m.StudentID, m.Username)
 }
 
-// ListAllMembers lists all members stored in the system.
-func ListAllMembers() (out []*Member) {
-	out = make([]*Member, 0)
-	keys := []string{}
-
+// ListAllMembers returns the list of all members stored in the system.
+func ListAllMembers() (members []*Member) {
 	database.GetPureDB().View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(MemberBucketName))
 		if b == nil {
-			return errors.New("Unable to find bucket")
+			return errors.New("unknown bucket: " + MemberBucketName)
 		}
-		//TODO Why not use the ForEach() function?
-		c := b.Cursor()
 
-		for k, _ := c.First(); k != nil; k, _ = c.Next() {
-			keys = append(keys, string(k))
-		}
+		b.ForEach(func(k, v []byte) error {
+			m, err := NewMemberFromUsername(string(k), true)
+			if err == nil {
+				members = append(members, m)
+			}
+			// continue also if member couldn't be created
+			return nil
+		})
 
 		return nil
 	})
 
-	for _, key := range keys {
-		m, err := NewMemberFromUsername(key, true)
-		if err != nil {
-			continue
-		}
-
-		out = append(out, m)
-	}
-
-	return
+	return members
 }
 
 // HasMember checks if the user is stored in the system.

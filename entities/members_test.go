@@ -302,27 +302,21 @@ func TestListAllMembers(t *testing.T) {
 	}
 
 	list := ListAllMembers()
-
-	i := 0
 	for _, user := range list {
-		i++
-
 		found := false
 		for _, username := range testListAllMembersInput {
 			if username == user.Username {
 				found = true
 			}
 		}
-
 		if !found {
-			t.Errorf("Found member %s not requested to be stored.", user.Username)
+			t.Errorf("Found unexpected member: %s", user.Username)
 		}
 	}
 
-	if len(testListAllMembersInput) != i {
-		t.Errorf("Missing members when listing the members. %d != %d", len(testListAllMembersInput), i)
+	if len(testListAllMembersInput) != len(list) {
+		t.Errorf("Missing members: expected: %d, got: %d", len(testListAllMembersInput), len(list))
 	}
-
 }
 
 var testAddMemberBuildResultInput = []struct {
