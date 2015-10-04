@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/boltdb/bolt"
+	"github.com/hfurubotten/autograder/maintenance"
 )
 
 var db *bolt.DB
@@ -20,6 +21,9 @@ func Start(dbloc string) (err error) {
 	if err != nil {
 		return err
 	}
+
+	// registering db backup handler to maintenance ticker.
+	maintenance.Register(NewBackupHandler())
 
 	return db.Update(func(tx *bolt.Tx) (err error) {
 		// Create a buckets.
