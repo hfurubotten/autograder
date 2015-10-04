@@ -82,6 +82,6 @@ func (cr *CodeReview) Save() error {
 
 // nextCodeReviewID will find the next available CodeReview ID.
 func nextCodeReviewID() (nextid codeReviewID, err error) {
-	id, err := database.NextID(CodeReviewBucketName, CodeReviewCounter)
+	id, err := database.NextID(CodeReviewBucketName)
 	return codeReviewID(id), err
 }
