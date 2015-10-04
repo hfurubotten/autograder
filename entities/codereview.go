@@ -1,19 +1,17 @@
 package git
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 
-	"github.com/boltdb/bolt"
 	"github.com/hfurubotten/autograder/database"
 )
 
-// CodeReviewBucketName is the bucket/table name in the database
+// CodeReviewBucketName is the bucket name in the database
 var CodeReviewBucketName = "codereviews"
 
-// CodeReviewLengtKey is the key used to count the ID for code reviews.
-var CodeReviewLengtKey = "length"
+// CodeReviewCounter is the key used to count the ID for code reviews.
+var CodeReviewCounter = "counter"
 
 func init() {
 	//TODO Is this necessary?
@@ -84,28 +82,6 @@ func (cr *CodeReview) Save() error {
 
 // nextCodeReviewID will find the next available CodeReview ID.
 func nextCodeReviewID() (nextid codeReviewID, err error) {
-	err = database.GetPureDB().Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(CodeReviewBucketName))
-		if b == nil {
-			return errors.New("unknown bucket: " + CodeReviewBucketName)
-		}
-
-		var er error
-		data := b.Get([]byte(CodeReviewLengtKey))
-		if data != nil {
-			er = database.GobDecode(data, &nextid)
-			if er != nil {
-				return er
-			}
-		}
-
-		nextid++
-		data, er = database.GobEncode(nextid)
-		if er != nil {
-			return er
-		}
-		return b.Put([]byte(CodeReviewLengtKey), data)
-	})
-
-	return nextid, err
+	id, err := database.NextID(CodeReviewBucketName, CodeReviewCounter)
+	return codeReviewID(id), err
 }
