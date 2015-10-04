@@ -24,6 +24,11 @@ type Leaderboard struct {
 	TrackingMonth time.Month
 }
 
+// NewLeaderboard creates a new leaderboard.
+func NewLeaderboard() *Leaderboard {
+	return &Leaderboard{scorelock: &sync.RWMutex{}}
+}
+
 // checkIntegrity is a internal method to check if any of the fields are nil and create the values if they are nil.
 func (l *Leaderboard) checkIntegrity() {
 	if l.TotalScore == nil {
@@ -42,6 +47,10 @@ func (l *Leaderboard) checkIntegrity() {
 // IncScoreBy will increment the score a user has earned.
 // This also updates the weekly and montly scores.
 func (l *Leaderboard) IncScoreBy(user string, score int) {
+	if l.scorelock == nil {
+		// if trying to use leaderboard without initializing TODO we shouldnt do this
+		l.scorelock = &sync.RWMutex{}
+	}
 	l.scorelock.Lock()
 	defer l.scorelock.Unlock()
 

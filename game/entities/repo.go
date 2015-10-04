@@ -3,7 +3,6 @@ package entities
 import (
 	"encoding/gob"
 	"errors"
-	"sync"
 
 	"github.com/google/go-github/github"
 	"github.com/hfurubotten/autograder/game/githubobjects"
@@ -15,14 +14,14 @@ func init() {
 }
 
 const (
-	ORGOWNER int = iota
-	USEROWNER
+	orgOwner int = iota
+	userOwner
 )
 
+// Repo represent the repository of TODO.
 type Repo struct {
-	//TODO Must be initialized properly
 	points.Leaderboard
-	lock sync.Mutex
+	// lock sync.Mutex
 
 	Name        string
 	Fullname    string
@@ -30,7 +29,7 @@ type Repo struct {
 	Language    string
 
 	// Owners
-	OwnerType int
+	OwnerType int //TODO should be separate type instead of int
 	Owner     string
 	Admins    map[string]interface{}
 
@@ -44,7 +43,6 @@ type Repo struct {
 // nothing is found a new empty repo object is returend back.
 func NewRepo(owner, name string) (repo *Repo, err error) {
 	repo = new(Repo)
-
 	repo.Owner = owner
 	repo.Name = name
 	repo.Fullname = owner + "/" + name
@@ -101,10 +99,10 @@ func (r *Repo) ImportGithubData(gr *github.Repository) {
 
 	// Owner information
 	if *gr.Owner.Type == githubobjects.USERTYPE {
-		r.OwnerType = USEROWNER
+		r.OwnerType = userOwner
 		r.Admins[*gr.Owner.Login] = nil
 	} else if *gr.Owner.Type == githubobjects.ORGANIZATIONTYPE {
-		r.OwnerType = ORGOWNER
+		r.OwnerType = orgOwner
 	}
 
 	r.Owner = *gr.Owner.Login
@@ -133,19 +131,19 @@ func (r *Repo) loadStoredData() (err error) {
 // other instances of the same organization. This has to be used
 // when new info is written, to prevent race conditions. Unlock
 // occures when data is finished written to storage.
-func (r *Repo) Lock() {
-	r.lock.Lock()
-}
+// func (r *Repo) Lock() {
+// 	r.lock.Lock()
+// }
 
 // Unlock will unlock the writers block on the user.
-func (r *Repo) Unlock() {
-	r.lock.Unlock()
-}
+// func (r *Repo) Unlock() {
+// 	r.lock.Unlock()
+// }
 
 // Save stores the repo object to memory cache and disk.
 // ATM a NO-OP
 func (r *Repo) Save() (err error) {
-	r.Unlock()
+	// r.Unlock() //TODO why Unlock here??
 	return nil
 }
 
