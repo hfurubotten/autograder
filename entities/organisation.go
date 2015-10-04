@@ -17,8 +17,8 @@ import (
 	"github.com/boltdb/bolt"
 	"github.com/google/go-github/github"
 	"github.com/hfurubotten/autograder/database"
-	"github.com/hfurubotten/autograder/global"
 	"github.com/hfurubotten/autograder/game/entities"
+	"github.com/hfurubotten/autograder/global"
 	"golang.org/x/oauth2"
 )
 
@@ -65,7 +65,7 @@ type Organization struct {
 	Teachers    map[string]interface{}
 
 	CodeReview     bool
-	CodeReviewlist []int
+	CodeReviewlist []codeReviewID
 
 	Slipdays    bool
 	SlipdaysMax int
@@ -107,7 +107,7 @@ func NewOrganization(name string, readonly bool) (org *Organization, err error) 
 		Teachers:             make(map[string]interface{}),
 		IndividualDeadlines:  make(map[int]time.Time),
 		GroupDeadlines:       make(map[int]time.Time),
-		CodeReviewlist:       make([]int, 0),
+		CodeReviewlist:       make([]codeReviewID, 0),
 		CI: CIOptions{
 			Basepath: "/testground/src/github.com/" + name + "/",
 			Secret:   fmt.Sprintf("%x", md5.Sum([]byte(name+time.Now().String()))),

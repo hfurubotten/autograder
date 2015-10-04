@@ -45,6 +45,7 @@ func Put(bucket string, key string, value interface{}) (err error) {
 				return err
 			}
 			if b == nil {
+				//TODO Can this even happen?
 				return errors.New("couldn't create bucket: " + bucket)
 			}
 		}
@@ -52,19 +53,24 @@ func Put(bucket string, key string, value interface{}) (err error) {
 		// protect the database's consistency. And there is no lock to unlock.
 		// defer Unlock(bucket, key)
 
-		//TODO I wonder if there are simpler ways to marshal the value
-		buf := &bytes.Buffer{}
-		encoder := gob.NewEncoder(buf)
-		if err = encoder.Encode(value); err != nil {
-			return err
-		}
-		data, err := ioutil.ReadAll(buf)
-		if err != nil {
-			return err
-		}
-
+		data, err := GobEncode(value)
 		return b.Put([]byte(key), data)
 	})
+}
+
+// GobEncode encodes the val object into a []byte.
+func GobEncode(val interface{}) ([]byte, error) {
+	//TODO I wonder if there are simpler ways to marshal the value
+	buf := &bytes.Buffer{}
+	encoder := gob.NewEncoder(buf)
+	if err := encoder.Encode(val); err != nil {
+		return nil, err
+	}
+	data, err := ioutil.ReadAll(buf)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }
 
 // Get the value associated with the given key in the provided bucket.
@@ -83,13 +89,17 @@ func Get(bucket string, key string, val interface{}) (err error) {
 		if data == nil {
 			return errors.New("key '" + key + "' not found in bucket:" + bucket)
 		}
-
-		buf := &bytes.Buffer{}
-		decoder := gob.NewDecoder(buf)
-		// Write to buf will write all data and return err=nil
-		buf.Write(data)
-		return decoder.Decode(val)
+		return GobDecode(data, val)
 	})
+}
+
+// GobDecode decodes data into the object val.
+func GobDecode(data []byte, val interface{}) error {
+	buf := &bytes.Buffer{}
+	decoder := gob.NewDecoder(buf)
+	// Write to buf will write all data and return err=nil
+	buf.Write(data)
+	return decoder.Decode(val)
 }
 
 // Has returns true the key is present in the given bucket.

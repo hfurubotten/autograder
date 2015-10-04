@@ -2,6 +2,7 @@ package git
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 
 	"github.com/boltdb/bolt"
@@ -21,9 +22,15 @@ func init() {
 	database.RegisterBucket(CodeReviewBucketName)
 }
 
+type codeReviewID int
+
+func (id *codeReviewID) String() string {
+	return strconv.Itoa(int(*id))
+}
+
 // CodeReview represent a code review stored in autograder.
 type CodeReview struct {
-	ID    int
+	ID    codeReviewID
 	Title string
 	Ext   string
 	Desc  string
@@ -34,70 +41,71 @@ type CodeReview struct {
 	URL string
 }
 
-// NewCodeReview will create a new code review object.
-func NewCodeReview() (*CodeReview, error) {
-	nextid := GetNextCodeReviewID()
-	if nextid < 0 {
-		return nil, errors.New("Error occured while generating Build ID")
-	}
-
-	return &CodeReview{
-		ID: nextid,
-	}, nil
+func (cr *CodeReview) String() string {
+	return fmt.Sprintf(
+		"ID: %v, Title: %s, Ext: %s, Desc: %s, Code: %s, User: %s, URL: %s",
+		cr.ID, cr.Title, cr.Ext, cr.Desc, cr.Code, cr.User, cr.URL)
 }
 
-// GetCodeReview will get an already store code review from the database.
-func GetCodeReview(reviewid int) (*CodeReview, error) {
-	cr := &CodeReview{
-		ID: reviewid,
-	}
+// Equal returns true if cr equals other.
+func (cr *CodeReview) Equal(other *CodeReview) bool {
+	return cr.ID == other.ID &&
+		cr.Title == other.Title &&
+		cr.Ext == other.Ext &&
+		cr.Desc == other.Desc &&
+		cr.Code == other.Code &&
+		cr.User == other.User &&
+		cr.URL == other.URL
+}
 
-	if err := cr.loadStoredData(); err != nil {
+// NewCodeReview creates a new code review object.
+func NewCodeReview() (*CodeReview, error) {
+	nextid, err := nextCodeReviewID()
+	if err != nil {
 		return nil, err
 	}
+	return &CodeReview{ID: nextid}, nil
+}
 
+// GetCodeReview returns the code review for the given reviewID.
+func GetCodeReview(id codeReviewID) (*CodeReview, error) {
+	var cr *CodeReview
+	err := database.Get(CodeReviewBucketName, id.String(), &cr)
+	if err != nil {
+		return nil, err
+	}
 	return cr, nil
 }
 
-func (cr *CodeReview) loadStoredData() error {
-	return database.Get(CodeReviewBucketName, strconv.Itoa(cr.ID), cr)
-}
-
-// Save will store the code review to the database.
+// Save stores the code review to the database.
 func (cr *CodeReview) Save() error {
-	return database.Put(CodeReviewBucketName, strconv.Itoa(cr.ID), cr)
+	return database.Put(CodeReviewBucketName, cr.ID.String(), cr)
 }
 
-// GetNextCodeReviewID will find the next available CodeReview ID.
-func GetNextCodeReviewID() int {
-	nextid := -1
-	err := database.GetPureDB().Update(func(tx *bolt.Tx) error {
+// nextCodeReviewID will find the next available CodeReview ID.
+func nextCodeReviewID() (nextid codeReviewID, err error) {
+	err = database.GetPureDB().Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(CodeReviewBucketName))
 		if b == nil {
 			return errors.New("unknown bucket: " + CodeReviewBucketName)
 		}
 
-		var err error
+		var er error
 		data := b.Get([]byte(CodeReviewLengtKey))
-		if data == nil {
-			nextid = 0
-		} else {
-			nextid, err = strconv.Atoi(string(data))
-			if err != nil {
-				return err
+		if data != nil {
+			er = database.GobDecode(data, &nextid)
+			if er != nil {
+				return er
 			}
 		}
 
 		nextid++
-		data = []byte(strconv.Itoa(nextid))
-		err = b.Put([]byte(CodeReviewLengtKey), data)
-		if err != nil {
-			return err
+		data, er = database.GobEncode(nextid)
+		if er != nil {
+			return er
 		}
-		return nil
+		return b.Put([]byte(CodeReviewLengtKey), data)
 	})
-	if err != nil {
-		return -1
-	}
-	return nextid
+
+	return nextid, err
 }
