@@ -15,6 +15,7 @@ func TestMain(m *testing.M) {
 		return
 	}
 	m.Run()
+	//TODO The following not always run for some reason, e.g. panic??
 	err = database.Close()
 	if err != nil {
 		log.Println("Unable to close the database properly")
