@@ -1,8 +1,6 @@
 package database
 
 import (
-	"bytes"
-	"encoding/gob"
 	"os"
 	"testing"
 
@@ -11,6 +9,7 @@ import (
 
 var tmploc = "test.db"
 var tmpbucket = "test"
+var agentBucket = "agent"
 
 // TestStart test the start function in the database package.
 func TestStart(t *testing.T) {
@@ -22,9 +21,10 @@ func TestStart(t *testing.T) {
 	cleanUpDB()
 }
 
-// testStoreValues is the test values for the TestStore and TestGet functions.
-var testStoreValues = []struct {
-	key, value string
+// testStringValues has string values for the TestPutGet function.
+var testStringValues = []struct {
+	key   string
+	value interface{}
 }{
 	{"hei", "sann"},
 	{"key", "value"},
@@ -32,72 +32,83 @@ var testStoreValues = []struct {
 	{"square", "pants"},
 }
 
-// TestStore will test the store function in the database package.
-func TestStore(t *testing.T) {
-	err := Start(tmploc)
-	if err != nil {
-		t.Error("Got error while executing start function." + err.Error())
-	}
-
-	for _, v := range testStoreValues {
-		Store(tmpbucket, v.key, v.value)
-	}
-
-	err = db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(tmpbucket))
-		if b == nil {
-			t.Error("Couldn't open bucket: " + err.Error())
-			t.FailNow()
-		}
-
-		for _, v := range testStoreValues {
-			got := b.Get([]byte(v.key))
-
-			var buf bytes.Buffer
-			buf.Write(got)
-			enc := gob.NewDecoder(&buf)
-
-			var val string
-			err := enc.Decode(&val)
-			if err != nil {
-				t.Error(err.Error())
-			}
-
-			if val != v.value {
-				t.Errorf("Got %s want %s", val, v.value)
-			}
-		}
-		return nil
-	})
-
-	cleanUpBucket()
-	cleanUpDB()
-
-	return
+type agent struct {
+	Name    string
+	DoubleO int
 }
 
-// TestGet will test the get function in the database package.
-func TestGet(t *testing.T) {
+// testAgentValues has the agent object values for the TestPutGet function.
+var testAgentValues = []struct {
+	key   string
+	value agent
+}{
+	{"agent", agent{"James Bond", 7}},
+	{"mi", agent{"Ethan Hunt", 1}},
+}
+
+// TestPutGet will test the Put and Get functions.
+func TestPutGet(t *testing.T) {
 	err := Start(tmploc)
 	if err != nil {
 		t.Error("Got error while executing start function." + err.Error())
 	}
 
-	for _, v := range testStoreValues {
-		Store(tmpbucket, v.key, v.value)
-
+	for _, v := range testStringValues {
+		err = Put(tmpbucket, v.key, v.value)
+		if err != nil {
+			t.Error(err)
+		}
 		var got string
-		Get(tmpbucket, v.key, &got, true)
-
+		err = Get(tmpbucket, v.key, &got)
+		if err != nil {
+			t.Error(err)
+		}
 		if got != v.value {
-			t.Errorf("Got %s want %s", got, v.key)
+			t.Errorf("Got %s wanted %s", got, v.key)
+		}
+	}
+
+	for _, v := range testAgentValues {
+		err = Put(agentBucket, v.key, v.value)
+		if err != nil {
+			t.Error(err)
+		}
+		var got agent
+		err = Get(agentBucket, v.key, &got)
+		if err != nil {
+			t.Error(err)
+		}
+		if got.DoubleO != v.value.DoubleO || got.Name != v.value.Name {
+			t.Errorf("Got %v wanted %v", got, v.key)
 		}
 	}
 
 	cleanUpBucket()
 	cleanUpDB()
+}
 
-	return
+func TestHas(t *testing.T) {
+	err := Start(tmploc)
+	if err != nil {
+		t.Error("Got error while executing start function." + err.Error())
+	}
+
+	for _, v := range testStringValues {
+		err = Put(tmpbucket, v.key, v.value)
+		if err != nil {
+			t.Error(err)
+		}
+		if !Has(tmpbucket, v.key) {
+			t.Errorf("Key %s not found in bucket %s", v.key, tmpbucket)
+		}
+	}
+	// test also that it doesn't always return true
+	if Has(tmpbucket, "this key shouldn't be in there") {
+		t.Errorf("Key was unexpectedly found in bucket %s", tmpbucket)
+	}
+
+	cleanUpBucket()
+	cleanUpDB()
 }
 
 // TestClose will test the closing function of the database.

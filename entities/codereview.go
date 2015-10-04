@@ -1,7 +1,6 @@
 package git
 
 import (
-	"encoding/gob"
 	"errors"
 	"strconv"
 
@@ -16,7 +15,8 @@ var CodeReviewBucketName = "codereviews"
 var CodeReviewLengtKey = "length"
 
 func init() {
-	gob.Register(CodeReview{})
+	//TODO Is this necessary?
+	// gob.Register(CodeReview{})
 
 	database.RegisterBucket(CodeReviewBucketName)
 }
@@ -52,32 +52,29 @@ func GetCodeReview(reviewid int) (*CodeReview, error) {
 		ID: reviewid,
 	}
 
-	if err := cr.loadStoredData(false); err != nil {
+	if err := cr.loadStoredData(); err != nil {
 		return nil, err
 	}
 
 	return cr, nil
 }
 
-func (cr *CodeReview) loadStoredData(lock bool) error {
-	return database.Get(CodeReviewBucketName, strconv.Itoa(cr.ID), cr, true)
+func (cr *CodeReview) loadStoredData() error {
+	return database.Get(CodeReviewBucketName, strconv.Itoa(cr.ID), cr)
 }
 
 // Save will store the code review to the database.
 func (cr *CodeReview) Save() error {
-	return database.Store(CodeReviewBucketName, strconv.Itoa(cr.ID), cr)
+	return database.Put(CodeReviewBucketName, strconv.Itoa(cr.ID), cr)
 }
 
 // GetNextCodeReviewID will find the next available CodeReview ID.
 func GetNextCodeReviewID() int {
 	nextid := -1
-	if err := database.GetPureDB().Update(func(tx *bolt.Tx) error {
-		// open the bucket
+	err := database.GetPureDB().Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(CodeReviewBucketName))
-
-		// Checks if the bucket was opened, and creates a new one if not existing. Returns error on any other situation.
 		if b == nil {
-			return errors.New("Missing bucket")
+			return errors.New("unknown bucket: " + CodeReviewBucketName)
 		}
 
 		var err error
@@ -92,19 +89,15 @@ func GetNextCodeReviewID() int {
 		}
 
 		nextid++
-
 		data = []byte(strconv.Itoa(nextid))
-
 		err = b.Put([]byte(CodeReviewLengtKey), data)
 		if err != nil {
 			return err
 		}
-
 		return nil
-
-	}); err != nil {
+	})
+	if err != nil {
 		return -1
 	}
-
 	return nextid
 }

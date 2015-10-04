@@ -5,7 +5,6 @@ import (
 	"encoding/gob"
 	"errors"
 	"io/ioutil"
-	"strconv"
 	"sync"
 
 	"github.com/boltdb/bolt"
@@ -14,7 +13,8 @@ import (
 var db *bolt.DB
 var registeredBucketNames = make([]string, 0)
 
-// Start will start up the database. If the database does not already exist, a new one will be created.
+// Start will start the database using the provided dbloc file.
+// If the database does not exist, a new database will be created.
 func Start(dbloc string) (err error) {
 	db, err = bolt.Open(dbloc, 0666, nil)
 	if err != nil {
@@ -32,37 +32,32 @@ func Start(dbloc string) (err error) {
 	})
 }
 
-// Store will put a new value in the assigned bucket(e.g. table) with given key.
-//
-// Key variable can be integer or string type.
-// Value variable can be any type.
-func Store(bucket string, key string, value interface{}) (err error) {
+// Put associates the given key and value in the provided bucket.
+// The value can be any type.
+func Put(bucket string, key string, value interface{}) (err error) {
 	return db.Update(func(tx *bolt.Tx) (err error) {
 		// open the bucket
 		b := tx.Bucket([]byte(bucket))
-
-		// Checks if the bucket was opened, and creates a new one if not existing. Returns error on any other situation.
 		if b == nil {
-			// Create a bucket.
+			// if bucket didn't exist, create the bucket.
 			b, err = tx.CreateBucket([]byte(bucket))
 			if err != nil {
 				return err
 			}
-
 			if b == nil {
-				return errors.New("Couldn't create bucket.")
+				return errors.New("couldn't create bucket: " + bucket)
 			}
 		}
+		//TODO Why an unlock here?; it is in a Update() context, and bolt will
+		// protect the database's consistency. And there is no lock to unlock.
+		// defer Unlock(bucket, key)
 
-		defer Unlock(bucket, key)
-
+		//TODO I wonder if there are simpler ways to marshal the value
 		buf := &bytes.Buffer{}
 		encoder := gob.NewEncoder(buf)
-
 		if err = encoder.Encode(value); err != nil {
-			return
+			return err
 		}
-
 		data, err := ioutil.ReadAll(buf)
 		if err != nil {
 			return err
@@ -72,66 +67,51 @@ func Store(bucket string, key string, value interface{}) (err error) {
 	})
 }
 
-// Get will get a value for the given key in a bucket(e.g. table).
-func Get(bucket string, key string, val interface{}, readonly bool) (err error) {
+// Get the value associated with the given key in the provided bucket.
+// The provided value must be an address.
+func Get(bucket string, key string, val interface{}) (err error) {
 	return db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(bucket))
 		if b == nil {
-			return errors.New("Trying to access a nonexisting bucket.")
+			return errors.New("unknown bucket: " + bucket)
 		}
-
-		if !readonly {
-			Lock(bucket, key)
-		}
+		//TODO We should never lock without releasing the lock in the same function.
+		//TODO Why do we need a lock?
+		// 	Lock(bucket, key)
 
 		data := b.Get([]byte(key))
 		if data == nil {
-			return errors.New("No data in database.")
+			return errors.New("key '" + key + "' not found in bucket:" + bucket)
 		}
 
 		buf := &bytes.Buffer{}
 		decoder := gob.NewDecoder(buf)
-
-		n, _ := buf.Write(data)
-
-		if n != len(data) {
-			return errors.New("Couldn't write all data to buffer while getting data from database. " + strconv.Itoa(n) + " != " + strconv.Itoa(len(data)))
-		}
-
+		// Write to buf will write all data and return err=nil
+		buf.Write(data)
 		return decoder.Decode(val)
 	})
 }
 
-// Has will check if the key is pressent in the database.
+// Has returns true the key is present in the given bucket.
 func Has(bucket, key string) bool {
 	found := false
-
-	err := db.View(func(tx *bolt.Tx) error {
+	db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(bucket))
 		if b == nil {
-			return errors.New("Unknown bucket")
+			return errors.New("unknown bucket: " + bucket)
 		}
-		c := b.Cursor()
-
-		for k, _ := c.First(); k != nil; k, _ = c.Next() {
-			if key == string(k) {
-				found = true
-				break
-			}
+		data := b.Get([]byte(key))
+		if data != nil {
+			found = true
 		}
-
 		return nil
 	})
-
-	if err != nil {
-		return false
-	}
-
+	// if an error was returned, found will still be false
 	return found
 }
 
-// Remove will delete a key in specified bucket.
-func Remove(bucket, key string) (err error) {
+// Remove will delete the given key in specified bucket.
+func Remove(bucket, key string) error {
 	return db.Update(func(tx *bolt.Tx) error {
 		return tx.Bucket([]byte(bucket)).Delete([]byte(key))
 	})
@@ -151,7 +131,7 @@ func RegisterBucket(bucket string) (err error) {
 	})
 }
 
-// GetPureDB Returns the pure connection to the database. Can be used with more
+// GetPureDB returns the pure connection to the database. Can be used with more
 // advanced DB interaction.
 func GetPureDB() *bolt.DB {
 	if db == nil {
@@ -165,6 +145,7 @@ func Close() (err error) {
 	return db.Close()
 }
 
+//TODO This lock functionality is doing what exactly? REMOVE IT
 var writerslock sync.Mutex
 var writerkeys = make(map[string]map[string]valueLocker)
 
@@ -174,7 +155,7 @@ type valueLocker struct {
 }
 
 // Lock will lock a specified key in a bucket for further use.
-func Lock(bucket string, key string) {
+func xLock(bucket string, key string) {
 	writerslock.Lock()
 	defer writerslock.Unlock()
 
@@ -194,7 +175,7 @@ func Lock(bucket string, key string) {
 
 // Unlock will unlock a specified key in a bucket and make it usable for other
 // tasks running.
-func Unlock(bucket string, key string) {
+func xUnlock(bucket string, key string) {
 	writerslock.Lock()
 	defer writerslock.Unlock()
 

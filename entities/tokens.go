@@ -33,15 +33,14 @@ func (t *Token) HasTokenInStore() bool {
 // GetUsernameFromTokenInStore gets the username associated with the token.
 func (t *Token) GetUsernameFromTokenInStore() (user string, err error) {
 	hash := sha256.Sum256([]byte(t.accessToken))
-	err = database.Get(TokenBucketName, fmt.Sprintf("%x", hash), &user, true)
-
+	err = database.Get(TokenBucketName, fmt.Sprintf("%x", hash), &user)
 	return user, err
 }
 
 // SetUsernameToTokenInStore sets the username associated with the token.
 func (t *Token) SetUsernameToTokenInStore(username string) (err error) {
 	hash := sha256.Sum256([]byte(t.accessToken))
-	err = database.Store(TokenBucketName, fmt.Sprintf("%x", hash), username)
+	err = database.Put(TokenBucketName, fmt.Sprintf("%x", hash), username)
 	return
 }
 
