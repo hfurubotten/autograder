@@ -87,7 +87,7 @@ func Get(bucket string, key string, val interface{}) (err error) {
 
 		data := b.Get([]byte(key))
 		if data == nil {
-			return errors.New("key '" + key + "' not found in bucket:" + bucket)
+			return errors.New("key '" + key + "' not found in bucket: " + bucket)
 		}
 		return GobDecode(data, val)
 	})

@@ -48,6 +48,30 @@ func TestNewBuildResult(t *testing.T) {
 	}
 }
 
+func TestConcurrentNewBuildResult(t *testing.T) {
+	first, err := NewBuildResult()
+	if err != nil {
+		t.Error(err)
+	}
+	for i := first.ID + 1; i <= iter; i++ {
+		go func() {
+			build, err := NewBuildResult()
+			if err != nil {
+				t.Error("Error creating a new build result object:", err)
+			}
+			if build.ID != i {
+				t.Errorf("Error generating build ID. Got %d, wanted %d.", build.ID, i)
+			}
+			if build.TestScores == nil {
+				t.Error("Field TestScores cannot be nil")
+			}
+			if build.Log == nil {
+				t.Error("Field Log cannot be nil")
+			}
+		}()
+	}
+}
+
 var testGetAndSaveBuildResultInput = []*BuildResult{
 	&BuildResult{
 		ID:        1,
@@ -115,13 +139,14 @@ var testGetAndSaveBuildResultInput = []*BuildResult{
 func TestGetAndSaveBuildResult(t *testing.T) {
 	for _, br := range testGetAndSaveBuildResultInput {
 		if err := br.Save(); err != nil {
-			t.Error("Failed to save the build result:", err)
+			t.Error("Failed to save build result: ", err)
 			continue
 		}
 
 		br2, err := GetBuildResult(br.ID)
 		if err != nil {
-			t.Error("Failed to get a build result from DB:", err)
+			t.Error("Failed to get a build result from DB: ", err)
+			continue
 		}
 		compareBuildResults(br, br2, t)
 	}
