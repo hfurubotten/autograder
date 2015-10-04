@@ -196,7 +196,7 @@ func TestGetTotalLeadBoard(t *testing.T) {
 
 	for i, s := range tl {
 		if s != leaderboardOutTest[i] {
-			t.Errorf("Got %s on place %s on total leadboard, want %s.", s, i, leaderboardOutTest[i])
+			t.Errorf("Got %s on place %d on total leadboard, want %s.", s, i, leaderboardOutTest[i])
 		}
 	}
 }
@@ -213,7 +213,7 @@ func TestGetMonthlyLeadBoard(t *testing.T) {
 
 	for i, s := range tl {
 		if s != leaderboardOutTest[i] {
-			t.Errorf("Got %s on place %s on total leadboard, want %s.", s, i, leaderboardOutTest[i])
+			t.Errorf("Got %s on place %d on total leadboard, want %s.", s, i, leaderboardOutTest[i])
 		}
 	}
 }
@@ -230,7 +230,7 @@ func TestGetWeeklyLeadBoard(t *testing.T) {
 
 	for i, s := range tl {
 		if s != leaderboardOutTest[i] {
-			t.Errorf("Got %s on place %s on total leadboard, want %s.", s, i, leaderboardOutTest[i])
+			t.Errorf("Got %s on place %d on total leadboard, want %s.", s, i, leaderboardOutTest[i])
 		}
 	}
 }

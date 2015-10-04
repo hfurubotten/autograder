@@ -32,7 +32,7 @@ func TestNewCourseOptions(t *testing.T) {
 		}
 
 		if opt.IsGroupMember {
-			t.Errorf("NewCourseOptions created struct with IsGroupMember as %b, want false.", opt.IsGroupMember)
+			t.Errorf("NewCourseOptions created struct with IsGroupMember as %t, want false.", opt.IsGroupMember)
 		}
 	}
 }

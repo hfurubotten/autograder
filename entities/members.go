@@ -491,12 +491,12 @@ func (m *Member) RemoveAssistingOrganization(org *Organization) (err error) {
 }
 
 // GetToken returns the users github token.
-func (m Member) GetToken() (token string) {
+func (m *Member) GetToken() (token string) {
 	return m.accessToken.GetToken()
 }
 
 // String will stringify the member.
-func (m Member) String() string {
+func (m *Member) String() string {
 	return fmt.Sprintf("Student: %s %s, Student ID: %d, Github: %s", m.Name, m.Email, m.StudentID, m.Username)
 }
 
@@ -510,6 +510,7 @@ func ListAllMembers() (out []*Member) {
 		if b == nil {
 			return errors.New("Unable to find bucket")
 		}
+		//TODO Why not use the ForEach() function?
 		c := b.Cursor()
 
 		for k, _ := c.First(); k != nil; k, _ = c.Next() {

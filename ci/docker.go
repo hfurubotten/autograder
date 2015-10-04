@@ -209,6 +209,4 @@ func (v *Virtual) ExecuteCommand(commands string, stdin io.Reader, stdout, stder
 		if err != nil {
 			return
 		}*/
-
-	return
 }

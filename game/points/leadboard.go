@@ -5,8 +5,9 @@ import (
 	"time"
 )
 
+// Leaderboard keeps track of leaders.
 type Leaderboard struct {
-	scorelock sync.RWMutex
+	*sync.RWMutex
 
 	// Scores. Holds up to 1 year with information.
 	TotalScore   map[string]int64
@@ -38,11 +39,11 @@ func (l *Leaderboard) checkIntegrity() {
 	}
 }
 
-// IncScore will increment the score a user has earned.
+// IncScoreBy will increment the score a user has earned.
 // This also updates the weekly and montly scores.
 func (l *Leaderboard) IncScoreBy(user string, score int) {
-	l.scorelock.Lock()
-	defer l.scorelock.Unlock()
+	l.Lock()
+	defer l.Unlock()
 
 	l.checkIntegrity()
 
@@ -81,7 +82,7 @@ func (l *Leaderboard) IncScoreBy(user string, score int) {
 	l.updateCurrentLeaderboard(week, month)
 }
 
-// DecScore will decrement the score a user has earned.
+// DecScoreBy will decrement the score a user has earned.
 // This will also update the weekly and monthly scores.
 func (l *Leaderboard) DecScoreBy(user string, score int) {
 	// the negative of adding a score.
