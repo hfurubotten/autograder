@@ -1,6 +1,7 @@
 package points
 
 import (
+	"sync"
 	"testing"
 	"time"
 )
@@ -66,7 +67,7 @@ var decScoreByTest = []struct {
 }
 
 func TestIncDecScoreBy(t *testing.T) {
-	lb := Leaderboard{}
+	lb := Leaderboard{scorelock: &sync.RWMutex{}}
 
 	_, week := time.Now().ISOWeek()
 	month := time.Now().Month()
@@ -110,7 +111,7 @@ var getUnknownUserTest = []string{
 }
 
 func TestGetUserScores(t *testing.T) {
-	lb := Leaderboard{}
+	lb := Leaderboard{scorelock: &sync.RWMutex{}}
 	_, week := time.Now().ISOWeek()
 	month := time.Now().Month()
 
@@ -186,7 +187,7 @@ var leaderboardOutTest = []string{
 }
 
 func TestGetTotalLeadBoard(t *testing.T) {
-	lb := Leaderboard{}
+	lb := Leaderboard{scorelock: &sync.RWMutex{}}
 
 	for _, in := range leaderboardInTest {
 		lb.IncScoreBy(in.user, in.score)
@@ -202,7 +203,7 @@ func TestGetTotalLeadBoard(t *testing.T) {
 }
 
 func TestGetMonthlyLeadBoard(t *testing.T) {
-	lb := Leaderboard{}
+	lb := Leaderboard{scorelock: &sync.RWMutex{}}
 	month := time.Now().Month()
 
 	for _, in := range leaderboardInTest {
@@ -219,7 +220,7 @@ func TestGetMonthlyLeadBoard(t *testing.T) {
 }
 
 func TestGetWeeklyLeadBoard(t *testing.T) {
-	lb := Leaderboard{}
+	lb := Leaderboard{scorelock: &sync.RWMutex{}}
 	_, week := time.Now().ISOWeek()
 
 	for _, in := range leaderboardInTest {

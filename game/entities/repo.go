@@ -20,6 +20,7 @@ const (
 )
 
 type Repo struct {
+	//TODO Must be initialized properly
 	points.Leaderboard
 	lock sync.Mutex
 

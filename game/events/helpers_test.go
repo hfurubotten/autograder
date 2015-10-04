@@ -24,16 +24,16 @@ func TestDistributeScores(t *testing.T) {
 	var ok bool
 
 	repo, err := entities.NewRepo("testorg", "testrepo")
-        if err != nil {
-                t.Error("Failed to open new repo:", err)
-                return
-        }
-        org, err := entities.NewOrganization("testorg")
-        if err != nil {
-                t.Error("Failed to open new org:", err)
-                return
-        }
-	
+	if err != nil {
+		t.Error("Failed to open new repo:", err)
+		return
+	}
+	org, err := entities.NewOrganization("testorg")
+	if err != nil {
+		t.Error("Failed to open new org:", err)
+		return
+	}
+
 	for _, dst := range distributeScoresTest {
 		if user, ok = userList[dst.inUser]; !ok {
 			user, err = entities.NewUser(dst.inUser)
