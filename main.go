@@ -7,10 +7,13 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"time"
 
 	"github.com/hfurubotten/autograder/config"
 	"github.com/hfurubotten/autograder/database"
 	git "github.com/hfurubotten/autograder/entities"
+	"github.com/hfurubotten/autograder/logging"
+	"github.com/hfurubotten/autograder/maintenance"
 	"github.com/hfurubotten/autograder/web"
 )
 
@@ -87,6 +90,10 @@ func main() {
 
 	conf.ExportToGlobalVars()
 
+	// starts up logging
+	logging.Start()
+	defer logging.Stop()
+
 	// saves configurations
 	if err := conf.Save(); err != nil {
 		log.Fatal(err)
@@ -118,14 +125,17 @@ func main() {
 	// TODO: install on supported systems
 	// TODO: give notice for those systems not supported
 
-	// log print appearance
-	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
-
 	// starts up the webserver
 	log.Println("Server starting")
 
 	server := web.NewServer(80)
 	server.Start()
+
+	// start up the maintenance ticking
+	now := time.Now()
+	midnight := time.Date(now.Year(), now.Month(), now.Day()+1, 0, 1, 1, 1, now.Location())
+	maintenance.Start(24*time.Hour, midnight.Sub(now))
+	defer maintenance.Stop()
 
 	// Prevent main from returning immediately. Wait for interrupt.
 	signalChan := make(chan os.Signal, 1)
