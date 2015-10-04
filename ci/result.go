@@ -8,15 +8,6 @@ import (
 	"github.com/hfurubotten/autograder/database"
 )
 
-func init() {
-	// gob.Register(BuildResult{})
-	//
-	database.RegisterBucket(BuildBucketName)
-}
-
-// BuildBucketName is the bucket/table name used in the database.
-var BuildBucketName = "buildresults"
-
 // BuildResult represent a result from a test build.
 type BuildResult struct {
 	ID     int
@@ -47,9 +38,15 @@ type BuildResult struct {
 	Contributions map[string]int
 }
 
+var buildBucketName = "buildresults"
+
+func init() {
+	database.RegisterBucket(buildBucketName)
+}
+
 // NewBuildResult will create a new build result object.
 func NewBuildResult() (*BuildResult, error) {
-	nextid, err := database.NextID(BuildBucketName)
+	nextid, err := database.NextID(buildBucketName)
 	if err != nil {
 		return nil, err
 	}
@@ -60,15 +57,15 @@ func NewBuildResult() (*BuildResult, error) {
 	}, nil
 }
 
-// GetBuildResult will find a build result on its ID.
+// GetBuildResult returns the build result for the provided buildID.
 func GetBuildResult(buildID int) (br *BuildResult, err error) {
 	key := strconv.Itoa(buildID)
-	err = database.Get(BuildBucketName, key, &br)
+	err = database.Get(buildBucketName, key, &br)
 	return br, err
 }
 
 // Save stores the build results in the database.
 func (br *BuildResult) Save() error {
 	key := strconv.Itoa(br.ID)
-	return database.Put(BuildBucketName, key, br)
+	return database.Put(buildBucketName, key, br)
 }
