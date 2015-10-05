@@ -15,14 +15,14 @@ var (
 	cmdlock  sync.Mutex
 )
 
-// Virtual represents a virtual docker enviorment where commands can be executed.
+// Virtual encapsulates a docker environment where commands can be executed.
 type Virtual struct {
 	Client    *docker.Client
 	Imagename string
 	Container *docker.Container
 }
 
-// NewVirtual will give a new Virtual object.
+// NewVirtual returns a new Virtual object.
 func NewVirtual() (v Virtual, err error) {
 	c, err := docker.NewClient(endpoint)
 	if err != nil {
@@ -57,11 +57,7 @@ func (v *Virtual) NewContainer(imagename string) (err error) {
 	}
 
 	v.Container, err = v.Client.CreateContainer(contopt)
-	if err != nil {
-		return
-	}
-
-	return
+	return err
 }
 
 // KillContainer will kill a running container.
@@ -73,12 +69,7 @@ func (v *Virtual) KillContainer() (err error) {
 	killopt := docker.KillContainerOptions{
 		ID: v.Container.ID,
 	}
-	err = v.Client.KillContainer(killopt)
-	if err != nil {
-		return
-	}
-
-	return
+	return v.Client.KillContainer(killopt)
 }
 
 // RemoveContainer will force a removal of a container in the docker system.
@@ -92,7 +83,6 @@ func (v *Virtual) RemoveContainer() (err error) {
 		RemoveVolumes: true,
 		Force:         true,
 	}
-
 	err = v.Client.RemoveContainer(rmopt)
 	if err != nil {
 		return
@@ -102,10 +92,11 @@ func (v *Virtual) RemoveContainer() (err error) {
 	return
 }
 
+//TODO this function is never used in autograder.
 // AttachToContainer will attach given readers and writers to streams from a running docker container.
-func (v *Virtual) AttachToContainer(stdin io.Reader, stdout io.Writer, stderr io.Writer) (err error) {
+func (v *Virtual) xAttachToContainer(stdin io.Reader, stdout, stderr io.Writer) (err error) {
 	if v.Container == nil {
-		return errors.New("Does not have any container started up yet.")
+		return errors.New("container is not running yet")
 	}
 
 	attopt := docker.AttachToContainerOptions{
@@ -138,20 +129,19 @@ func (v *Virtual) AttachToContainer(stdin io.Reader, stdout io.Writer, stderr io
 	return
 }
 
-// ExecuteCommand will execute a command in a running docker container.
-func (v *Virtual) ExecuteCommand(commands string, stdin io.Reader, stdout, stderr io.Writer) (err error) {
+// Execute the given command in a running docker container.
+func (v *Virtual) Execute(command string, stdin io.Reader, stdout, stderr io.Writer) error {
 	cmdlock.Lock()
 	defer cmdlock.Unlock()
 	if v.Container == nil {
-		return errors.New("Does not have any container started up yet.")
+		return errors.New("container is not running yet")
 	}
-
-	err = v.Client.StartContainer(v.Container.ID, &docker.HostConfig{})
+	err := v.Client.StartContainer(v.Container.ID, &docker.HostConfig{})
 	if _, ok := err.(*docker.ContainerAlreadyRunning); err != nil && !ok {
-		return
+		return err
 	}
 
-	cmd := exec.Command("/bin/bash", "-c", "docker exec "+v.Container.ID+" "+commands+"")
+	cmd := exec.Command("/bin/bash", "-c", "docker exec "+v.Container.ID+" "+command+"")
 
 	cmd.Stdin = stdin
 	cmd.Stdout = stdout
@@ -159,7 +149,7 @@ func (v *Virtual) ExecuteCommand(commands string, stdin io.Reader, stdout, stder
 
 	err = cmd.Start()
 	if err != nil {
-		return
+		return err
 	}
 
 	done := make(chan error, 1)
@@ -175,7 +165,7 @@ func (v *Virtual) ExecuteCommand(commands string, stdin io.Reader, stdout, stder
 		<-done // allow goroutine to exit
 		return errors.New("Process killed on timeout after 5 min.")
 	case err = <-done:
-		return
+		return err
 	}
 
 	/*

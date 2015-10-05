@@ -32,6 +32,7 @@ type DaemonOptions struct {
 }
 
 // StartTesterDaemon will start a new test build in the background.
+//TODO this functions is too long. needs to be split into shorter functions.
 func StartTesterDaemon(opt DaemonOptions) {
 	// safeguard
 	defer func() {
@@ -112,6 +113,7 @@ func StartTesterDaemon(opt DaemonOptions) {
 
 	r.BuildTime = time.Since(starttime)
 
+	//TODO factor this out somewhere else
 	// parsing the results
 	SimpleParsing(r)
 	if len(r.TestScores) > 0 {
@@ -192,11 +194,10 @@ func StartTesterDaemon(opt DaemonOptions) {
 }
 
 // CalculateTestScore uses a array of Score objects to calculate a total score between 0 and 100.
+//TODO This does not belong in ci; it should be in autograde/kit/score??
 func CalculateTestScore(s []score.Score) (total int) {
 	totalWeight := float32(0)
-	var weight []float32
-	var score []float32
-	var max []float32
+	var max, score, weight []float32
 	for _, ts := range s {
 		totalWeight += float32(ts.Weight)
 		weight = append(weight, float32(ts.Weight))
@@ -229,23 +230,24 @@ func SimpleParsing(r *BuildResult) {
 	log.Println("Found ", r.NumPasses, " passed tests.")
 }
 
-func execute(v *Virtual, cmd string, l *BuildResult, opt DaemonOptions) (err error) {
-
+func execute(v *Virtual, cmd string, l *BuildResult, opt DaemonOptions) error {
 	buf := bytes.NewBuffer(make([]byte, 0))
 	bufw := bufio.NewWriter(buf)
 
+	//TODO fmt?
 	fmt.Println("$", cmd)
 
-	err = v.ExecuteCommand(cmd, nil, bufw, bufw)
+	err := v.Execute(cmd, nil, bufw, bufw)
+	if err != nil {
+		return err
+	}
 
 	s := bufio.NewScanner(buf)
-
 	for s.Scan() {
 		text := s.Text()
 		logOutput(text, l, opt)
 	}
-
-	return
+	return nil
 }
 
 func logOutput(s string, l *BuildResult, opt DaemonOptions) {
