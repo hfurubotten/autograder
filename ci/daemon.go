@@ -6,9 +6,7 @@ import (
 	// "errors"
 	"fmt"
 	"log"
-	"time"
 
-	"github.com/autograde/kit/score"
 	git "github.com/hfurubotten/autograder/entities"
 )
 
@@ -37,9 +35,6 @@ func StartTesterDaemon(opt DaemonOptions) {
 			log.Println("Recovered from panic: ", r)
 		}
 	}()
-
-	startMsg := fmt.Sprintf("Running tests for: %s/%s", opt.Org, opt.Repo)
-	log.Println(startMsg)
 
 	// Test execution
 	env, err := NewVirtual()
@@ -77,21 +72,15 @@ func StartTesterDaemon(opt DaemonOptions) {
 		{"/bin/sh -c \"(cd \"" + opt.BaseFolder + opt.DestFolder + "/" + opt.LabFolder + "/\" && ./test.sh)\"", false},
 	}
 
-	r, err := NewBuildResult()
+	r, err := NewBuildResult(opt)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
+	startMsg := fmt.Sprintf("Running tests for: %s/%s", opt.Org, opt.Repo)
+	log.Println(startMsg)
 	r.Add(startMsg, opt)
-	r.Course = opt.Org
-	r.Timestamp = time.Now()
-	r.PushTime = time.Now()
-	r.User = opt.User
-	r.Status = "Active lab assignment"
-	r.Labnum = opt.LabNumber
-
-	starttime := time.Now()
 
 	// executes build commands
 	for _, cmd := range cmds {
@@ -105,23 +94,7 @@ func StartTesterDaemon(opt DaemonOptions) {
 			}
 		}
 	}
-
-	r.BuildTime = time.Since(starttime)
-
-	//TODO factor this out somewhere else: ResultBuilder??
-	// parsing the results
-	// SimpleParsing(r)
-	if len(r.TestScores) > 0 {
-		r.TotalScore = score.Total(r.TestScores)
-	} else {
-		if r.NumPasses+r.NumFails != 0 {
-			r.TotalScore = int((float64(r.NumPasses) / float64(r.NumPasses+r.NumFails)) * 100.0)
-		}
-	}
-
-	if r.numBuildFailure > 0 {
-		r.TotalScore = 0
-	}
+	r.Done()
 
 	defer func() {
 		// saves the build results

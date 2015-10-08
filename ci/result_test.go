@@ -29,12 +29,13 @@ func TestMain(m *testing.M) {
 var iter = 100
 
 func TestNewBuildResult(t *testing.T) {
-	first, err := NewBuildResult()
+	opt := DaemonOptions{}
+	first, err := NewBuildResult(opt)
 	if err != nil {
 		t.Error(err)
 	}
 	for i := first.ID + 1; i <= iter; i++ {
-		build, err := NewBuildResult()
+		build, err := NewBuildResult(opt)
 		if err != nil {
 			t.Error("Error creating a new build result object:", err)
 		}
@@ -51,13 +52,14 @@ func TestNewBuildResult(t *testing.T) {
 }
 
 func TestConcurrentNewBuildResult(t *testing.T) {
-	first, err := NewBuildResult()
+	opt := DaemonOptions{}
+	first, err := NewBuildResult(opt)
 	if err != nil {
 		t.Error(err)
 	}
 	for i := first.ID + 1; i <= iter; i++ {
 		go func() {
-			build, err := NewBuildResult()
+			build, err := NewBuildResult(opt)
 			if err != nil {
 				t.Error("Error creating a new build result object:", err)
 			}

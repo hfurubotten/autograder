@@ -27,8 +27,9 @@ type BuildResult struct {
 	Status          string
 	Labnum          int
 
-	Timestamp time.Time
+	Timestamp time.Time //TODO This is never used elsewhere. What is it meant to represent?
 	PushTime  time.Time
+	BuildTime time.Duration
 
 	TestScores []*score.Score
 	TotalScore int
@@ -37,8 +38,6 @@ type BuildResult struct {
 	HeadCommitText string
 	CommitIDs      []string
 	CommitTexts    []string
-
-	BuildTime time.Duration
 
 	Contributions map[string]int
 }
@@ -50,16 +49,39 @@ func init() {
 }
 
 // NewBuildResult will create a new build result object.
-func NewBuildResult() (*BuildResult, error) {
+func NewBuildResult(opt DaemonOptions) (*BuildResult, error) {
 	nextid, err := database.NextID(buildBucketName)
 	if err != nil {
 		return nil, err
 	}
+	startTime := time.Now()
 	return &BuildResult{
 		ID:         int(nextid),
+		Course:     opt.Org,
+		User:       opt.User,
+		Status:     "Active lab assignment",
+		Labnum:     opt.LabNumber,
+		Timestamp:  startTime,
+		PushTime:   startTime,
 		TestScores: make([]*score.Score, 0),
 		log:        make([]string, 0),
 	}, nil
+}
+
+// Done records the build time and computes the test score.
+func (br *BuildResult) Done() {
+	br.BuildTime = time.Since(br.PushTime)
+
+	if len(br.TestScores) > 0 {
+		br.TotalScore = score.Total(br.TestScores)
+	} else {
+		if br.NumPasses+br.NumFails != 0 {
+			br.TotalScore = int((float64(br.NumPasses) / float64(br.NumPasses+br.NumFails)) * 100.0)
+		}
+	}
+	if br.numBuildFailure > 0 {
+		br.TotalScore = 0
+	}
 }
 
 // GetBuildResult returns the build result for the provided buildID.
