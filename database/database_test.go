@@ -17,7 +17,7 @@ func TestStart(t *testing.T) {
 	if err != nil {
 		t.Error("Got error while executing start function. " + err.Error())
 	}
-	cleanUpDB()
+	removeDB()
 }
 
 // testStringValues has string values for the TestPutGet function.
@@ -83,7 +83,7 @@ func TestPutGet(t *testing.T) {
 	}
 
 	cleanUpBucket()
-	cleanUpDB()
+	removeDB()
 }
 
 // BenchmarkPutGetString will benchmark the Put and Get functions.
@@ -98,7 +98,7 @@ func BenchmarkPutGetString(b *testing.B) {
 			Get(tmpbucket, v.key, &got)
 		}
 	}
-	cleanUpDB()
+	removeDB()
 }
 
 // BenchmarkPutGetObject will benchmark the Put and Get functions.
@@ -113,7 +113,7 @@ func BenchmarkPutGetObject(b *testing.B) {
 			Get(agentBucket, v.key, &got)
 		}
 	}
-	cleanUpDB()
+	removeDB()
 }
 
 func TestHas(t *testing.T) {
@@ -137,7 +137,7 @@ func TestHas(t *testing.T) {
 	}
 
 	cleanUpBucket()
-	cleanUpDB()
+	removeDB()
 }
 
 // TestClose will test the closing function of the database.
@@ -158,7 +158,7 @@ func TestClose(t *testing.T) {
 		t.Error("Database still open after close is called.")
 	}
 
-	cleanUpDB()
+	removeDB()
 }
 
 // cleanUpBucket will remove the test bucket from the database.
@@ -171,7 +171,7 @@ func cleanUpBucket() {
 }
 
 // cleanUpDB will close and remove the database.
-func cleanUpDB() {
+func removeDB() {
 	db.Close()
 	if err := os.Remove(tmploc); err != nil {
 		panic("Couldn't remove database." + err.Error())
