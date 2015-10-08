@@ -131,7 +131,7 @@ func BenchmarkPutGetDiffKey(b *testing.B) {
 	removeDB()
 }
 
-// BenchmarkPutKey will benchmark the Put and Get functions.
+// BenchmarkPutKey will benchmark the Put function.
 func BenchmarkPutKey(b *testing.B) {
 	// we ignore errors in this benchmark test
 	Start(tmploc)
@@ -143,7 +143,7 @@ func BenchmarkPutKey(b *testing.B) {
 	removeDB()
 }
 
-// BenchmarkGetKey will benchmark the Put and Get functions.
+// BenchmarkGetKey will benchmark the Get function.
 func BenchmarkGetKey(b *testing.B) {
 	// we ignore errors in this benchmark test
 	Start(tmploc)
