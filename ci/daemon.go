@@ -10,20 +10,24 @@ import (
 	git "github.com/hfurubotten/autograder/entities"
 )
 
+//TODO Rename: DaemonOptions -> TestParameters
+
 // DaemonOptions represent the options needed to start the testing daemon.
 type DaemonOptions struct {
 	Org   string
 	User  string
-	Group int
+	Group int // TODO should use string (group name) instead.
 
 	Repo       string
 	BaseFolder string
 	LabFolder  string
 	LabNumber  int
-	AdminToken string
 	DestFolder string
-	Secret     string
 	IsPush     bool
+
+	// secret stuff (TODO move out to avoid saving to DB?)
+	AdminToken string
+	Secret     string
 }
 
 // StartTesterDaemon will start a new test build in the background.
@@ -50,28 +54,6 @@ func StartTesterDaemon(opt DaemonOptions) {
 	// cleanup
 	defer env.RemoveContainer()
 
-	// mkdir /testground/github.com/
-	// git clone user-labs
-	// git clone test-labs
-	// cp test-labs user-labs
-	// /bin/sh dependecies.sh
-	// /bin/sh test.sh
-
-	cmds := []struct {
-		Cmd       string
-		Breakable bool
-	}{
-		{"mkdir -p " + opt.BaseFolder, true},
-		{"git clone https://" + opt.AdminToken + ":x-oauth-basic@github.com/" + opt.Org + "/" + opt.Repo + ".git" + " " + opt.BaseFolder + opt.DestFolder + "/", true},
-		{"git clone https://" + opt.AdminToken + ":x-oauth-basic@github.com/" + opt.Org + "/" + git.TestRepoName + ".git" + " " + opt.BaseFolder + git.TestRepoName + "/", true},
-		{"/bin/bash -c \"cp -rf \"" + opt.BaseFolder + git.TestRepoName + "/*\" \"" + opt.BaseFolder + opt.DestFolder + "/\" \"", true},
-
-		{"chmod 777 " + opt.BaseFolder + opt.DestFolder + "/dependencies.sh", true},
-		{"/bin/sh -c \"(cd \"" + opt.BaseFolder + opt.DestFolder + "/\" && ./dependencies.sh)\"", true},
-		{"chmod 777 " + opt.BaseFolder + opt.DestFolder + "/" + opt.LabFolder + "/test.sh", true},
-		{"/bin/sh -c \"(cd \"" + opt.BaseFolder + opt.DestFolder + "/" + opt.LabFolder + "/\" && ./test.sh)\"", false},
-	}
-
 	r, err := NewBuildResult(opt)
 	if err != nil {
 		log.Println(err)
@@ -82,18 +64,7 @@ func StartTesterDaemon(opt DaemonOptions) {
 	log.Println(startMsg)
 	r.Add(startMsg, opt)
 
-	// executes build commands
-	for _, cmd := range cmds {
-		err = execute(&env, cmd.Cmd, r, opt)
-		if err != nil {
-			r.Add(err.Error(), opt)
-			log.Println(err)
-			if cmd.Breakable {
-				r.Add("Unexpected end of integration.", opt)
-				break
-			}
-		}
-	}
+	runCommands(env, r, opt)
 	r.Done()
 
 	defer func() {
@@ -157,6 +128,43 @@ func StartTesterDaemon(opt DaemonOptions) {
 		if err := user.Save(); err != nil {
 			user.Unlock()
 			log.Println(err)
+		}
+	}
+}
+
+func runCommands(env Virtual, r *BuildResult, opt DaemonOptions) {
+	// mkdir /testground/github.com/
+	// git clone user-labs
+	// git clone test-labs
+	// cp test-labs user-labs
+	// /bin/sh dependecies.sh
+	// /bin/sh test.sh
+
+	cmds := []struct {
+		Cmd       string
+		Breakable bool
+	}{
+		{"mkdir -p " + opt.BaseFolder, true},
+		{"git clone https://" + opt.AdminToken + ":x-oauth-basic@github.com/" + opt.Org + "/" + opt.Repo + ".git" + " " + opt.BaseFolder + opt.DestFolder + "/", true},
+		{"git clone https://" + opt.AdminToken + ":x-oauth-basic@github.com/" + opt.Org + "/" + git.TestRepoName + ".git" + " " + opt.BaseFolder + git.TestRepoName + "/", true},
+		{"/bin/bash -c \"cp -rf \"" + opt.BaseFolder + git.TestRepoName + "/*\" \"" + opt.BaseFolder + opt.DestFolder + "/\" \"", true},
+
+		{"chmod 777 " + opt.BaseFolder + opt.DestFolder + "/dependencies.sh", true},
+		{"/bin/sh -c \"(cd \"" + opt.BaseFolder + opt.DestFolder + "/\" && ./dependencies.sh)\"", true},
+		{"chmod 777 " + opt.BaseFolder + opt.DestFolder + "/" + opt.LabFolder + "/test.sh", true},
+		{"/bin/sh -c \"(cd \"" + opt.BaseFolder + opt.DestFolder + "/" + opt.LabFolder + "/\" && ./test.sh)\"", false},
+	}
+
+	// executes build commands
+	for _, cmd := range cmds {
+		err := execute(&env, cmd.Cmd, r, opt)
+		if err != nil {
+			r.Add(err.Error(), opt)
+			log.Println(err)
+			if cmd.Breakable {
+				r.Add("Unexpected end of integration.", opt)
+				break
+			}
 		}
 	}
 }

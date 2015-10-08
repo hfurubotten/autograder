@@ -130,7 +130,7 @@ func (br *BuildResult) Add(s string, opt DaemonOptions) {
 	s = strings.Replace(s, opt.AdminToken, hidden, -1)
 	s = strings.TrimSpace(s)
 
-	// append sanitized strong to log
+	// append sanitized string to log
 	br.log = append(br.log, s)
 	br.updateResultCount(s)
 }
