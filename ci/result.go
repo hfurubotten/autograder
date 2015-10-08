@@ -2,11 +2,15 @@ package ci
 
 import (
 	"strconv"
+	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/autograde/kit/score"
 	"github.com/hfurubotten/autograder/database"
 )
+
+const hidden = "Sanitized"
 
 // BuildResult represent a result from a test build.
 type BuildResult struct {
@@ -15,17 +19,18 @@ type BuildResult struct {
 	User   string
 	Group  int
 
-	Log             []string
+	Log []string
+	//TODO unexport / lower case these:
 	NumPasses       int
 	NumFails        int
-	NumBuildFailure int
+	numBuildFailure int
 	Status          string
 	Labnum          int
 
 	Timestamp time.Time
 	PushTime  time.Time
 
-	TestScores []score.Score
+	TestScores []*score.Score
 	TotalScore int
 
 	HeadCommitID   string
@@ -52,7 +57,7 @@ func NewBuildResult() (*BuildResult, error) {
 	}
 	return &BuildResult{
 		ID:         int(nextid),
-		TestScores: make([]score.Score, 0),
+		TestScores: make([]*score.Score, 0),
 		Log:        make([]string, 0),
 	}, nil
 }
@@ -68,4 +73,61 @@ func GetBuildResult(buildID int) (br *BuildResult, err error) {
 func (br *BuildResult) Save() error {
 	key := strconv.Itoa(br.ID)
 	return database.Put(buildBucketName, key, br)
+}
+
+func (br *BuildResult) log(s string, opt DaemonOptions) {
+	if !utf8.ValidString(s) {
+		v := make([]rune, 0, len(s))
+		for i, r := range s {
+			if r == utf8.RuneError {
+				_, size := utf8.DecodeRuneInString(s[i:])
+				if size == 1 {
+					continue
+				}
+			}
+			v = append(v, r)
+		}
+		s = string(v)
+	}
+	s = strings.Trim(s, string(0))
+	s = strings.TrimSpace(s)
+
+	// check for and parse JSON Score string
+	if score.HasPrefix(s) {
+		sc, err := score.Parse(s, opt.Secret)
+		if err != nil {
+			return
+		}
+		br.TestScores = append(br.TestScores, sc)
+	}
+
+	// remove any accidental secret output
+	s = strings.Replace(s, opt.Secret, hidden, -1)
+	s = strings.Replace(s, opt.AdminToken, hidden, -1)
+	s = strings.TrimSpace(s)
+
+	// append sanitized strong to log
+	br.Log = append(br.Log, s)
+	br.updateResultCount(s)
+}
+
+// TODO: Not sure if the following should be used. They are probably specific to
+// Go and there is nothing that prevents students from inserting --- PASS.
+var passStrings = []string{"--- PASS"}
+var testFailStrings = []string{"--- FAIL"}
+var buildFailStrings = []string{"build failed"}
+
+//TODO Rename to updateBuildFailCount()
+// updateResultCount searches the provided line for tests passed, failed, and
+// build failures.
+func (br *BuildResult) updateResultCount(line string) {
+	for _, pass := range passStrings {
+		br.NumPasses = br.NumPasses + strings.Count(line, pass)
+	}
+	for _, fail := range testFailStrings {
+		br.NumFails = br.NumFails + strings.Count(line, fail)
+	}
+	for _, bfail := range buildFailStrings {
+		br.numBuildFailure = br.numBuildFailure + strings.Count(line, bfail)
+	}
 }

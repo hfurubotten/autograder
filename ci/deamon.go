@@ -3,13 +3,10 @@ package ci
 import (
 	"bufio"
 	"bytes"
-	"encoding/json"
 	// "errors"
 	"fmt"
 	"log"
-	"strings"
 	"time"
-	"unicode/utf8"
 
 	"github.com/autograde/kit/score"
 	git "github.com/hfurubotten/autograder/entities"
@@ -41,12 +38,10 @@ func StartTesterDaemon(opt DaemonOptions) {
 		}
 	}()
 
-	var logarray []string
-	logarray = append(logarray, "CI starting up on repo "+opt.Org+"/"+opt.Repo)
+	startMsg := fmt.Sprintf("Running tests for: %s/%s", opt.Org, opt.Repo)
+	log.Println(startMsg)
 
 	// Test execution
-	log.Println("CI starting up on repo", opt.Org, "/", opt.Repo)
-
 	env, err := NewVirtual()
 	if err != nil {
 		panic(err)
@@ -88,7 +83,7 @@ func StartTesterDaemon(opt DaemonOptions) {
 		return
 	}
 
-	r.Log = logarray
+	r.Log = append(r.Log, startMsg)
 	r.Course = opt.Org
 	r.Timestamp = time.Now()
 	r.PushTime = time.Now()
@@ -102,10 +97,10 @@ func StartTesterDaemon(opt DaemonOptions) {
 	for _, cmd := range cmds {
 		err = execute(&env, cmd.Cmd, r, opt)
 		if err != nil {
-			logOutput(err.Error(), r, opt)
+			r.log(err.Error(), opt)
 			log.Println(err)
 			if cmd.Breakable {
-				logOutput("Unexpected end of integration.", r, opt)
+				r.log("Unexpected end of integration.", opt)
 				break
 			}
 		}
@@ -113,18 +108,18 @@ func StartTesterDaemon(opt DaemonOptions) {
 
 	r.BuildTime = time.Since(starttime)
 
-	//TODO factor this out somewhere else
+	//TODO factor this out somewhere else: ResultBuilder??
 	// parsing the results
-	SimpleParsing(r)
+	// SimpleParsing(r)
 	if len(r.TestScores) > 0 {
-		r.TotalScore = CalculateTestScore(r.TestScores)
+		r.TotalScore = score.Total(r.TestScores)
 	} else {
 		if r.NumPasses+r.NumFails != 0 {
 			r.TotalScore = int((float64(r.NumPasses) / float64(r.NumPasses+r.NumFails)) * 100.0)
 		}
 	}
 
-	if r.NumBuildFailure > 0 {
+	if r.numBuildFailure > 0 {
 		r.TotalScore = 0
 	}
 
@@ -193,43 +188,6 @@ func StartTesterDaemon(opt DaemonOptions) {
 	}
 }
 
-// CalculateTestScore uses a array of Score objects to calculate a total score between 0 and 100.
-//TODO This does not belong in ci; it should be in autograde/kit/score??
-func CalculateTestScore(s []score.Score) (total int) {
-	totalWeight := float32(0)
-	var max, score, weight []float32
-	for _, ts := range s {
-		totalWeight += float32(ts.Weight)
-		weight = append(weight, float32(ts.Weight))
-		score = append(score, float32(ts.Score))
-		max = append(max, float32(ts.MaxScore))
-	}
-
-	tmpTotal := float32(0)
-	for i := 0; i < len(s); i = i + 1 {
-		if score[i] > max[i] {
-			score[i] = max[i]
-		}
-		tmpTotal += ((score[i] / max[i]) * (weight[i] / totalWeight))
-	}
-
-	return int(tmpTotal * 100)
-}
-
-// SimpleParsing will do a simple parsing of the test results. It looks for the strings "--- PASS", "--- FAIL" and "build failed".
-func SimpleParsing(r *BuildResult) {
-	key := "--- PASS"
-	negkey := "--- FAIL"
-	bfkey := "build failed"
-	for _, l := range r.Log {
-		r.NumPasses = r.NumPasses + strings.Count(l, key)
-		r.NumFails = r.NumFails + strings.Count(l, negkey)
-		r.NumBuildFailure = r.NumBuildFailure + strings.Count(l, bfkey)
-	}
-
-	log.Println("Found ", r.NumPasses, " passed tests.")
-}
-
 func execute(v *Virtual, cmd string, l *BuildResult, opt DaemonOptions) error {
 	buf := bytes.NewBuffer(make([]byte, 0))
 	bufw := bufio.NewWriter(buf)
@@ -245,50 +203,9 @@ func execute(v *Virtual, cmd string, l *BuildResult, opt DaemonOptions) error {
 	s := bufio.NewScanner(buf)
 	for s.Scan() {
 		text := s.Text()
-		logOutput(text, l, opt)
+		l.log(text, opt)
 	}
 	return nil
-}
-
-func logOutput(s string, l *BuildResult, opt DaemonOptions) {
-	if !utf8.ValidString(s) {
-		v := make([]rune, 0, len(s))
-		for i, r := range s {
-			if r == utf8.RuneError {
-				_, size := utf8.DecodeRuneInString(s[i:])
-				if size == 1 {
-					continue
-				}
-			}
-			v = append(v, r)
-		}
-		s = string(v)
-	}
-
-	s = strings.Trim(s, string(0))
-	s = strings.TrimSpace(s)
-
-	//TODO: Move this code to a new function in kit/score package? Reason: easier to test.
-	if strings.Contains(s, opt.Secret) {
-		// TODO: must be a better way of detecting JSON data!  TODO: Hein@Heine: Why?
-		var testscore score.Score
-		err := json.Unmarshal([]byte(s), &testscore)
-		if err == nil {
-			if testscore.Secret == opt.Secret {
-				testscore.Secret = "Sanitized"
-				l.TestScores = append(l.TestScores, testscore)
-			}
-			return
-		}
-		// ensure that the error message does not reveal the secret token
-		es := strings.Replace(err.Error(), opt.Secret, "Sanitized", -1)
-		log.Printf("Parse error: %s\n", es)
-	}
-	s = strings.Replace(s, opt.Secret, "Sanitized", -1)
-	s = strings.Replace(s, opt.AdminToken, "Sanitized", -1)
-
-	l.Log = append(l.Log, strings.TrimSpace(s))
-	fmt.Println(s)
 }
 
 // // GetIntegationResults will find a test result for a user or group.

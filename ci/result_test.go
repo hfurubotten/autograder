@@ -3,8 +3,10 @@ package ci
 import (
 	"log"
 	"os"
+	"strings"
 	"testing"
 
+	"github.com/autograde/kit/score"
 	"github.com/hfurubotten/autograder/database"
 )
 
@@ -72,7 +74,12 @@ func TestConcurrentNewBuildResult(t *testing.T) {
 	}
 }
 
-var testGetAndSaveBuildResultInput = []*BuildResult{
+var buildResults = []*BuildResult{
+	&BuildResult{
+		ID:     8,
+		Course: "coursex",
+		User:   "user1",
+	},
 	&BuildResult{
 		ID:        1,
 		Course:    "course1",
@@ -137,7 +144,7 @@ var testGetAndSaveBuildResultInput = []*BuildResult{
 }
 
 func TestGetAndSaveBuildResult(t *testing.T) {
-	for _, br := range testGetAndSaveBuildResultInput {
+	for _, br := range buildResults {
 		if err := br.Save(); err != nil {
 			t.Error("Failed to save build result: ", err)
 			continue
@@ -168,8 +175,8 @@ func compareBuildResults(br1, br2 *BuildResult, t *testing.T) {
 	if br1.NumFails != br2.NumFails {
 		t.Errorf("Field values for NumFails does not match. %v != %v.", br1.NumFails, br2.NumFails)
 	}
-	if br1.NumBuildFailure != br2.NumBuildFailure {
-		t.Errorf("Field values for NumBuildFailure does not match. %v != %v.", br1.NumBuildFailure, br2.NumBuildFailure)
+	if br1.numBuildFailure != br2.numBuildFailure {
+		t.Errorf("Field values for numBuildFailure does not match. %v != %v.", br1.numBuildFailure, br2.numBuildFailure)
 	}
 	if br1.Status != br2.Status {
 		t.Errorf("Field values for Status does not match. %v != %v.", br1.Status, br2.Status)
@@ -194,5 +201,62 @@ func compareBuildResults(br1, br2 *BuildResult, t *testing.T) {
 	}
 	if br1.BuildTime != br2.BuildTime {
 		t.Errorf("Field values for BuildTime does not match. %v != %v.", br1.BuildTime, br2.BuildTime)
+	}
+}
+
+var logOutput = `
+{"Secret":"my secret code","TestName":"TestErrorsAG","Score":16,"MaxScore":16,"Weight":20}
+TestErrorsAG: 16/16 cases passed
+
+{"Secret":"my secret code","TestName":"TestFibonacciAG","Score":14,"MaxScore":14,"Weight":20}
+TestFibonacciAG: 14/14 cases passed
+
+{"Secret":"my secret code","TestName":"TestFormatAG","Score":3,"MaxScore":3,"Weight":20}
+TestFormatAG: 3/3 cases passed
+
+{"Secret":"my secret code","TestName":"TestGoCommandsAG","Score":0,"MaxScore":5,"Weight":20}
+TestGoCommandsAG: 0/5 cases passed
+--- FAIL: TestGoCommandsAG (0.00s)
+	multiple_choice.go:50: TestGoCommandsAG 1: '\n' is incorrect.
+	multiple_choice.go:50: TestGoCommandsAG 2: '\n' is incorrect.
+	multiple_choice.go:50: TestGoCommandsAG 3: '\n' is incorrect.
+	multiple_choice.go:50: TestGoCommandsAG 4: '\n' is incorrect.
+	multiple_choice.go:50: TestGoCommandsAG 5: '\n' is incorrect.
+
+{"Secret":"my secret code","TestName":"TestWritersAG","Score":12,"MaxScore":12,"Weight":20}
+TestWritersAG: 12/12 cases passed
+
+{"Secret":"my secret code","TestName":"TestRot13AG","Score":6,"MaxScore":6,"Weight":20}
+TestRot13AG: 6/6 cases passed
+
+{"Secret":"my secret code","TestName":"TestStringerAG","Score":3,"MaxScore":3,"Weight":20}
+TestStringerAG: 3/3 cases passed
+FAIL
+exit status 1
+FAIL	github.com/uis-dat320/labassignments-2015/lab2-go	0.108s
+`
+
+func TestBuildResultLog(t *testing.T) {
+	opt := DaemonOptions{Secret: "my secret code", AdminToken: "my token"}
+	br := buildResults[0]
+	if err := br.Save(); err != nil {
+		t.Error("Failed to save build result: ", err)
+	}
+	r, err := GetBuildResult(br.ID)
+	if err != nil {
+		t.Error("Failed to get a build result from DB: ", err)
+	}
+	lines := strings.Split(logOutput, "\n")
+	for _, l := range lines {
+		r.log(l, opt)
+	}
+	tot := score.Total(r.TestScores)
+	if tot != 85 { // 6 exercises with all pass of 7 = 6/7 = 85.71
+		t.Errorf("Got: %d, Want: %d", tot, 86)
+	}
+	for _, l := range r.Log {
+		if strings.Contains(l, opt.Secret) || strings.Contains(l, opt.AdminToken) {
+			t.Errorf("Security issue (log contains secret keyword):\n%v", l)
+		}
 	}
 }
