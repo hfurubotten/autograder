@@ -17,7 +17,6 @@ func TestStart(t *testing.T) {
 	if err != nil {
 		t.Error("Got error while executing start function. " + err.Error())
 	}
-
 	cleanUpDB()
 }
 
@@ -84,6 +83,36 @@ func TestPutGet(t *testing.T) {
 	}
 
 	cleanUpBucket()
+	cleanUpDB()
+}
+
+// BenchmarkPutGetString will benchmark the Put and Get functions.
+func BenchmarkPutGetString(b *testing.B) {
+	// we ignore errors in this benchmark test
+	Start(tmploc)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		for _, v := range testStringValues {
+			Put(tmpbucket, v.key, v.value)
+			var got string
+			Get(tmpbucket, v.key, &got)
+		}
+	}
+	cleanUpDB()
+}
+
+// BenchmarkPutGetObject will benchmark the Put and Get functions.
+func BenchmarkPutGetObject(b *testing.B) {
+	// we ignore errors in this benchmark test
+	Start(tmploc)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		for _, v := range testAgentValues {
+			Put(agentBucket, v.key, v.value)
+			var got agent
+			Get(agentBucket, v.key, &got)
+		}
+	}
 	cleanUpDB()
 }
 
