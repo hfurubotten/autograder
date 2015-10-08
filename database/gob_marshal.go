@@ -3,7 +3,6 @@ package database
 import (
 	"bytes"
 	"encoding/gob"
-	"io/ioutil"
 )
 
 // Marshal encodes the val object into a []byte.
@@ -13,18 +12,12 @@ func Marshal(val interface{}) ([]byte, error) {
 	if err := encoder.Encode(val); err != nil {
 		return nil, err
 	}
-	data, err := ioutil.ReadAll(buf)
-	if err != nil {
-		return nil, err
-	}
-	return data, nil
+	return buf.Bytes(), nil
 }
 
 // Unmarshal decodes data into the object val.
 func Unmarshal(data []byte, val interface{}) error {
-	buf := &bytes.Buffer{}
+	buf := bytes.NewBuffer(data)
 	decoder := gob.NewDecoder(buf)
-	// Write to buf will write all data and return err=nil
-	buf.Write(data)
 	return decoder.Decode(val)
 }
