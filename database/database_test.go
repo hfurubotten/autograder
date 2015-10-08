@@ -87,6 +87,8 @@ func TestPutGet(t *testing.T) {
 	removeDB()
 }
 
+// To run the benchmarks: go test -bench .
+
 // BenchmarkPutGetString will benchmark the Put and Get functions.
 func BenchmarkPutGetString(b *testing.B) {
 	// we ignore errors in this benchmark test

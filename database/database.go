@@ -44,10 +44,6 @@ func Put(bucket string, key string, value interface{}) (err error) {
 			if err != nil {
 				return err
 			}
-			if b == nil {
-				//TODO Can this even happen?
-				return errors.New("couldn't create bucket: " + bucket)
-			}
 		}
 		//TODO Why an unlock here?; it is in a Update() context, and bolt will
 		// protect the database's consistency. And there is no lock to unlock.
