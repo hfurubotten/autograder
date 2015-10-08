@@ -44,8 +44,8 @@ func TestNewBuildResult(t *testing.T) {
 		if build.TestScores == nil {
 			t.Error("Field TestScores cannot be nil")
 		}
-		if build.Log == nil {
-			t.Error("Field Log cannot be nil")
+		if build.log == nil {
+			t.Error("Field log cannot be nil")
 		}
 	}
 }
@@ -67,8 +67,8 @@ func TestConcurrentNewBuildResult(t *testing.T) {
 			if build.TestScores == nil {
 				t.Error("Field TestScores cannot be nil")
 			}
-			if build.Log == nil {
-				t.Error("Field Log cannot be nil")
+			if build.log == nil {
+				t.Error("Field log cannot be nil")
 			}
 		}()
 	}
@@ -248,13 +248,13 @@ func TestBuildResultLog(t *testing.T) {
 	}
 	lines := strings.Split(logOutput, "\n")
 	for _, l := range lines {
-		r.log(l, opt)
+		r.Add(l, opt)
 	}
 	tot := score.Total(r.TestScores)
 	if tot != 85 { // 6 exercises with all pass of 7 = 6/7 = 85.71
 		t.Errorf("Got: %d, Want: %d", tot, 86)
 	}
-	for _, l := range r.Log {
+	for _, l := range r.log {
 		if strings.Contains(l, opt.Secret) || strings.Contains(l, opt.AdminToken) {
 			t.Errorf("Security issue (log contains secret keyword):\n%v", l)
 		}

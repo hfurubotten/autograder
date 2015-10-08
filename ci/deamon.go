@@ -83,7 +83,7 @@ func StartTesterDaemon(opt DaemonOptions) {
 		return
 	}
 
-	r.Log = append(r.Log, startMsg)
+	r.Add(startMsg, opt)
 	r.Course = opt.Org
 	r.Timestamp = time.Now()
 	r.PushTime = time.Now()
@@ -97,10 +97,10 @@ func StartTesterDaemon(opt DaemonOptions) {
 	for _, cmd := range cmds {
 		err = execute(&env, cmd.Cmd, r, opt)
 		if err != nil {
-			r.log(err.Error(), opt)
+			r.Add(err.Error(), opt)
 			log.Println(err)
 			if cmd.Breakable {
-				r.log("Unexpected end of integration.", opt)
+				r.Add("Unexpected end of integration.", opt)
 				break
 			}
 		}
@@ -203,7 +203,7 @@ func execute(v *Virtual, cmd string, l *BuildResult, opt DaemonOptions) error {
 	s := bufio.NewScanner(buf)
 	for s.Scan() {
 		text := s.Text()
-		l.log(text, opt)
+		l.Add(text, opt)
 	}
 	return nil
 }

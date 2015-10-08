@@ -19,7 +19,7 @@ type BuildResult struct {
 	User   string
 	Group  int
 
-	Log []string
+	log []string
 	//TODO unexport / lower case these:
 	NumPasses       int
 	NumFails        int
@@ -58,7 +58,7 @@ func NewBuildResult() (*BuildResult, error) {
 	return &BuildResult{
 		ID:         int(nextid),
 		TestScores: make([]*score.Score, 0),
-		Log:        make([]string, 0),
+		log:        make([]string, 0),
 	}, nil
 }
 
@@ -75,7 +75,9 @@ func (br *BuildResult) Save() error {
 	return database.Put(buildBucketName, key, br)
 }
 
-func (br *BuildResult) log(s string, opt DaemonOptions) {
+// Add adds a line to the build results log and updates the test scores if
+// any JSON score object are found.
+func (br *BuildResult) Add(s string, opt DaemonOptions) {
 	if !utf8.ValidString(s) {
 		v := make([]rune, 0, len(s))
 		for i, r := range s {
@@ -107,7 +109,7 @@ func (br *BuildResult) log(s string, opt DaemonOptions) {
 	s = strings.TrimSpace(s)
 
 	// append sanitized strong to log
-	br.Log = append(br.Log, s)
+	br.log = append(br.log, s)
 	br.updateResultCount(s)
 }
 
