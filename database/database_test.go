@@ -1,6 +1,7 @@
 package database
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -97,6 +98,45 @@ func BenchmarkPutGetString(b *testing.B) {
 			var got string
 			Get(tmpbucket, v.key, &got)
 		}
+	}
+	removeDB()
+}
+
+// BenchmarkPutGetDiffKey will benchmark the Put and Get functions.
+func BenchmarkPutGetDiffKey(b *testing.B) {
+	// we ignore errors in this benchmark test
+	Start(tmploc)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		key := fmt.Sprintf("k%d", i)
+		Put(tmpbucket, key, "v.value")
+		var got string
+		Get(tmpbucket, key, &got)
+	}
+	removeDB()
+}
+
+// BenchmarkPutKey will benchmark the Put and Get functions.
+func BenchmarkPutKey(b *testing.B) {
+	// we ignore errors in this benchmark test
+	Start(tmploc)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		key := fmt.Sprintf("k%d", i)
+		Put(tmpbucket, key, "v.value")
+	}
+	removeDB()
+}
+
+// BenchmarkGetKey will benchmark the Put and Get functions.
+func BenchmarkGetKey(b *testing.B) {
+	// we ignore errors in this benchmark test
+	Start(tmploc)
+	Put(tmpbucket, "key", "v.value")
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		var got string
+		Get(tmpbucket, "key", &got)
 	}
 	removeDB()
 }
