@@ -5,7 +5,6 @@ import (
 	"encoding/gob"
 	"errors"
 	"io/ioutil"
-	"sync"
 
 	"github.com/boltdb/bolt"
 )
@@ -45,10 +44,6 @@ func Put(bucket string, key string, value interface{}) (err error) {
 				return err
 			}
 		}
-		//TODO Why an unlock here?; it is in a Update() context, and bolt will
-		// protect the database's consistency. And there is no lock to unlock.
-		// defer Unlock(bucket, key)
-
 		data, err := GobEncode(value)
 		return b.Put([]byte(key), data)
 	})
@@ -77,10 +72,6 @@ func Get(bucket string, key string, val interface{}) (err error) {
 		if b == nil {
 			return errors.New("unknown bucket: " + bucket)
 		}
-		//TODO We should never lock without releasing the lock in the same function.
-		//TODO Why do we need a lock?
-		// 	Lock(bucket, key)
-
 		data := b.Get([]byte(key))
 		if data == nil {
 			return errors.New("key '" + key + "' not found in bucket: " + bucket)
@@ -116,14 +107,14 @@ func Has(bucket, key string) bool {
 	return found
 }
 
-// Remove will delete the given key in specified bucket.
+// Remove will delete the given key in the specified bucket.
 func Remove(bucket, key string) error {
 	return db.Update(func(tx *bolt.Tx) error {
 		return tx.Bucket([]byte(bucket)).Delete([]byte(key))
 	})
 }
 
-// RegisterBucket Will store all bucket names reserved by other packages. When
+// RegisterBucket will store all bucket names reserved by other packages. When
 // the database is started these bucket names will be made sure exists in the DB.
 func RegisterBucket(bucket string) (err error) {
 	registeredBucketNames = append(registeredBucketNames, bucket)
@@ -139,6 +130,7 @@ func RegisterBucket(bucket string) (err error) {
 
 // GetPureDB returns the pure connection to the database. Can be used with more
 // advanced DB interaction.
+// TODO Avoid using this method
 func GetPureDB() *bolt.DB {
 	if db == nil {
 		panic("Trying to obtain uninitalized database")
@@ -149,54 +141,4 @@ func GetPureDB() *bolt.DB {
 // Close will shut down the database in a safe mather.
 func Close() (err error) {
 	return db.Close()
-}
-
-//TODO This lock functionality is doing what exactly? REMOVE IT
-var writerslock sync.Mutex
-var writerkeys = make(map[string]map[string]valueLocker)
-
-type valueLocker struct {
-	sync.Mutex
-	islocked bool
-}
-
-// Lock will lock a specified key in a bucket for further use.
-func xLock(bucket string, key string) {
-	writerslock.Lock()
-	defer writerslock.Unlock()
-
-	if _, ok := writerkeys[bucket]; !ok {
-		writerkeys[bucket] = make(map[string]valueLocker)
-	}
-
-	if _, ok := writerkeys[bucket][key]; !ok {
-		writerkeys[bucket][key] = valueLocker{}
-	}
-
-	wkl := writerkeys[bucket][key]
-	wkl.Lock()
-	wkl.islocked = true
-	writerkeys[bucket][string(key)] = wkl
-}
-
-// Unlock will unlock a specified key in a bucket and make it usable for other
-// tasks running.
-func xUnlock(bucket string, key string) {
-	writerslock.Lock()
-	defer writerslock.Unlock()
-
-	if _, ok := writerkeys[bucket]; !ok {
-		return
-	}
-
-	if _, ok := writerkeys[bucket][key]; !ok {
-		return
-	}
-
-	wkl := writerkeys[bucket][key]
-	if wkl.islocked {
-		wkl.Unlock()
-		wkl.islocked = false
-	}
-	writerkeys[bucket][key] = wkl
 }
