@@ -1,7 +1,6 @@
 package database
 
 import (
-	"encoding/json"
 	"errors"
 
 	"github.com/boltdb/bolt"
@@ -42,8 +41,8 @@ func Put(bucket string, key string, value interface{}) (err error) {
 				return err
 			}
 		}
-		// data, err := Marshal(value)
-		data, err := json.Marshal(value)
+		data, err := Marshal(value)
+		// data, err := json.Marshal(value)
 		return b.Put([]byte(key), data)
 	})
 }
@@ -60,8 +59,8 @@ func Get(bucket string, key string, val interface{}) (err error) {
 		if data == nil {
 			return errors.New("key '" + key + "' not found in bucket: " + bucket)
 		}
-		// return Unmarshal(data, val)
-		return json.Unmarshal(data, val)
+		return Unmarshal(data, val)
+		// return json.Unmarshal(data, val)
 	})
 }
 
