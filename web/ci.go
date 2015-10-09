@@ -101,7 +101,8 @@ func ManualCITriggerHandler(w http.ResponseWriter, r *http.Request) {
 		User:  user,
 		Group: groupid,
 
-		Repo:       repo,
+		UserRepo:   repo,
+		TestRepo:   git.TestRepoName,
 		BaseFolder: org.CI.Basepath,
 		LabFolder:  lab,
 		LabNumber:  labnum,

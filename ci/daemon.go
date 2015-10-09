@@ -18,7 +18,8 @@ type DaemonOptions struct {
 	User  string
 	Group int
 
-	Repo       string
+	UserRepo   string
+	TestRepo   string
 	BaseFolder string
 	LabFolder  string
 	LabNumber  int
@@ -59,7 +60,7 @@ func StartTesterDaemon(opt DaemonOptions) {
 		return
 	}
 
-	startMsg := fmt.Sprintf("Running tests for: %s/%s", opt.Org, opt.Repo)
+	startMsg := fmt.Sprintf("Running tests for: %s/%s", opt.Org, opt.UserRepo)
 	log.Println(startMsg)
 	r.Add(startMsg, opt)
 
@@ -144,7 +145,7 @@ func runCommands(env Virtual, r *BuildResult, opt DaemonOptions) {
 		Breakable bool
 	}{
 		{"mkdir -p " + opt.BaseFolder, true},
-		{"git clone https://" + opt.AdminToken + ":x-oauth-basic@github.com/" + opt.Org + "/" + opt.Repo + ".git" + " " + opt.BaseFolder + opt.DestFolder + "/", true},
+		{"git clone https://" + opt.AdminToken + ":x-oauth-basic@github.com/" + opt.Org + "/" + opt.UserRepo + ".git" + " " + opt.BaseFolder + opt.DestFolder + "/", true},
 		{"git clone https://" + opt.AdminToken + ":x-oauth-basic@github.com/" + opt.Org + "/" + git.TestRepoName + ".git" + " " + opt.BaseFolder + git.TestRepoName + "/", true},
 		{"/bin/bash -c \"cp -rf \"" + opt.BaseFolder + git.TestRepoName + "/*\" \"" + opt.BaseFolder + opt.DestFolder + "/\" \"", true},
 
