@@ -27,7 +27,7 @@ type BuildResult struct {
 	Status          string
 	Labnum          int
 
-	Timestamp time.Time //TODO This is never used elsewhere. What is it meant to represent?
+	Timestamp time.Time
 	PushTime  time.Time
 	BuildTime time.Duration
 

@@ -16,7 +16,7 @@ import (
 type DaemonOptions struct {
 	Org   string
 	User  string
-	Group int // TODO should use string (group name) instead.
+	Group int
 
 	Repo       string
 	BaseFolder string
@@ -25,7 +25,6 @@ type DaemonOptions struct {
 	DestFolder string
 	IsPush     bool
 
-	// secret stuff (TODO move out to avoid saving to DB?)
 	AdminToken string
 	Secret     string
 }

@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/autograde/kit/score"
 	"github.com/hfurubotten/autograder/database"
@@ -78,9 +79,11 @@ func TestConcurrentNewBuildResult(t *testing.T) {
 
 var buildResults = []*BuildResult{
 	&BuildResult{
-		ID:     8,
-		Course: "coursex",
-		User:   "user1",
+		ID:        8,
+		Course:    "coursex",
+		User:      "user1",
+		Timestamp: time.Now(),
+		PushTime:  time.Now(),
 	},
 	&BuildResult{
 		ID:        1,
@@ -90,6 +93,8 @@ var buildResults = []*BuildResult{
 		NumPasses: 20,
 		NumFails:  10,
 		Labnum:    2,
+		Timestamp: time.Now(),
+		PushTime:  time.Now(),
 	},
 	&BuildResult{
 		ID:        2,
@@ -99,6 +104,8 @@ var buildResults = []*BuildResult{
 		NumPasses: 20,
 		NumFails:  10,
 		Labnum:    2,
+		Timestamp: time.Now(),
+		PushTime:  time.Now(),
 	},
 	&BuildResult{
 		ID:        3,
@@ -108,6 +115,8 @@ var buildResults = []*BuildResult{
 		NumPasses: 20,
 		NumFails:  10,
 		Labnum:    2,
+		Timestamp: time.Now(),
+		PushTime:  time.Now(),
 	},
 	&BuildResult{
 		ID:        4,
@@ -117,6 +126,8 @@ var buildResults = []*BuildResult{
 		NumPasses: 23,
 		NumFails:  1,
 		Labnum:    3,
+		Timestamp: time.Now(),
+		PushTime:  time.Now(),
 	},
 	&BuildResult{
 		ID:        5,
@@ -125,6 +136,8 @@ var buildResults = []*BuildResult{
 		NumPasses: 20,
 		NumFails:  10,
 		Labnum:    2,
+		Timestamp: time.Now(),
+		PushTime:  time.Now(),
 	},
 	&BuildResult{
 		ID:        6,
@@ -133,6 +146,8 @@ var buildResults = []*BuildResult{
 		NumPasses: 20,
 		NumFails:  52,
 		Labnum:    2,
+		Timestamp: time.Now(),
+		PushTime:  time.Now(),
 	},
 	&BuildResult{
 		ID:        7,
@@ -142,6 +157,8 @@ var buildResults = []*BuildResult{
 		NumPasses: 21,
 		NumFails:  10,
 		Labnum:    5,
+		Timestamp: time.Now(),
+		PushTime:  time.Now(),
 	},
 }
 
@@ -187,10 +204,10 @@ func compareBuildResults(br1, br2 *BuildResult, t *testing.T) {
 		t.Errorf("Field values for Labnum does not match. %v != %v.", br1.Labnum, br2.Labnum)
 	}
 	if br1.Timestamp != br2.Timestamp {
-		t.Errorf("Field values for Timestamp does not match. %v != %v.", br1.Timestamp, br2.Timestamp)
+		t.Errorf("Timestamp fields does not match: %v != %v", br1.Timestamp, br2.Timestamp)
 	}
 	if br1.PushTime != br2.PushTime {
-		t.Errorf("Field values for PushTime does not match. %v != %v.", br1.PushTime, br2.PushTime)
+		t.Errorf("PushTime  fields does not match: %v != %v", br1.PushTime, br2.PushTime)
 	}
 	if br1.TotalScore != br2.TotalScore {
 		t.Errorf("Field values for TotalScore does not match. %v != %v.", br1.TotalScore, br2.TotalScore)
