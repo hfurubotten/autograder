@@ -1,4 +1,4 @@
-package git
+package entities
 
 // TeamOptions represents the options needed when creating a team within a organization.
 type TeamOptions struct {

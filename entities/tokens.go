@@ -1,4 +1,4 @@
-package git
+package entities
 
 import "github.com/hfurubotten/autograder/database"
 

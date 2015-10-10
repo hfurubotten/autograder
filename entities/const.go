@@ -1,4 +1,4 @@
-package git //TODO why is this package git??
+package entities
 
 const (
 	// Standard repository names
