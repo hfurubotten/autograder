@@ -95,8 +95,7 @@ func TestNewMember(t *testing.T) {
 			continue
 		}
 
-		// checks again with loading from DB and not just memory caches
-		delete(InMemoryMembers, in.username)
+		// checks again with loading from DB
 		m4, err := NewMember(in.token, true)
 		if err != nil {
 			t.Error("Error creating new member:", err)
@@ -111,6 +110,24 @@ func TestNewMember(t *testing.T) {
 		if m4.StudentID != in.studid+1 {
 			t.Errorf("StudentID does not match. %v != %v", m.StudentID, in.studid)
 			continue
+		}
+	}
+}
+
+func BenchmarkNewMember(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		for _, in := range testNewMemberInput {
+			NewMember(in.token, false)
+		}
+	}
+}
+
+func BenchmarkNewMemberAndSave(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		for _, in := range testNewMemberInput {
+			m, _ := NewMember(in.token, false)
+			m.StudentID = in.studid
+			m.Save()
 		}
 	}
 }

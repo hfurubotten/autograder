@@ -1,13 +1,9 @@
 package git
 
 import (
-	"bytes"
 	"encoding/gob"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"strconv"
-	"sync"
 	"time"
 
 	"github.com/boltdb/bolt"
@@ -17,14 +13,8 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// MemberBucketName is the bucket/table name for organizations in the DB.
+// MemberBucketName is the bucket name for members in the DB.
 var MemberBucketName = "members"
-
-// InMemoryMembers is a mapper where pointers to all the Organization are kept in memory.
-var InMemoryMembers = make(map[string]*Member)
-
-// InMemoryMembersLock is the locking for the org mapper.
-var InMemoryMembersLock sync.Mutex
 
 func init() {
 	gob.Register(Member{})
@@ -57,9 +47,6 @@ func NewMember(oauthtoken string, readonly bool) (m *Member, err error) {
 		return nil, errors.New("Cannot have empty oauth token")
 	}
 
-	InMemoryMembersLock.Lock()
-	defer InMemoryMembersLock.Unlock()
-
 	u := entities.User{
 		WeeklyScore:  make(map[int]int64),
 		MonthlyScore: make(map[time.Month]int64),
@@ -84,18 +71,9 @@ func NewMember(oauthtoken string, readonly bool) (m *Member, err error) {
 		}
 	}
 
-	if _, ok := InMemoryMembers[m.Username]; ok {
-		m = InMemoryMembers[m.Username]
-		if !readonly {
-			m.Lock()
-		}
-	} else {
-		err = m.loadStoredData(!readonly)
-		if err != nil {
-			return nil, err
-		}
-
-		InMemoryMembers[m.Username] = m
+	err = m.loadStoredData()
+	if err != nil {
+		return nil, err
 	}
 
 	if m.IsTeacher {
@@ -136,15 +114,6 @@ func NewUserWithGithubData(gu *github.User, readonly bool) (u *Member, err error
 
 // NewMemberFromUsername loads a user from storage with the given username.
 func NewMemberFromUsername(username string, readonly bool) (m *Member, err error) {
-	InMemoryMembersLock.Lock()
-	defer InMemoryMembersLock.Unlock()
-	if m, ok := InMemoryMembers[username]; ok {
-		if !readonly {
-			m.Lock()
-		}
-		return m, nil
-	}
-
 	u := entities.User{
 		Username:     username,
 		WeeklyScore:  make(map[int]int64),
@@ -158,13 +127,10 @@ func NewMemberFromUsername(username string, readonly bool) (m *Member, err error
 		AssistantCourses: make(map[string]interface{}),
 	}
 
-	err = m.loadStoredData(!readonly)
+	err = m.loadStoredData()
 	if err != nil {
 		return nil, err
 	}
-
-	InMemoryMembers[m.Username] = m
-
 	return m, nil
 }
 
@@ -189,51 +155,25 @@ func (m *Member) loadDataFromGithub() (err error) {
 }
 
 // loadData loads data from storage if it exists.
-func (m *Member) loadStoredData(lock bool) (err error) {
-	err = database.GetPureDB().View(func(tx *bolt.Tx) error {
-		// locks the object directly in order to ensure consistent info from DB.
-		if lock {
-			m.Lock()
-		}
-
-		b := tx.Bucket([]byte(MemberBucketName))
-		if b == nil {
-			return errors.New("Bucket not found. Are you sure the bucket was registered correctly?")
-		}
-
-		data := b.Get([]byte(m.Username))
-		if data == nil {
-			return errors.New("No data in database")
-		}
-
-		buf := &bytes.Buffer{}
-		decoder := gob.NewDecoder(buf)
-
-		n, _ := buf.Write(data)
-
-		if n != len(data) {
-			return errors.New("Couldn't write all data to buffer while getting data from database. " + strconv.Itoa(n) + " != " + strconv.Itoa(len(data)))
-		}
-
-		err = decoder.Decode(m)
-		if err != nil {
-			return err
-		}
-
-		return nil
-	})
-
+// func loadStoredData(userName) (*Member, error) {
+func (m *Member) loadStoredData() error {
+	// var m *Member //TODO We should not create object first and then populate it.
+	err := database.Get(MemberBucketName, m.Username, &m)
 	if err != nil {
-		if err.Error() == "No data in database" {
+		// TODO Why is it ok that the key was not found?
+		// This check is necessary since otherwise tests fail.
+		if _, nokey := err.(database.KeyNotFoundError); nokey {
 			err = nil
 		}
+		return err
+		// return nil, err
 	}
 
 	if !m.accessToken.HasTokenInStore() {
 		m.accessToken.SetUsernameToTokenInStore(m.Username)
 	}
-
-	return
+	return nil
+	// return m, nil
 }
 
 // Save stores the user to disk and caches it in memory.
@@ -241,35 +181,7 @@ func (m *Member) loadStoredData(lock bool) (err error) {
 // NB: If error occure the unlocking of the object need to be done manually.
 // Will panic if the member is not locked before saving.
 func (m *Member) Save() (err error) {
-	return database.GetPureDB().Update(func(tx *bolt.Tx) (err error) {
-		// open the bucket
-		b := tx.Bucket([]byte(MemberBucketName))
-
-		// Checks if the bucket was opened, and creates a new one if not existing. Returns error on any other situation.
-		if b == nil {
-			return errors.New("Missing bucket")
-		}
-
-		buf := &bytes.Buffer{}
-		encoder := gob.NewEncoder(buf)
-
-		if err = encoder.Encode(m); err != nil {
-			return
-		}
-
-		data, err := ioutil.ReadAll(buf)
-		if err != nil {
-			return err
-		}
-
-		err = b.Put([]byte(m.Username), data)
-		if err != nil {
-			return err
-		}
-
-		m.Unlock()
-		return nil
-	})
+	return database.Put(MemberBucketName, m.Username, m)
 }
 
 // IsComplete checks if all the required fields about the user has content.
