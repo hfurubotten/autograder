@@ -57,7 +57,7 @@ func Get(bucket string, key string, val interface{}) (err error) {
 		}
 		data := b.Get([]byte(key))
 		if data == nil {
-			return errors.New("key '" + key + "' not found in bucket: " + bucket)
+			return KeyNotFoundError{key, bucket}
 		}
 		return Unmarshal(data, val)
 		// return json.Unmarshal(data, val)
