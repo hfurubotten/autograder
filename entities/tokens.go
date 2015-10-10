@@ -1,11 +1,6 @@
 package git
 
-import (
-	"crypto/sha256"
-	"fmt"
-
-	"github.com/hfurubotten/autograder/database"
-)
+import "github.com/hfurubotten/autograder/database"
 
 // TokenBucketName is the bucket/table name for tokens in the database.
 var TokenBucketName = "tokens"
@@ -26,28 +21,23 @@ func NewToken(oauthtoken string) Token {
 
 // HasTokenInStore checks if the token is in storage.
 func (t *Token) HasTokenInStore() bool {
-	hash := sha256.Sum256([]byte(t.accessToken))
-	return database.Has(TokenBucketName, fmt.Sprintf("%x", hash))
+	return database.Has(TokenBucketName, t.accessToken)
 }
 
 // GetUsernameFromTokenInStore gets the username associated with the token.
 func (t *Token) GetUsernameFromTokenInStore() (user string, err error) {
-	hash := sha256.Sum256([]byte(t.accessToken))
-	err = database.Get(TokenBucketName, fmt.Sprintf("%x", hash), &user)
+	err = database.Get(TokenBucketName, t.accessToken, &user)
 	return user, err
 }
 
 // SetUsernameToTokenInStore sets the username associated with the token.
 func (t *Token) SetUsernameToTokenInStore(username string) (err error) {
-	hash := sha256.Sum256([]byte(t.accessToken))
-	err = database.Put(TokenBucketName, fmt.Sprintf("%x", hash), username)
-	return
+	return database.Put(TokenBucketName, t.accessToken, username)
 }
 
 // RemoveTokenInStore removed the token from storage.
 func (t *Token) RemoveTokenInStore() (err error) {
-	hash := sha256.Sum256([]byte(t.accessToken))
-	return database.Remove(TokenBucketName, fmt.Sprintf("%x", hash))
+	return database.Remove(TokenBucketName, t.accessToken)
 }
 
 // HasToken checks if the token is set.

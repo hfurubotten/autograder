@@ -1,8 +1,6 @@
 package git
 
-import (
-	"testing"
-)
+import "testing"
 
 var testNewTokenInput = []string{
 	"54143585152ac4",
@@ -54,7 +52,7 @@ func TestHasSetGetAndRemoveTokenInStore(t *testing.T) {
 		}
 
 		if !token.HasTokenInStore() {
-			t.Errorf("Could not find the token \"%v\" in store before saving it to username \"%v\".", in.Token, in.Username)
+			t.Errorf("Could not find the token \"%v\" in store after saving it to username \"%v\".", in.Token, in.Username)
 		}
 
 		username, err := token.GetUsernameFromTokenInStore()
