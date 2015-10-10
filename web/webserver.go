@@ -33,7 +33,7 @@ type Server struct {
 	Port int
 }
 
-// NewWebServer will return a new Webserver object with possibility to listen to given port.
+// NewServer will return a new Webserver object with possibility to listen to given port.
 func NewServer(port int) Server {
 	return Server{port}
 }
@@ -243,7 +243,7 @@ func checkMemberApproval(w http.ResponseWriter, r *http.Request, redirect bool) 
 		return
 	}
 
-	member, err = git.NewMember(value.(string), true)
+	member, err = git.NewMember(value.(string))
 	if err != nil {
 		return nil, err
 	}

@@ -42,7 +42,7 @@ type Member struct {
 // NewMember tries to use the given oauth token to find the
 // user stored on disk/memory. If not found it will load user
 // data from github and make a new user.
-func NewMember(oauthtoken string, readonly bool) (m *Member, err error) {
+func NewMember(oauthtoken string) (m *Member, err error) {
 	if oauthtoken == "" {
 		return nil, errors.New("Cannot have empty oauth token")
 	}
@@ -97,12 +97,12 @@ func NewMember(oauthtoken string, readonly bool) (m *Member, err error) {
 
 // NewUserWithGithubData creates a new User object from a github User object.
 // It will copy all information from the given GitHub data to the new User object.
-func NewUserWithGithubData(gu *github.User, readonly bool) (u *Member, err error) {
+func NewUserWithGithubData(gu *github.User) (u *Member, err error) {
 	if gu == nil {
 		return nil, errors.New("Cannot parse nil github.User object.")
 	}
 
-	u, err = NewMemberFromUsername(*gu.Login, readonly)
+	u, err = NewMemberFromUsername(*gu.Login)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +113,7 @@ func NewUserWithGithubData(gu *github.User, readonly bool) (u *Member, err error
 }
 
 // NewMemberFromUsername loads a user from storage with the given username.
-func NewMemberFromUsername(username string, readonly bool) (m *Member, err error) {
+func NewMemberFromUsername(username string) (m *Member, err error) {
 	u := entities.User{
 		Username:     username,
 		WeeklyScore:  make(map[int]int64),
@@ -421,7 +421,7 @@ func ListAllMembers() (members []*Member) {
 		}
 
 		b.ForEach(func(k, v []byte) error {
-			m, err := NewMemberFromUsername(string(k), true)
+			m, err := NewMemberFromUsername(string(k))
 			if err == nil {
 				members = append(members, m)
 			}

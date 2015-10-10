@@ -190,7 +190,7 @@ var testActivate = []struct {
 func TestActivate(t *testing.T) {
 	for _, tcase := range testActivate {
 		for username := range tcase.want.Members {
-			u, err := NewMemberFromUsername(username, false)
+			u, err := NewMemberFromUsername(username)
 			if err != nil {
 				t.Errorf("Error getting user: %v", err)
 				continue
@@ -212,7 +212,7 @@ func TestActivate(t *testing.T) {
 		compareGroups(tcase.in, tcase.want, t)
 
 		for username := range tcase.want.Members {
-			u, err := NewMemberFromUsername(username, true)
+			u, err := NewMemberFromUsername(username)
 			if err != nil {
 				t.Errorf("Error getting user: %v", err)
 			}
@@ -361,7 +361,7 @@ var testSaveHasAndDelete = []struct {
 func TestSaveHasAndDelete(t *testing.T) {
 	for _, tcase := range testSaveHasAndDelete {
 		for username := range tcase.in.Members {
-			u, err := NewMemberFromUsername(username, false)
+			u, err := NewMemberFromUsername(username)
 			if err != nil {
 				t.Errorf("Error getting user: %v", err)
 			}

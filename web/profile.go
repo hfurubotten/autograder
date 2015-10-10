@@ -8,9 +8,9 @@ import (
 
 	"github.com/hfurubotten/autograder/auth"
 	git "github.com/hfurubotten/autograder/entities"
+	"github.com/hfurubotten/autograder/game/levels"
 	"github.com/hfurubotten/autograder/web/pages"
 	"github.com/hfurubotten/autograder/web/sessions"
-	"github.com/hfurubotten/autograder/game/levels"
 )
 
 // ProfileView is the view passed to the html template compiler for ProfileHandler.
@@ -43,7 +43,7 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m, err := git.NewMember(value.(string), true)
+	m, err := git.NewMember(value.(string))
 	if err != nil {
 		log.Println(err.Error())
 		http.Error(w, err.Error(), 500)
@@ -100,7 +100,7 @@ func UpdateMemberHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		member, err := git.NewMember(value.(string), false)
+		member, err := git.NewMember(value.(string))
 		if err != nil {
 			log.Println(err.Error())
 			http.Error(w, err.Error(), 500)

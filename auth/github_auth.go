@@ -84,7 +84,7 @@ func githubOauthHandler(w http.ResponseWriter, r *http.Request) {
 		scope := q.Get("scope")
 
 		if scope != "" {
-			m, err := git.NewMember(accessToken, false)
+			m, err := git.NewMember(accessToken)
 			if err != nil {
 				log.Println("Could not open Member object:", err)
 				http.Redirect(w, r, pages.FRONTPAGE, 307)

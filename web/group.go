@@ -127,7 +127,7 @@ func NewGroupHandler(w http.ResponseWriter, r *http.Request) {
 
 	var opt git.CourseOptions
 	for _, username := range members {
-		user, err := git.NewMemberFromUsername(username, true)
+		user, err := git.NewMemberFromUsername(username)
 		if err != nil {
 			continue
 		}

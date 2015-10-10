@@ -99,7 +99,7 @@ func main() {
 	// checks for an admin username
 	if *admin != "" {
 		log.Println("New admin added to the system: ", *admin)
-		m, err := git.NewMemberFromUsername(*admin, false)
+		m, err := git.NewMemberFromUsername(*admin)
 		if err != nil {
 			log.Fatal(err)
 		}

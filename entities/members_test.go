@@ -38,7 +38,7 @@ func TestNewMember(t *testing.T) {
 			continue
 		}
 
-		m, err := NewMember(in.token, false)
+		m, err := NewMember(in.token)
 		if err != nil {
 			t.Error("Error creating new member:", err)
 			continue
@@ -57,7 +57,7 @@ func TestNewMember(t *testing.T) {
 
 		testListAllMembersInput = append(testListAllMembersInput, in.username)
 
-		m2, err := NewMember(in.token, false)
+		m2, err := NewMember(in.token)
 		if err != nil {
 			t.Error("Error creating new member:", err)
 			continue
@@ -79,7 +79,7 @@ func TestNewMember(t *testing.T) {
 			t.Error("Could not save user:", err)
 		}
 
-		m3, err := NewMember(in.token, true)
+		m3, err := NewMember(in.token)
 		if err != nil {
 			t.Error("Error creating new member:", err)
 			continue
@@ -96,7 +96,7 @@ func TestNewMember(t *testing.T) {
 		}
 
 		// checks again with loading from DB
-		m4, err := NewMember(in.token, true)
+		m4, err := NewMember(in.token)
 		if err != nil {
 			t.Error("Error creating new member:", err)
 			continue
@@ -117,7 +117,7 @@ func TestNewMember(t *testing.T) {
 func BenchmarkNewMember(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		for _, in := range testNewMemberInput {
-			NewMember(in.token, false)
+			NewMember(in.token)
 		}
 	}
 }
@@ -125,7 +125,7 @@ func BenchmarkNewMember(b *testing.B) {
 func BenchmarkNewMemberAndSave(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		for _, in := range testNewMemberInput {
-			m, _ := NewMember(in.token, false)
+			m, _ := NewMember(in.token)
 			m.StudentID = in.studid
 			m.Save()
 		}
@@ -311,7 +311,7 @@ var testListAllMembersInput = []string{}
 
 func TestListAllMembers(t *testing.T) {
 	for _, username := range testListAllMembersInput {
-		user, err := NewMemberFromUsername(username, false)
+		user, err := NewMemberFromUsername(username)
 		if err != nil {
 			t.Errorf("Error getting user: %v", err)
 		}
@@ -419,7 +419,7 @@ var testAddMemberBuildResultInput = []struct {
 
 func TestAddAndGetMemberBuildResult(t *testing.T) {
 	for _, in := range testAddMemberBuildResultInput {
-		user, err := NewMemberFromUsername(in.username, true)
+		user, err := NewMemberFromUsername(in.username)
 		if err != nil {
 			t.Error(err)
 			continue
@@ -528,7 +528,7 @@ var testAddAndGetMemberNotesInput = []struct {
 
 func TestAddAndGetMemberNotes(t *testing.T) {
 	for _, in := range testAddAndGetMemberNotesInput {
-		user, err := NewMemberFromUsername(in.username, true)
+		user, err := NewMemberFromUsername(in.username)
 		if err != nil {
 			t.Error(err)
 			continue
@@ -591,7 +591,7 @@ var testMemberSetApprovedBuildInput = []struct {
 
 func TestMemberSetApprovedBuild(t *testing.T) {
 	for _, in := range testMemberSetApprovedBuildInput {
-		user, err := NewMemberFromUsername(in.User, true)
+		user, err := NewMemberFromUsername(in.User)
 		if err != nil {
 			t.Error(err)
 			continue

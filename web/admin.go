@@ -59,7 +59,7 @@ func SetAdminHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m, err := git.NewMemberFromUsername(r.FormValue("user"), false)
+	m, err := git.NewMemberFromUsername(r.FormValue("user"))
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 	}
@@ -114,7 +114,7 @@ func SetTeacherHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m, err := git.NewMemberFromUsername(r.FormValue("user"), false)
+	m, err := git.NewMemberFromUsername(r.FormValue("user"))
 	if err != nil {
 		log.Println("Unautorized request of admin page.") // TODO replace this with more appropiate msg.
 		err = enc.Encode(ErrNotAdmin)                     // TODO replace this with more appropiate msg.

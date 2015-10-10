@@ -65,7 +65,7 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		user, _ := git.NewUserWithGithubData(payload.Comment.User, true)
+		user, _ := git.NewUserWithGithubData(payload.Comment.User)
 		org, _ := git.NewOrganizationWithGithubData(payload.Organization, true)
 
 		if org.IsTeacher(user) {
@@ -97,7 +97,7 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		user, _ := git.NewUserWithGithubData(payload.Comment.User, true)
+		user, _ := git.NewUserWithGithubData(payload.Comment.User)
 		org, _ := git.NewOrganizationWithGithubData(payload.Organization, true)
 
 		if org.IsTeacher(user) {
@@ -129,7 +129,7 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		user, _ := git.NewUserWithGithubData(payload.Sender, true)
+		user, _ := git.NewUserWithGithubData(payload.Sender)
 		org, _ := git.NewOrganizationWithGithubData(payload.Organization, true)
 
 		p, ta, err := events.FindIssuesPointsAndTrophyAction(payload)
@@ -199,7 +199,7 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		user, _ := git.NewUserWithGithubData(payload.Comment.User, true)
+		user, _ := git.NewUserWithGithubData(payload.Comment.User)
 		org, _ := git.NewOrganizationWithGithubData(payload.Organization, true)
 
 		if org.IsTeacher(user) {
@@ -256,7 +256,7 @@ func StartTestBuildProcess(load github.PushPayload) (err error) {
 		return errors.New("invalid organization name: " + orgName)
 	}
 	org, err := git.NewOrganization(orgName, true)
-	user, err := git.NewMemberFromUsername(userLogin, true)
+	user, err := git.NewMemberFromUsername(userLogin)
 	//TODO these erros will be returned at the end. Is that intentional??
 	// Shouldn't they be handled here?
 
