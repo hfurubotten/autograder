@@ -70,10 +70,16 @@ func NewMember(oauthtoken string) (m *Member, err error) {
 			return nil, err
 		}
 	}
-
-	err = m.loadStoredData()
+	user := m.Username
+	//TODO THis is too messy; clean up
+	mx, err := GetMember(user)
 	if err != nil {
-		return nil, err
+		if _, nokey := err.(database.KeyNotFoundError); nokey {
+			err = nil
+		}
+	}
+	if mx != nil {
+		m = mx
 	}
 
 	if m.IsTeacher {
@@ -113,23 +119,21 @@ func NewUserWithGithubData(gu *github.User) (u *Member, err error) {
 }
 
 // NewMemberFromUsername loads a user from storage with the given username.
-func NewMemberFromUsername(username string) (m *Member, err error) {
+func NewMemberFromUsername(userName string) (m *Member, err error) {
+	m, err = GetMember(userName)
+	if err == nil {
+		return m, nil
+	}
 	u := entities.User{
-		Username:     username,
+		Username:     userName,
 		WeeklyScore:  make(map[int]int64),
 		MonthlyScore: make(map[time.Month]int64),
 	}
-
 	m = &Member{
 		User:             u,
 		Teaching:         make(map[string]interface{}),
 		Courses:          make(map[string]CourseOptions),
 		AssistantCourses: make(map[string]interface{}),
-	}
-
-	err = m.loadStoredData()
-	if err != nil {
-		return nil, err
 	}
 	return m, nil
 }
@@ -154,27 +158,39 @@ func (m *Member) loadDataFromGithub() (err error) {
 	return
 }
 
-// loadData loads data from storage if it exists.
-// func loadStoredData(userName) (*Member, error) {
-func (m *Member) loadStoredData() error {
-	// var m *Member //TODO We should not create object first and then populate it.
-	err := database.Get(MemberBucketName, m.Username, &m)
+// GetMember returns the member data for the given user.
+func GetMember(user string) (*Member, error) {
+	var m *Member
+	err := database.Get(MemberBucketName, user, &m)
 	if err != nil {
-		// TODO Why is it ok that the key was not found?
-		// This check is necessary since otherwise tests fail.
-		if _, nokey := err.(database.KeyNotFoundError); nokey {
-			err = nil
-		}
-		return err
-		// return nil, err
+		return nil, err
 	}
-
+	// TODO why do we need to store it separately? Should be stored only in Member
 	if !m.accessToken.HasTokenInStore() {
 		m.accessToken.SetUsernameToTokenInStore(m.Username)
 	}
-	return nil
-	// return m, nil
+	return m, nil
 }
+
+// func (m *Member) loadStoredData() error {
+// 	// var m *Member //TODO We should not create object first and then populate it.
+// 	err := database.Get(MemberBucketName, m.Username, &m)
+// 	if err != nil {
+// 		// TODO Why is it ok that the key was not found?
+// 		// This check is necessary since otherwise tests fail.
+// 		if _, nokey := err.(database.KeyNotFoundError); nokey {
+// 			err = nil
+// 		}
+// 		return err
+// 		// return nil, err
+// 	}
+//
+// 	if !m.accessToken.HasTokenInStore() {
+// 		m.accessToken.SetUsernameToTokenInStore(m.Username)
+// 	}
+// 	return nil
+// 	// return m, nil
+// }
 
 // Save stores the user to disk and caches it in memory.
 // save the object will be automatically unlocked.
