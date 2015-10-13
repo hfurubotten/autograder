@@ -1,6 +1,8 @@
 package entities
 
-import "testing"
+import (
+	"testing"
+)
 
 var testNewTokenInput = []string{
 	"54143585152ac4",
@@ -11,15 +13,6 @@ var testNewTokenInput = []string{
 	"adc531351d53ddd",
 	"cdv3513513",
 	"789564321dcbad",
-}
-
-func TestNewToken(t *testing.T) {
-	for _, hash := range testNewTokenInput {
-		token := NewToken(hash)
-		if token.accessToken != hash {
-			t.Errorf("Failed to set token. Got \"%v\" and not \"%v\" from token object ", token.accessToken, hash)
-		}
-	}
 }
 
 var testHasTokenInStoreInput = []struct {
@@ -39,55 +32,31 @@ var testHasTokenInStoreInput = []struct {
 
 func TestHasSetGetAndRemoveTokenInStore(t *testing.T) {
 	for _, in := range testHasTokenInStoreInput {
-		token := NewToken(in.Token)
-
-		if token.HasTokenInStore() {
+		if has(in.Token) {
 			t.Errorf("Found the token \"%v\" in store before save.", in.Token)
 		}
 
-		err := token.SetUsernameToTokenInStore(in.Username)
+		err := put(in.Token, in.Username)
 		if err != nil {
 			t.Error("Error saving token in database:", err)
 			continue
 		}
 
-		if !token.HasTokenInStore() {
-			t.Errorf("Could not find the token \"%v\" in store after saving it to username \"%v\".", in.Token, in.Username)
+		if !has(in.Token) {
+			t.Errorf("Could not find the token \"%v\" in store before saving it to username \"%v\".", in.Token, in.Username)
 		}
 
-		username, err := token.GetUsernameFromTokenInStore()
+		username, err := get(in.Token)
 		if err != nil {
 			t.Error("Error while getting username from token store:", err)
 		}
-
 		if username != in.Username {
 			t.Errorf("Username gotten from token store does not match saved username. %v != %v", username, in.Username)
 		}
 
-		token.RemoveTokenInStore()
-
-		if token.HasTokenInStore() {
+		remove(in.Token)
+		if has(in.Token) {
 			t.Errorf("Could find the token \"%v\" in store after removing it.", in.Token)
-		}
-	}
-}
-
-func TestHasAndGetToken(t *testing.T) {
-	for _, hash := range testNewTokenInput {
-		token := Token{}
-		if token.HasToken() {
-			t.Error("Found a token when it should not be any there")
-		}
-
-		token = NewToken(hash)
-
-		if !token.HasToken() {
-			t.Error("Found no token when it should be there")
-		}
-
-		storedhash := token.GetToken()
-		if storedhash != hash {
-			t.Errorf("Wrong token gotten from the token object. %v != %v", storedhash, hash)
 		}
 	}
 }

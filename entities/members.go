@@ -35,7 +35,7 @@ type Member struct {
 	Courses          map[string]CourseOptions
 	AssistantCourses map[string]interface{}
 
-	accessToken  Token
+	accessToken  string
 	githubclient *github.Client
 }
 
@@ -53,14 +53,14 @@ func NewMember(oauthtoken string) (m *Member, err error) {
 	}
 	m = &Member{
 		User:             u,
-		accessToken:      NewToken(oauthtoken),
+		accessToken:      oauthtoken,
 		Teaching:         make(map[string]interface{}),
 		Courses:          make(map[string]CourseOptions),
 		AssistantCourses: make(map[string]interface{}),
 	}
 
-	if m.accessToken.HasTokenInStore() {
-		m.Username, err = m.accessToken.GetUsernameFromTokenInStore()
+	if has(m.accessToken) {
+		m.Username, err = get(m.accessToken)
 		if err != nil {
 			return nil, err
 		}
@@ -165,9 +165,8 @@ func GetMember(user string) (*Member, error) {
 	if err != nil {
 		return nil, err
 	}
-	// TODO why do we need to store it separately? Should be stored only in Member
-	if !m.accessToken.HasTokenInStore() {
-		m.accessToken.SetUsernameToTokenInStore(m.Username)
+	if !has(m.accessToken) {
+		put(m.accessToken, m.Username)
 	}
 	return m, nil
 }
@@ -209,18 +208,21 @@ func (m *Member) IsComplete() bool {
 	return true
 }
 
+func (m *Member) hasAccessToken() bool {
+	return m.accessToken != "" && len(m.accessToken) > 0
+}
+
 // connectToGithub creates a new github client.
 func (m *Member) connectToGithub() error {
 	if m.githubclient != nil {
 		return nil
 	}
-
-	if !m.accessToken.HasToken() {
-		return errors.New("Missing AccessToken to the memeber. Can't contact github.")
+	if !m.hasAccessToken() {
+		return errors.New("unable to connect to github; missing access token for " + m.Username)
 	}
 
 	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: m.accessToken.GetToken()},
+		&oauth2.Token{AccessToken: m.accessToken},
 	)
 	tc := oauth2.NewClient(oauth2.NoContext, ts)
 	m.githubclient = github.NewClient(tc)
@@ -420,7 +422,7 @@ func (m *Member) RemoveAssistingOrganization(org *Organization) (err error) {
 
 // GetToken returns the users github token.
 func (m *Member) GetToken() (token string) {
-	return m.accessToken.GetToken()
+	return m.accessToken
 }
 
 // String will stringify the member.

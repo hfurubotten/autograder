@@ -1,51 +1,52 @@
 package entities
 
-import "github.com/hfurubotten/autograder/database"
+import (
+	"crypto/sha256"
+	"fmt"
 
-// TokenBucketName is the bucket/table name for tokens in the database.
+	"github.com/hfurubotten/autograder/database"
+)
+
+// TokenBucketName is the bucket name for tokens in the database.
 var TokenBucketName = "tokens"
 
 func init() {
 	database.RegisterBucket(TokenBucketName)
 }
 
-// Token represents a access token retrieved in the oauth process.
-type Token struct {
-	accessToken string
+// has returns true if the given token is in the database.
+// Tokens are hashed before they are stored in the database to protect the on
+// disk version of the tokens.
+func has(token string) bool {
+	hash := sha256.Sum256([]byte(token))
+	return database.Has(TokenBucketName, fmt.Sprintf("%x", hash))
 }
 
-// NewToken returns a new token created from a oauth token.
-func NewToken(oauthtoken string) Token {
-	return Token{oauthtoken}
-}
-
-// HasTokenInStore checks if the token is in storage.
-func (t *Token) HasTokenInStore() bool {
-	return database.Has(TokenBucketName, t.accessToken)
-}
-
-// GetUsernameFromTokenInStore gets the username associated with the token.
-func (t *Token) GetUsernameFromTokenInStore() (user string, err error) {
-	err = database.Get(TokenBucketName, t.accessToken, &user)
+// get returns the user name associated with the given token, if the given
+// token exists in the database. An error is returned if the token is not
+// present in the database, or the database operation failed.
+// Tokens are hashed before they are stored in the database to protect the on
+// disk version of the tokens.
+func get(token string) (user string, err error) {
+	hash := sha256.Sum256([]byte(token))
+	err = database.Get(TokenBucketName, fmt.Sprintf("%x", hash), &user)
 	return user, err
 }
 
-// SetUsernameToTokenInStore sets the username associated with the token.
-func (t *Token) SetUsernameToTokenInStore(username string) (err error) {
-	return database.Put(TokenBucketName, t.accessToken, username)
+// put stores the association between the given token and user name in the
+// database. An error is returned if the database operation failed.
+// Tokens are hashed before they are stored in the database to protect the on
+// disk version of the tokens.
+func put(token, user string) error {
+	hash := sha256.Sum256([]byte(token))
+	return database.Put(TokenBucketName, fmt.Sprintf("%x", hash), user)
 }
 
-// RemoveTokenInStore removed the token from storage.
-func (t *Token) RemoveTokenInStore() (err error) {
-	return database.Remove(TokenBucketName, t.accessToken)
-}
-
-// HasToken checks if the token is set.
-func (t *Token) HasToken() bool {
-	return t.accessToken != ""
-}
-
-// GetToken returns the plain token string.
-func (t *Token) GetToken() string {
-	return t.accessToken
+// remove removes the given token from the database. An error is returned if the
+// database operation failed.
+// Tokens are hashed before they are stored in the database to protect the on
+// disk version of the tokens.
+func remove(token string) error {
+	hash := sha256.Sum256([]byte(token))
+	return database.Remove(TokenBucketName, fmt.Sprintf("%x", hash))
 }
