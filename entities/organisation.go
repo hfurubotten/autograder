@@ -51,7 +51,7 @@ type Organization struct {
 	GroupDeadlines       map[int]time.Time
 
 	StudentTeamID int
-	OwnerTeamID   int
+	TeacherTeamID int
 	Private       bool
 
 	//GroupCount         int
@@ -332,7 +332,7 @@ func (o *Organization) AddMembership(member *Member) (err error) {
 	var teams map[string]Team
 	if o.StudentTeamID == 0 {
 		teams, err = o.ListTeams()
-		students, ok := teams[StudentsTeam]
+		students, ok := teams[studentsTeam]
 		if !ok {
 			return errors.New("Couldn't find the students team.")
 		}
@@ -404,16 +404,16 @@ func (o *Organization) AddTeacher(member *Member) (err error) {
 	o.Teachers[member.Username] = nil
 
 	var teams map[string]Team
-	if o.OwnerTeamID == 0 {
+	if o.TeacherTeamID == 0 {
 		teams, err = o.ListTeams()
-		owners, ok := teams[OwnersTeam]
+		owners, ok := teams[teachersTeam]
 		if !ok {
 			return errors.New("Couldn't find the owners team.")
 		}
-		o.OwnerTeamID = owners.ID
+		o.TeacherTeamID = owners.ID
 	}
 
-	_, _, err = o.githubadmin.Organizations.AddTeamMembership(o.OwnerTeamID, member.Username,
+	_, _, err = o.githubadmin.Organizations.AddTeamMembership(o.TeacherTeamID, member.Username,
 		&github.OrganizationAddTeamMembershipOptions{
 			Role: "member",
 		})
@@ -437,16 +437,16 @@ func (o *Organization) RemoveTeacher(member *Member) (err error) {
 	delete(o.Teachers, member.Username)
 
 	var teams map[string]Team
-	if o.OwnerTeamID == 0 {
+	if o.TeacherTeamID == 0 {
 		teams, err = o.ListTeams()
-		owners, ok := teams["Owners"]
+		owners, ok := teams[teachersTeam]
 		if !ok {
 			return errors.New("Couldn't find the owners team.")
 		}
-		o.OwnerTeamID = owners.ID
+		o.TeacherTeamID = owners.ID
 	}
 
-	_, err = o.githubadmin.Organizations.RemoveTeamMembership(o.OwnerTeamID, member.Username)
+	_, err = o.githubadmin.Organizations.RemoveTeamMembership(o.TeacherTeamID, member.Username)
 	return
 }
 

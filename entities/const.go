@@ -11,8 +11,8 @@ const (
 	GroupRepoPrefix    = "group"
 
 	// Standard team names
-	StudentsTeam = "students"
-	OwnersTeam   = "Owners"
+	studentsTeam = "students"
+	teachersTeam = "Owners" //TODO Should be changed to 'teachers' and correspondingly we need to create this team at the start of the course.
 
 	// Team premission names on github
 	AdminPermission = "admin"

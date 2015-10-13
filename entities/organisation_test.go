@@ -164,8 +164,8 @@ func compareOrganizations(org1, org2 *Organization, t *testing.T) {
 	if org1.StudentTeamID != org2.StudentTeamID {
 		t.Errorf("Two organizations do not have equal StudentTeamID field. %v != %v", org1.StudentTeamID, org2.StudentTeamID)
 	}
-	if org1.OwnerTeamID != org2.OwnerTeamID {
-		t.Errorf("Two organizations do not have equal OwnerTeamID field. %v != %v", org1.OwnerTeamID, org2.OwnerTeamID)
+	if org1.TeacherTeamID != org2.TeacherTeamID {
+		t.Errorf("Two organizations do not have equal OwnerTeamID field. %v != %v", org1.TeacherTeamID, org2.TeacherTeamID)
 	}
 	if org1.Private != org2.Private {
 		t.Errorf("Two organizations do not have equal Private field. %v != %v", org1.Private, org2.Private)
