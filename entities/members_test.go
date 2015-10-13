@@ -248,8 +248,8 @@ func TestAddOrganization(t *testing.T) {
 
 		for _, cname := range tcase.in {
 			if opt, ok := user.Courses[cname]; ok {
-				if opt.Course != cname {
-					t.Errorf("In course options for %s got wrong course name. Got %s", cname, opt.Course)
+				if opt.CourseName != cname {
+					t.Errorf("In course options for %s got wrong course name. Got %s", cname, opt.CourseName)
 				}
 			} else {
 				t.Errorf("%s is missing in course list", cname)
@@ -596,7 +596,7 @@ func TestMemberSetApprovedBuild(t *testing.T) {
 			continue
 		}
 
-		user.Courses[in.Course] = NewCourseOptions(in.Course)
+		user.Courses[in.Course] = NewCourse(in.Course)
 
 		user.SetApprovedBuild(in.Course, in.Labnum, in.BuildID, in.Date)
 

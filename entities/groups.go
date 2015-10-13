@@ -41,7 +41,7 @@ type Group struct {
 	Members map[string]interface{}
 
 	CurrentLabNum int
-	Assignments   map[int]*LabAssignmentOptions
+	Assignments   map[int]*Assignment
 
 	lock sync.Mutex
 }
@@ -56,7 +56,7 @@ func NewGroup(org string, groupid int, readonly bool) (g *Group, err error) {
 		Active:        false,
 		Course:        org,
 		Members:       make(map[string]interface{}),
-		Assignments:   make(map[int]*LabAssignmentOptions),
+		Assignments:   make(map[int]*Assignment),
 		CurrentLabNum: 1,
 	}
 
@@ -161,11 +161,11 @@ func (g *Group) RemoveMember(user string) {
 // AddBuildResult will add a build result to the group.
 func (g *Group) AddBuildResult(lab, buildid int) {
 	if g.Assignments == nil {
-		g.Assignments = make(map[int]*LabAssignmentOptions)
+		g.Assignments = make(map[int]*Assignment)
 	}
 
 	if _, ok := g.Assignments[lab]; !ok {
-		g.Assignments[lab] = NewLabAssignmentOptions()
+		g.Assignments[lab] = NewAssignment()
 	}
 
 	g.Assignments[lab].AddBuildResult(buildid)
@@ -190,7 +190,7 @@ func (g *Group) GetLastBuildID(lab int) int {
 // SetApprovedBuild will put the approved build results in
 func (g *Group) SetApprovedBuild(labnum, buildid int, date time.Time) {
 	if _, ok := g.Assignments[labnum]; !ok {
-		g.Assignments[labnum] = NewLabAssignmentOptions()
+		g.Assignments[labnum] = NewAssignment()
 	}
 
 	g.Assignments[labnum].ApproveDate = date
@@ -204,11 +204,11 @@ func (g *Group) SetApprovedBuild(labnum, buildid int, date time.Time) {
 // AddNotes will add notes to a lab assignment.
 func (g *Group) AddNotes(lab int, notes string) {
 	if g.Assignments == nil {
-		g.Assignments = make(map[int]*LabAssignmentOptions)
+		g.Assignments = make(map[int]*Assignment)
 	}
 
 	if _, ok := g.Assignments[lab]; !ok {
-		g.Assignments[lab] = NewLabAssignmentOptions()
+		g.Assignments[lab] = NewAssignment()
 	}
 
 	g.Assignments[lab].Notes = notes
@@ -217,11 +217,11 @@ func (g *Group) AddNotes(lab int, notes string) {
 // GetNotes will get notes from a lab assignment.
 func (g *Group) GetNotes(lab int) string {
 	if g.Assignments == nil {
-		g.Assignments = make(map[int]*LabAssignmentOptions)
+		g.Assignments = make(map[int]*Assignment)
 	}
 
 	if _, ok := g.Assignments[lab]; !ok {
-		g.Assignments[lab] = NewLabAssignmentOptions()
+		g.Assignments[lab] = NewAssignment()
 	}
 
 	return g.Assignments[lab].Notes

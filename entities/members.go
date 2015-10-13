@@ -32,7 +32,7 @@ type Member struct {
 	IsAdmin     bool
 
 	Teaching         map[string]interface{}
-	Courses          map[string]CourseOptions
+	Courses          map[string]Course
 	AssistantCourses map[string]interface{}
 
 	accessToken  string
@@ -69,7 +69,7 @@ func NewMember(token string) (m *Member, err error) {
 			User:             u,
 			accessToken:      token,
 			Teaching:         make(map[string]interface{}),
-			Courses:          make(map[string]CourseOptions),
+			Courses:          make(map[string]Course),
 			AssistantCourses: make(map[string]interface{}),
 		}
 		err = m.loadDataFromGithub()
@@ -132,7 +132,7 @@ func NewMemberFromUsername(userName string) (m *Member, err error) {
 		// accessToken:      token,
 		User:             u,
 		Teaching:         make(map[string]interface{}),
-		Courses:          make(map[string]CourseOptions),
+		Courses:          make(map[string]Course),
 		AssistantCourses: make(map[string]interface{}),
 	}
 	return m, nil
@@ -218,11 +218,11 @@ func (m *Member) AddBuildResult(course string, lab, buildid int) {
 	g := m.Courses[course]
 
 	if g.Assignments == nil {
-		g.Assignments = make(map[int]*LabAssignmentOptions)
+		g.Assignments = make(map[int]*Assignment)
 	}
 
 	if _, ok := g.Assignments[lab]; !ok {
-		g.Assignments[lab] = NewLabAssignmentOptions()
+		g.Assignments[lab] = NewAssignment()
 	}
 
 	g.Assignments[lab].AddBuildResult(buildid)
@@ -258,7 +258,7 @@ func (m *Member) SetApprovedBuild(course string, labnum, buildid int, date time.
 
 	opt := m.Courses[course]
 	if _, ok := opt.Assignments[labnum]; !ok {
-		opt.Assignments[labnum] = NewLabAssignmentOptions()
+		opt.Assignments[labnum] = NewAssignment()
 	}
 
 	opt.Assignments[labnum].ApproveDate = date
@@ -278,11 +278,11 @@ func (m *Member) AddNotes(course string, lab int, notes string) {
 	g := m.Courses[course]
 
 	if g.Assignments == nil {
-		g.Assignments = make(map[int]*LabAssignmentOptions)
+		g.Assignments = make(map[int]*Assignment)
 	}
 
 	if _, ok := g.Assignments[lab]; !ok {
-		g.Assignments[lab] = NewLabAssignmentOptions()
+		g.Assignments[lab] = NewAssignment()
 		m.Courses[course] = g
 	}
 
@@ -298,11 +298,11 @@ func (m *Member) GetNotes(course string, lab int) string {
 	g := m.Courses[course]
 
 	if g.Assignments == nil {
-		g.Assignments = make(map[int]*LabAssignmentOptions)
+		g.Assignments = make(map[int]*Assignment)
 	}
 
 	if _, ok := g.Assignments[lab]; !ok {
-		g.Assignments[lab] = NewLabAssignmentOptions()
+		g.Assignments[lab] = NewAssignment()
 		m.Courses[course] = g
 	}
 
@@ -330,11 +330,11 @@ func (m *Member) ListOrgs() (ls []string, err error) {
 // AddOrganization will add a new github organization to attending courses.
 func (m *Member) AddOrganization(org *Organization) (err error) {
 	if m.Courses == nil {
-		m.Courses = make(map[string]CourseOptions)
+		m.Courses = make(map[string]Course)
 	}
 
 	if _, ok := m.Courses[org.Name]; !ok {
-		m.Courses[org.Name] = NewCourseOptions(org.Name)
+		m.Courses[org.Name] = NewCourse(org.Name)
 	}
 
 	return
@@ -343,14 +343,14 @@ func (m *Member) AddOrganization(org *Organization) (err error) {
 // RemoveOrganization will remove a github organization from attending courses.
 func (m *Member) RemoveOrganization(org *Organization) (err error) {
 	if m.Courses == nil {
-		m.Courses = make(map[string]CourseOptions)
+		m.Courses = make(map[string]Course)
 	}
 
 	if _, ok := m.Courses[org.Name]; ok {
 		c := m.Courses[org.Name]
 
 		if c.IsGroupMember {
-			g, err := NewGroup(c.Course, c.GroupNum, false)
+			g, err := NewGroup(c.CourseName, c.GroupNum, false)
 			if err != nil {
 				return err
 			}

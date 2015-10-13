@@ -3,46 +3,17 @@ package entities
 import (
 	"encoding/gob"
 	"math"
-	"time"
-
-	"github.com/autograde/kit/score"
 )
 
 func init() {
-	gob.Register(CourseOptions{})
-}
-
-// LabAssignmentOptions represents a lab assignments results.
-type LabAssignmentOptions struct {
-	Notes         string      // Teachers notes on a lab.
-	ExtraCredit   score.Score // extra credit from the teacher.
-	ApproveDate   time.Time   // When a lab was approved.
-	ApprovedBuild int         // Which build approved the lab.
-	Builds        []int
-}
-
-// NewLabAssignmentOptions will create a new LabAssignmentOptions object.
-func NewLabAssignmentOptions() *LabAssignmentOptions {
-	return &LabAssignmentOptions{
-		ApprovedBuild: -1,
-		Builds:        []int{},
-	}
-}
-
-// AddBuildResult will add build ID to the assignment options.
-func (l *LabAssignmentOptions) AddBuildResult(buildid int) {
-	if l.Builds == nil {
-		l.Builds = []int{}
-	}
-
-	l.Builds = append(l.Builds, buildid)
+	gob.Register(Course{})
 }
 
 // CourseOptions represent the course options a user need when signed up for a course.
-type CourseOptions struct {
-	Course        string
+type Course struct {
+	CourseName    string
 	CurrentLabNum int
-	Assignments   map[int]*LabAssignmentOptions
+	Assignments   map[int]*Assignment
 	UsedSlipDays  int
 
 	// Group link
@@ -51,18 +22,18 @@ type CourseOptions struct {
 }
 
 // NewCourseOptions will create a new course option object.
-func NewCourseOptions(course string) CourseOptions {
-	return CourseOptions{
-		Course:        course,
+func NewCourse(course string) Course {
+	return Course{
+		CourseName:    course,
 		CurrentLabNum: 1,
-		Assignments:   make(map[int]*LabAssignmentOptions),
+		Assignments:   make(map[int]*Assignment),
 	}
 }
 
 // RecalculateSlipDays will calculate and set the number of slipdays used on the
 // specified course.
-func (co *CourseOptions) RecalculateSlipDays() error {
-	org, err := NewOrganization(co.Course, true)
+func (co *Course) RecalculateSlipDays() error {
+	org, err := NewOrganization(co.CourseName, true)
 	if err != nil {
 		return err
 	}
@@ -80,7 +51,7 @@ func (co *CourseOptions) RecalculateSlipDays() error {
 	}
 
 	if co.IsGroupMember {
-		group, err := NewGroup(co.Course, co.GroupNum, true)
+		group, err := NewGroup(co.CourseName, co.GroupNum, true)
 		if err != nil {
 			return err
 		}

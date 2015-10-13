@@ -500,7 +500,7 @@ func (o *Organization) IsMember(member *Member) bool {
 	_, mok := member.Courses[o.Name]
 
 	if orgok && !mok {
-		member.Courses[o.Name] = NewCourseOptions(o.Name)
+		member.Courses[o.Name] = NewCourse(o.Name)
 	} else if !orgok && mok {
 		o.Members[member.Username] = nil
 	}

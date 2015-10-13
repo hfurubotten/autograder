@@ -13,14 +13,14 @@ var newCourseOptionsInput = []string{
 
 func TestNewCourseOptions(t *testing.T) {
 	for _, inputname := range newCourseOptionsInput {
-		opt := NewCourseOptions(inputname)
+		opt := NewCourse(inputname)
 
 		if opt.Assignments == nil {
 			t.Error("NewCourseOptions created struct with Assignments as nil, want map[int]LabAssignmentOptions.")
 		}
 
-		if opt.Course != inputname {
-			t.Errorf("NewCourseOptions created struct with IsGroupMember as %s, want %s.", opt.Course, inputname)
+		if opt.CourseName != inputname {
+			t.Errorf("NewCourseOptions created struct with IsGroupMember as %s, want %s.", opt.CourseName, inputname)
 		}
 
 		if opt.CurrentLabNum != 1 {
@@ -128,11 +128,11 @@ func TestRecalculateSlipDays(t *testing.T) {
 			continue
 		}
 
-		opt := NewCourseOptions(in.Course)
+		opt := NewCourse(in.Course)
 
 		for i, date := range in.IndvApproveDate {
 			org.IndividualDeadlines[i] = in.IndvDeadline[i]
-			opt.Assignments[i] = NewLabAssignmentOptions()
+			opt.Assignments[i] = NewAssignment()
 			opt.Assignments[i].ApproveDate = date
 		}
 
@@ -148,7 +148,7 @@ func TestRecalculateSlipDays(t *testing.T) {
 
 			for i, date := range in.GroupApproveDate {
 				org.GroupDeadlines[i] = in.GroupDeadline[i]
-				group.Assignments[i] = NewLabAssignmentOptions()
+				group.Assignments[i] = NewAssignment()
 				group.Assignments[i].ApproveDate = date
 			}
 		}
