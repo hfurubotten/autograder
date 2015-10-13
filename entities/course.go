@@ -9,7 +9,8 @@ func init() {
 	gob.Register(Course{})
 }
 
-// CourseOptions represent the course options a user need when signed up for a course.
+// Course holds data about a user's course details, including slip day usage
+// and assignments.
 type Course struct {
 	CourseName    string
 	CurrentLabNum int
@@ -21,7 +22,7 @@ type Course struct {
 	GroupNum      int
 }
 
-// NewCourseOptions will create a new course option object.
+// NewCourse will create a new course option object.
 func NewCourse(course string) Course {
 	return Course{
 		CourseName:    course,
