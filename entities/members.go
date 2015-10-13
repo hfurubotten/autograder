@@ -24,7 +24,7 @@ func init() {
 
 // Member represent a student in autograder.
 type Member struct {
-	entities.User
+	entities.User //TODO clean up; make clearer separation between User and Member and the game stuff
 
 	StudentID   int
 	IsTeacher   bool
@@ -42,46 +42,43 @@ type Member struct {
 // NewMember tries to use the given oauth token to find the
 // user stored on disk/memory. If not found it will load user
 // data from github and make a new user.
-func NewMember(oauthtoken string) (m *Member, err error) {
-	if oauthtoken == "" {
-		return nil, errors.New("Cannot have empty oauth token")
+func NewMember(token string) (m *Member, err error) {
+	if token == "" {
+		return nil, errors.New("non-empty OAuth token is required")
 	}
-
-	u := entities.User{
-		WeeklyScore:  make(map[int]int64),
-		MonthlyScore: make(map[time.Month]int64),
-	}
-	m = &Member{
-		User:             u,
-		accessToken:      oauthtoken,
-		Teaching:         make(map[string]interface{}),
-		Courses:          make(map[string]CourseOptions),
-		AssistantCourses: make(map[string]interface{}),
-	}
-
-	if has(m.accessToken) {
-		m.Username, err = get(m.accessToken)
+	var user string
+	if has(token) {
+		user, err = get(token)
 		if err != nil {
 			return nil, err
 		}
+		m, err = NewMemberFromUsername(user) //TODO need to pass in token also
+		if err != nil {
+			return nil, err
+		}
+		// m.accessToken = token //TODO or just set it here!!
 	} else {
+		//TODO clean up this code later
+		//TODO This code branch is probably not being tested; it should be
+		u := entities.User{
+			Username:     user,
+			WeeklyScore:  make(map[int]int64),
+			MonthlyScore: make(map[time.Month]int64),
+		}
+		m = &Member{
+			User:             u,
+			accessToken:      token,
+			Teaching:         make(map[string]interface{}),
+			Courses:          make(map[string]CourseOptions),
+			AssistantCourses: make(map[string]interface{}),
+		}
 		err = m.loadDataFromGithub()
 		if err != nil {
 			return nil, err
 		}
 	}
-	user := m.Username
-	//TODO THis is too messy; clean up
-	mx, err := GetMember(user)
-	if err != nil {
-		if _, nokey := err.(database.KeyNotFoundError); nokey {
-			err = nil
-		}
-	}
-	if mx != nil {
-		m = mx
-	}
 
+	//TODO Refactor: This code should be moved elsewhere
 	if m.IsTeacher {
 		var org *Organization
 		for k := range m.Teaching {
@@ -90,9 +87,9 @@ func NewMember(oauthtoken string) (m *Member, err error) {
 				continue
 			}
 
-			if org.AdminToken != oauthtoken {
+			if org.AdminToken != token {
 				org.Lock()
-				org.AdminToken = oauthtoken
+				org.AdminToken = token
 				org.Save()
 			}
 		}
@@ -105,10 +102,9 @@ func NewMember(oauthtoken string) (m *Member, err error) {
 // It will copy all information from the given GitHub data to the new User object.
 func NewUserWithGithubData(gu *github.User) (u *Member, err error) {
 	if gu == nil {
-		return nil, errors.New("Cannot parse nil github.User object.")
+		return nil, errors.New("github user object is required")
 	}
-
-	u, err = NewMemberFromUsername(*gu.Login)
+	u, err = NewMemberFromUsername(*gu.Login) //TODO Need to pass in token also??
 	if err != nil {
 		return nil, err
 	}
@@ -119,17 +115,21 @@ func NewUserWithGithubData(gu *github.User) (u *Member, err error) {
 }
 
 // NewMemberFromUsername loads a user from storage with the given username.
+//TODO rename this method (should also take token)
 func NewMemberFromUsername(userName string) (m *Member, err error) {
 	m, err = GetMember(userName)
 	if err == nil {
+		// userName found in database; return early
 		return m, nil
 	}
+	// userName not found in database
 	u := entities.User{
 		Username:     userName,
 		WeeklyScore:  make(map[int]int64),
 		MonthlyScore: make(map[time.Month]int64),
 	}
 	m = &Member{
+		// accessToken:      token,
 		User:             u,
 		Teaching:         make(map[string]interface{}),
 		Courses:          make(map[string]CourseOptions),
@@ -170,26 +170,6 @@ func GetMember(user string) (*Member, error) {
 	}
 	return m, nil
 }
-
-// func (m *Member) loadStoredData() error {
-// 	// var m *Member //TODO We should not create object first and then populate it.
-// 	err := database.Get(MemberBucketName, m.Username, &m)
-// 	if err != nil {
-// 		// TODO Why is it ok that the key was not found?
-// 		// This check is necessary since otherwise tests fail.
-// 		if _, nokey := err.(database.KeyNotFoundError); nokey {
-// 			err = nil
-// 		}
-// 		return err
-// 		// return nil, err
-// 	}
-//
-// 	if !m.accessToken.HasTokenInStore() {
-// 		m.accessToken.SetUsernameToTokenInStore(m.Username)
-// 	}
-// 	return nil
-// 	// return m, nil
-// }
 
 // Save stores the user to disk and caches it in memory.
 // save the object will be automatically unlocked.
