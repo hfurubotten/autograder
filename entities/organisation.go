@@ -785,32 +785,23 @@ func (o *Organization) CreateFile(repo, path, content, commitmsg string) (commit
 	return *commit.SHA, nil
 }
 
-// ListRegisteredOrganizations will list all the organizations registered in autograder.
-func ListRegisteredOrganizations() (out []*Organization) {
-	out = make([]*Organization, 0)
-	keys := []string{}
-
-	database.GetPureDB().View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(OrganizationBucketName))
-		c := b.Cursor()
-
-		for k, _ := c.First(); k != nil; k, _ = c.Next() {
-			keys = append(keys, string(k))
-		}
-
-		return nil
-	})
-
-	for _, key := range keys {
-		org, err := NewOrganization(key, true)
+// ListRegisteredOrganizations returns the list of Autograder organizations.
+func ListRegisteredOrganizations() (orgs []*Organization) {
+	// iteration function called for each entry in the organization bucket
+	fn := func(k, v []byte) error {
+		org, err := NewOrganization(string(k), true)
 		if err != nil {
-			log.Println(err)
-			continue
+			// this will terminate the iteration, even if other orgs could be created
+			return err
 		}
-
-		out = append(out, org)
+		orgs = append(orgs, org)
+		return nil
 	}
 
+	err := database.ForEach(OrganizationBucketName, fn)
+	if err != nil {
+		log.Println(err)
+	}
 	return
 }
 

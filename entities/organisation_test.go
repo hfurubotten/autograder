@@ -133,6 +133,12 @@ func TestListRegisteredOrganizations(t *testing.T) {
 	}
 }
 
+func BenchmarkListRegOrgs(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		ListRegisteredOrganizations()
+	}
+}
+
 func compareOrganizations(org1, org2 *Organization, t *testing.T) {
 	if org1.Name != org2.Name {
 		t.Errorf("Two organizations do not have equal Name field. %v != %v", org1.Name, org2.Name)

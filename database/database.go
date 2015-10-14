@@ -64,6 +64,17 @@ func Get(bucket string, key string, val interface{}) (err error) {
 	})
 }
 
+// ForEach iterates over all keys in bucket, evaluating the function fn.
+func ForEach(bucket string, fn func(k, v []byte) error) error {
+	return db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(bucket))
+		if b == nil {
+			return errors.New("unknown bucket: " + bucket)
+		}
+		return b.ForEach(fn)
+	})
+}
+
 // Has returns true the key is present in the given bucket.
 func Has(bucket, key string) bool {
 	found := false
