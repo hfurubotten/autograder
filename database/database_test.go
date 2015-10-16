@@ -238,35 +238,6 @@ func TestLockFuncs(t *testing.T) {
 	}
 }
 
-func xTestConcurrentLocking2(t *testing.T) {
-	key := "hey dude"
-	done := make(chan bool, 3)
-	go func(ch chan bool) {
-		Lock(tmpbucket, key)
-		t.Log("I got the lock 1")
-		Unlock(tmpbucket, key)
-		t.Log("I unlocked it  1")
-		ch <- true
-	}(done)
-	go func(ch chan bool) {
-		Lock(tmpbucket, key)
-		t.Log("I got the lock 2")
-		Unlock(tmpbucket, key)
-		t.Log("I unlocked it  2")
-		ch <- true
-	}(done)
-	go func(ch chan bool) {
-		Lock(tmpbucket, key)
-		t.Log("I got the lock 3")
-		Unlock(tmpbucket, key)
-		t.Log("I unlocked it  3")
-		ch <- true
-	}(done)
-	<-done
-	<-done
-	<-done
-}
-
 func TestConcurrentLocking(t *testing.T) {
 	keyLocks := newKeyLocker()
 	key := "hey dude"
