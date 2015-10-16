@@ -5,6 +5,9 @@ import (
 	"sync"
 )
 
+// TODO: Issue with this implementation. We do not delete any bucketkey-to-lock
+// mappings, and so we will run out of memory eventually.
+
 // keyLocker allows for fine-grained locking on a per bucket/key pair.
 type keyLocker struct {
 	mu      *sync.Mutex          // protect map from concurrent updates
@@ -32,7 +35,6 @@ func (k *keyLocker) get(bucket, key string) (*fineLock, bool) {
 	if !ok {
 		fl = &fineLock{}
 		fl.cond = sync.NewCond(fl)
-		fl.locked = false
 		k.keyLock[bucketkey] = fl
 	}
 	return fl, ok
@@ -62,5 +64,5 @@ func (k *keyLocker) unlock(bucket string, key string) {
 	wkl.locked = false
 	wkl.cond.Signal() // signal that bucketkey is unlocked
 	wkl.Unlock()
-	// delete(k.keyLock, bucketkey)
+	// delete(k.keyLock, bucket+"/"+key)
 }
