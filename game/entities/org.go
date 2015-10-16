@@ -2,7 +2,7 @@ package entities
 
 import (
 	"encoding/gob"
-//	"errors"
+	//	"errors"
 	"sync"
 	"time"
 

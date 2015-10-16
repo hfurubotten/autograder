@@ -171,6 +171,11 @@ func GetMember(user string) (*Member, error) {
 	return m, nil
 }
 
+// Update database under a lock regime to ensure safety.
+func (m *Member) Update(fn func() error) (err error) {
+	return nil
+}
+
 // Save stores the user to disk and caches it in memory.
 // save the object will be automatically unlocked.
 // NB: If error occure the unlocking of the object need to be done manually.
