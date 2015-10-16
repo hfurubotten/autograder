@@ -38,8 +38,6 @@ func (k *keyLocker) get(bucket, key string) (*fineLock, bool) {
 	return fl, ok
 }
 
-//TODO replace condition variable with synchronous channel instead
-
 // lock acquires the lock on the given bucket/key pair to prevent concurrent
 // access.  If the lock is already in use, the calling goroutine
 // blocks until the mutex is available.
