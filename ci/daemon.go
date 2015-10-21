@@ -104,7 +104,7 @@ func StartTesterDaemon(opt DaemonOptions) {
 		}
 		// build for single user. Stores build ID to user.
 	} else {
-		user, err := git.NewMemberFromUsername(opt.User)
+		user, err := git.GetMember(opt.User)
 		if err != nil {
 			log.Println(err)
 			return

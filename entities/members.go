@@ -52,7 +52,7 @@ func NewMember(token string) (m *Member, err error) {
 		if err != nil {
 			return nil, err
 		}
-		m, err = NewMemberFromUsername(user) //TODO need to pass in token also
+		m, err = GetMember(user) //TODO need to pass in token also
 		if err != nil {
 			return nil, err
 		}
@@ -104,7 +104,7 @@ func NewUserWithGithubData(gu *github.User) (u *Member, err error) {
 	if gu == nil {
 		return nil, errors.New("github user object is required")
 	}
-	u, err = NewMemberFromUsername(*gu.Login) //TODO Need to pass in token also??
+	u, err = GetMember(*gu.Login) //TODO Need to pass in token also??
 	if err != nil {
 		return nil, err
 	}
@@ -114,15 +114,23 @@ func NewUserWithGithubData(gu *github.User) (u *Member, err error) {
 	return
 }
 
-// NewMemberFromUsername loads a user from storage with the given username.
-//TODO rename this method (should also take token)
-func NewMemberFromUsername(userName string) (m *Member, err error) {
-	m, err = GetMember(userName)
+// GetMember returns the member associated with the given userName.
+//TODO should this also take token?
+func GetMember(userName string) (m *Member, err error) {
+	err = database.Get(MemberBucketName, userName, &m)
 	if err == nil {
+		// TODO We should make sure that the access token is always saved whenever
+		// we put a member into the MemberBucketName. So that we can remove this code.
+		// unless token for userName is already stored
+		if !hasToken(m.accessToken) {
+			// make reverse lookup association from token to userName.
+			putToken(m.accessToken, m.Username)
+		}
 		// userName found in database; return early
 		return m, nil
 	}
-	// userName not found in database
+
+	// userName not found in database; create new member object
 	u := entities.User{
 		Username:     userName,
 		WeeklyScore:  make(map[int]int64),
@@ -158,21 +166,9 @@ func (m *Member) loadDataFromGithub() (err error) {
 	return
 }
 
-// GetMember returns the member data for the given user.
-func GetMember(user string) (*Member, error) {
-	var m *Member
-	err := database.Get(MemberBucketName, user, &m)
-	if err != nil {
-		return nil, err
-	}
-	if !hasToken(m.accessToken) {
-		putToken(m.accessToken, m.Username)
-	}
-	return m, nil
-}
-
 // Update database under a lock regime to ensure safety.
 func (m *Member) Update(fn func() error) (err error) {
+	//TODO implement safe locking
 	return nil
 }
 
@@ -424,7 +420,7 @@ func ListAllMembers() (members []*Member) {
 		}
 
 		b.ForEach(func(k, v []byte) error {
-			m, err := NewMemberFromUsername(string(k))
+			m, err := GetMember(string(k))
 			if err == nil {
 				members = append(members, m)
 			}

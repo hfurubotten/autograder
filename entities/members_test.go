@@ -310,7 +310,7 @@ var testListAllMembersInput = []string{}
 
 func TestListAllMembers(t *testing.T) {
 	for _, username := range testListAllMembersInput {
-		user, err := NewMemberFromUsername(username)
+		user, err := GetMember(username)
 		if err != nil {
 			t.Errorf("Error getting user: %v", err)
 		}
@@ -418,7 +418,7 @@ var testAddMemberBuildResultInput = []struct {
 
 func TestAddAndGetMemberBuildResult(t *testing.T) {
 	for _, in := range testAddMemberBuildResultInput {
-		user, err := NewMemberFromUsername(in.username)
+		user, err := GetMember(in.username)
 		if err != nil {
 			t.Error(err)
 			continue
@@ -527,7 +527,7 @@ var testAddAndGetMemberNotesInput = []struct {
 
 func TestAddAndGetMemberNotes(t *testing.T) {
 	for _, in := range testAddAndGetMemberNotesInput {
-		user, err := NewMemberFromUsername(in.username)
+		user, err := GetMember(in.username)
 		if err != nil {
 			t.Error(err)
 			continue
@@ -590,7 +590,7 @@ var testMemberSetApprovedBuildInput = []struct {
 
 func TestMemberSetApprovedBuild(t *testing.T) {
 	for _, in := range testMemberSetApprovedBuildInput {
-		user, err := NewMemberFromUsername(in.User)
+		user, err := GetMember(in.User)
 		if err != nil {
 			t.Error(err)
 			continue

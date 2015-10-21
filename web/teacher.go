@@ -66,7 +66,7 @@ func TeachersPanelHandler(w http.ResponseWriter, r *http.Request) {
 	var status string
 	for username := range users {
 		// check status up against Github
-		users[username], err = git.NewMemberFromUsername(username)
+		users[username], err = git.GetMember(username)
 		if err != nil {
 			continue
 		}
@@ -90,12 +90,12 @@ func TeachersPanelHandler(w http.ResponseWriter, r *http.Request) {
 
 	// gets teachers
 	for username := range org.Teachers {
-		org.Teachers[username], _ = git.NewMemberFromUsername(username)
+		org.Teachers[username], _ = git.GetMember(username)
 	}
 
 	// gets users
 	for username := range org.Members {
-		org.Members[username], _ = git.NewMemberFromUsername(username)
+		org.Members[username], _ = git.GetMember(username)
 	}
 
 	// get pending groups
@@ -118,7 +118,7 @@ func TeachersPanelHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		for key := range group.Members {
-			groupmember, _ := git.NewMemberFromUsername(key)
+			groupmember, _ := git.GetMember(key)
 			group.Members[key] = groupmember
 		}
 
@@ -130,7 +130,7 @@ func TeachersPanelHandler(w http.ResponseWriter, r *http.Request) {
 		groupID, _ := strconv.Atoi(groupname[5:])
 		group, _ := git.NewGroup(org.Name, groupID, true)
 		for key := range group.Members {
-			groupmember, _ := git.NewMemberFromUsername(key)
+			groupmember, _ := git.GetMember(key)
 			group.Members[key] = groupmember
 		}
 		org.Groups[groupname] = group
@@ -231,7 +231,7 @@ func ShowResultHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		user, err := git.NewMemberFromUsername(username)
+		user, err := git.GetMember(username)
 		if err != nil {
 			http.Error(w, err.Error(), 500)
 		}
@@ -281,7 +281,7 @@ func AddAssistantHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	assistant, err := git.NewMemberFromUsername(username)
+	assistant, err := git.GetMember(username)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
@@ -344,7 +344,7 @@ func RemoveAssistantHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	assistant, err := git.NewMemberFromUsername(username)
+	assistant, err := git.GetMember(username)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return

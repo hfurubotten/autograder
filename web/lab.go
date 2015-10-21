@@ -110,7 +110,7 @@ func ApproveLabHandler(w http.ResponseWriter, r *http.Request) {
 
 		if org.Slipdays {
 			for username := range group.Members {
-				user, err := git.NewMemberFromUsername(username)
+				user, err := git.GetMember(username)
 				if err != nil {
 					log.Println(err)
 					continue
@@ -125,7 +125,7 @@ func ApproveLabHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	} else {
-		user, err := git.NewMemberFromUsername(username)
+		user, err := git.GetMember(username)
 		if err != nil {
 			log.Println(err.Error())
 			http.Error(w, err.Error(), 500)
@@ -268,7 +268,7 @@ func NotesHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 	} else {
-		user, err := git.NewMemberFromUsername(username)
+		user, err := git.GetMember(username)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, err.Error(), 500)
@@ -346,7 +346,7 @@ func SlipdaysHandler(w http.ResponseWriter, r *http.Request) {
 	if org.IsTeacher(member) {
 		username := r.FormValue("Username")
 
-		user, err := git.NewMemberFromUsername(username)
+		user, err := git.GetMember(username)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, err.Error(), 404)

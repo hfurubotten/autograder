@@ -256,7 +256,7 @@ func StartTestBuildProcess(load github.PushPayload) (err error) {
 		return errors.New("invalid organization name: " + orgName)
 	}
 	org, err := git.NewOrganization(orgName, true)
-	user, err := git.NewMemberFromUsername(userLogin)
+	user, err := git.GetMember(userLogin)
 	//TODO these erros will be returned at the end. Is that intentional??
 	// Shouldn't they be handled here?
 

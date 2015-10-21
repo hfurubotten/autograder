@@ -607,7 +607,7 @@ func ApproveCourseMembershipHandler(w http.ResponseWriter, r *http.Request) {
 	delete(org.PendingUser, username)
 	org.Members[username] = nil
 
-	member, err := git.NewMemberFromUsername(username)
+	member, err := git.GetMember(username)
 	if err != nil {
 		view.ErrorMsg = "Could not retrieve the stored user."
 		enc.Encode(view)
@@ -943,7 +943,7 @@ func RemoveUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := git.NewMemberFromUsername(username)
+	user, err := git.GetMember(username)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return

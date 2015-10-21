@@ -125,7 +125,7 @@ func (g *Group) Activate() {
 	g.Active = true
 
 	for username := range g.Members {
-		user, err := NewMemberFromUsername(username)
+		user, err := GetMember(username)
 		if err != nil {
 			continue
 		}
@@ -276,7 +276,7 @@ func (g *Group) Save() error {
 // Delete will remove the group object.
 func (g *Group) Delete() error {
 	for username := range g.Members {
-		user, err := NewMemberFromUsername(username)
+		user, err := GetMember(username)
 		if err != nil {
 			continue
 		}

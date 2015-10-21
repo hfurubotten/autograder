@@ -202,7 +202,7 @@ func CIResultHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		user, err := git.NewMemberFromUsername(username)
+		user, err := git.GetMember(username)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, err.Error(), 404)
@@ -311,7 +311,7 @@ func CIResultSummaryHandler(w http.ResponseWriter, r *http.Request) {
 			//credit[labname] = lab.ExtraCredit
 		}
 	} else {
-		user, err := git.NewMemberFromUsername(username)
+		user, err := git.GetMember(username)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, err.Error(), 500)
@@ -453,7 +453,7 @@ func CIResultListHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 	} else {
-		user, err := git.NewMemberFromUsername(username)
+		user, err := git.GetMember(username)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, err.Error(), 500)
