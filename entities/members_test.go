@@ -32,7 +32,7 @@ var testNewMemberInput = []struct {
 
 func TestNewMember(t *testing.T) {
 	for _, in := range testNewMemberInput {
-		if err := put(in.token, in.username); err != nil {
+		if err := putToken(in.token, in.username); err != nil {
 			t.Error("Error storing tokens with username:", err)
 			continue
 		}

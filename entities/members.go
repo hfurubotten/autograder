@@ -47,8 +47,8 @@ func NewMember(token string) (m *Member, err error) {
 		return nil, errors.New("non-empty OAuth token is required")
 	}
 	var user string
-	if has(token) {
-		user, err = get(token)
+	if hasToken(token) {
+		user, err = getToken(token)
 		if err != nil {
 			return nil, err
 		}
@@ -165,8 +165,8 @@ func GetMember(user string) (*Member, error) {
 	if err != nil {
 		return nil, err
 	}
-	if !has(m.accessToken) {
-		put(m.accessToken, m.Username)
+	if !hasToken(m.accessToken) {
+		putToken(m.accessToken, m.Username)
 	}
 	return m, nil
 }

@@ -17,7 +17,7 @@ func init() {
 // has returns true if the given token is in the database.
 // Tokens are hashed before they are stored in the database to protect the on
 // disk version of the tokens.
-func has(token string) bool {
+func hasToken(token string) bool {
 	hash := sha256.Sum256([]byte(token))
 	return database.Has(TokenBucketName, fmt.Sprintf("%x", hash))
 }
@@ -27,7 +27,7 @@ func has(token string) bool {
 // present in the database, or the database operation failed.
 // Tokens are hashed before they are stored in the database to protect the on
 // disk version of the tokens.
-func get(token string) (user string, err error) {
+func getToken(token string) (user string, err error) {
 	hash := sha256.Sum256([]byte(token))
 	err = database.Get(TokenBucketName, fmt.Sprintf("%x", hash), &user)
 	return user, err
@@ -37,7 +37,7 @@ func get(token string) (user string, err error) {
 // database. An error is returned if the database operation failed.
 // Tokens are hashed before they are stored in the database to protect the on
 // disk version of the tokens.
-func put(token, user string) error {
+func putToken(token, user string) error {
 	hash := sha256.Sum256([]byte(token))
 	return database.Put(TokenBucketName, fmt.Sprintf("%x", hash), user)
 }
@@ -46,7 +46,7 @@ func put(token, user string) error {
 // database operation failed.
 // Tokens are hashed before they are stored in the database to protect the on
 // disk version of the tokens.
-func remove(token string) error {
+func removeToken(token string) error {
 	hash := sha256.Sum256([]byte(token))
 	return database.Remove(TokenBucketName, fmt.Sprintf("%x", hash))
 }
