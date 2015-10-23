@@ -21,7 +21,7 @@ func NewUserWithGithubData(gu *github.User) (u *Member, err error) {
 	if gu == nil {
 		return nil, errors.New("github user object is required")
 	}
-	u, err = GetMember(*gu.Login) //TODO Need to pass in token also??
+	u, err = GetMember(*gu.Login)
 	if err != nil {
 		return nil, err
 	}

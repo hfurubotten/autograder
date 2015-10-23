@@ -4,9 +4,9 @@ import (
 	"encoding/gob"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
-	"github.com/boltdb/bolt"
 	"github.com/google/go-github/github"
 	"github.com/hfurubotten/autograder/database"
 	"golang.org/x/oauth2"
@@ -358,23 +358,18 @@ func (m *Member) String() string {
 
 // ListAllMembers returns the list of all members stored in the system.
 func ListAllMembers() (members []*Member) {
-	database.GetPureDB().View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(MemberBucketName))
-		if b == nil {
-			return errors.New("unknown bucket: " + MemberBucketName)
+	fn := func(k, v []byte) error {
+		m, err := GetMember(string(k))
+		if err == nil {
+			members = append(members, m)
 		}
-
-		b.ForEach(func(k, v []byte) error {
-			m, err := GetMember(string(k))
-			if err == nil {
-				members = append(members, m)
-			}
-			// continue also if member couldn't be created
-			return nil
-		})
-
+		// continue also if member couldn't be created
 		return nil
-	})
+	}
+	err := database.ForEach(MemberBucketName, fn)
+	if err != nil {
+		log.Println(err)
+	}
 
 	return members
 }

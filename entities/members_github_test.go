@@ -10,13 +10,12 @@
 // To run the github dependent tests use the following:
 //   go test -v -tags github
 // Or:
-//   go test -v -tags github -run TestRepo
+//   go test -v -tags github -run TestGetGithubMember
 package entities
 
 import "testing"
 
 func TestGetGithubMember(t *testing.T) {
-	// gu := &github.User{}
 	gc, err := connect(mytoken)
 	if err != nil {
 		t.Errorf("Could not connect github user %v", err)
@@ -27,9 +26,11 @@ func TestGetGithubMember(t *testing.T) {
 	}
 	t.Logf("g: %v, x: %v\n", gu, xu)
 
-	// m, err := NewUserWithGithubData(gu)
-	// if err != nil {
-	// 	t.Errorf("Could not create github user %v", err)
-	// }
-	// t.Logf("m: %v\n", m)
+	m, err := NewUserWithGithubData(gu)
+	if err != nil {
+		t.Errorf("Could not create github user %v", err)
+	}
+	if m.Username != *gu.Login {
+		t.Errorf("unexpected github user %v returned", m.Username)
+	}
 }
