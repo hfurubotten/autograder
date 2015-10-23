@@ -9,7 +9,6 @@ import (
 	"github.com/boltdb/bolt"
 	"github.com/google/go-github/github"
 	"github.com/hfurubotten/autograder/database"
-	"github.com/hfurubotten/autograder/game/entities"
 	"golang.org/x/oauth2"
 )
 
@@ -24,7 +23,7 @@ func init() {
 
 // Member represent a student in autograder.
 type Member struct {
-	entities.User //TODO clean up; make clearer separation between User and Member and the game stuff
+	User //TODO clean up; make clearer separation between User and Member and the game stuff
 
 	StudentID   int
 	IsTeacher   bool
@@ -60,7 +59,7 @@ func NewMember(token string) (m *Member, err error) {
 	} else {
 		//TODO clean up this code later
 		//TODO This code branch is probably not being tested; it should be
-		u := entities.User{
+		u := User{
 			Username:     user,
 			WeeklyScore:  make(map[int]int64),
 			MonthlyScore: make(map[time.Month]int64),
@@ -115,7 +114,7 @@ func GetMember(userName string) (m *Member, err error) {
 	}
 
 	// userName not found in database; create new member object
-	u := entities.User{
+	u := User{
 		Username:     userName,
 		WeeklyScore:  make(map[int]int64),
 		MonthlyScore: make(map[time.Month]int64),

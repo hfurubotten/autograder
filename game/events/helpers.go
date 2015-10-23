@@ -5,7 +5,7 @@ import (
 	"log"
 	"runtime/debug"
 
-	"github.com/hfurubotten/autograder/game/entities"
+	"github.com/hfurubotten/autograder/entities"
 	"github.com/hfurubotten/autograder/game/points"
 	"github.com/hfurubotten/autograder/game/trophies"
 )

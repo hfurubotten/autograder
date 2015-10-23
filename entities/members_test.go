@@ -4,8 +4,6 @@ import (
 	"net/mail"
 	"testing"
 	"time"
-
-	"github.com/hfurubotten/autograder/game/entities"
 )
 
 var testNewMemberInput = []struct {
@@ -137,7 +135,7 @@ var testIsComplete = []struct {
 }{
 	{
 		&Member{
-			User: entities.User{
+			User: User{
 				Name: "Ola Normann",
 			},
 		},
@@ -145,7 +143,7 @@ var testIsComplete = []struct {
 	},
 	{
 		&Member{
-			User: entities.User{
+			User: User{
 				Name: "Ola Normann",
 			},
 			StudentID: 112222,
@@ -154,7 +152,7 @@ var testIsComplete = []struct {
 	},
 	{
 		&Member{
-			User: entities.User{
+			User: User{
 				Name:     "Ola Normann",
 				Username: "olanormann",
 			},
@@ -164,7 +162,7 @@ var testIsComplete = []struct {
 	},
 	{
 		&Member{
-			User: entities.User{
+			User: User{
 				Name:     "Ola Normann",
 				Username: "olanormann",
 			},
@@ -173,7 +171,7 @@ var testIsComplete = []struct {
 	},
 	{
 		&Member{
-			User: entities.User{
+			User: User{
 				Username: "olanormann",
 				Email:    &mail.Address{},
 			},
@@ -183,7 +181,7 @@ var testIsComplete = []struct {
 	},
 	{
 		&Member{
-			User: entities.User{
+			User: User{
 				Name:     "Ola Normann",
 				Username: "olanormann",
 				Email:    &mail.Address{},

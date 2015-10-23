@@ -3,6 +3,7 @@ package events
 import (
 	"testing"
 
+	git "github.com/hfurubotten/autograder/entities"
 	"github.com/hfurubotten/autograder/game/entities"
 )
 
@@ -16,11 +17,11 @@ var distributeScoresTest = []struct {
 	{"user1", 20, 61},
 }
 
-var userList = make(map[string]*entities.User)
+var userList = make(map[string]*git.User)
 
 func TestDistributeScores(t *testing.T) {
 	// Does not test if stored correctly, only the point calculation.
-	var user *entities.User
+	var user *git.User
 	var ok bool
 
 	repo, err := entities.NewRepo("testorg", "testrepo")
@@ -36,7 +37,7 @@ func TestDistributeScores(t *testing.T) {
 
 	for _, dst := range distributeScoresTest {
 		if user, ok = userList[dst.inUser]; !ok {
-			user, err = entities.NewUser(dst.inUser)
+			user, err = git.NewUser(dst.inUser)
 			if err != nil {
 				t.Error("Failed to open new user:", err)
 				continue
