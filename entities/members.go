@@ -23,7 +23,7 @@ func init() {
 
 // Member represent a student in autograder.
 type Member struct {
-	User //TODO clean up; make clearer separation between User and Member and the game stuff
+	UserProfile //TODO clean up; make clearer separation between User and Member and the game stuff
 
 	StudentID   int
 	IsTeacher   bool
@@ -59,13 +59,13 @@ func NewMember(token string) (m *Member, err error) {
 	} else {
 		//TODO clean up this code later
 		//TODO This code branch is probably not being tested; it should be
-		u := User{
+		u := UserProfile{
 			Username:     user,
 			WeeklyScore:  make(map[int]int64),
 			MonthlyScore: make(map[time.Month]int64),
 		}
 		m = &Member{
-			User:             u,
+			UserProfile:      u,
 			accessToken:      token,
 			Teaching:         make(map[string]interface{}),
 			Courses:          make(map[string]Course),
@@ -114,14 +114,14 @@ func GetMember(userName string) (m *Member, err error) {
 	}
 
 	// userName not found in database; create new member object
-	u := User{
+	u := UserProfile{
 		Username:     userName,
 		WeeklyScore:  make(map[int]int64),
 		MonthlyScore: make(map[time.Month]int64),
 	}
 	m = &Member{
 		// accessToken:      token,
-		User:             u,
+		UserProfile:      u,
 		Teaching:         make(map[string]interface{}),
 		Courses:          make(map[string]Course),
 		AssistantCourses: make(map[string]interface{}),

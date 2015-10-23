@@ -35,7 +35,7 @@ func NewUserWithGithubData(gu *github.User) (u *Member, err error) {
 // github User object. It will copy all information from
 // the given GitHub data to the new User object.
 //TODO Figuring out which to keep... (also in github_connet.go)
-func xNewUserWithGithubData(gu *github.User) (u *User, err error) {
+func xNewUserWithGithubData(gu *github.User) (u *UserProfile, err error) {
 	if gu == nil {
 		return nil, errors.New("Cannot parse nil User object.")
 	}
@@ -59,7 +59,7 @@ func connect(token string) (*github.Client, error) {
 }
 
 // connectToGithub sets up the nesassery github client to talk to github.
-func (u *User) connectToGithub() error {
+func (u *UserProfile) connectToGithub() error {
 	if u.githubclient != nil {
 		return nil
 	}

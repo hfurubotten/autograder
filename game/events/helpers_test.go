@@ -17,11 +17,11 @@ var distributeScoresTest = []struct {
 	{"user1", 20, 61},
 }
 
-var userList = make(map[string]*git.User)
+var userList = make(map[string]*git.UserProfile)
 
 func TestDistributeScores(t *testing.T) {
 	// Does not test if stored correctly, only the point calculation.
-	var user *git.User
+	var user *git.UserProfile
 	var ok bool
 
 	repo, err := entities.NewRepo("testorg", "testrepo")

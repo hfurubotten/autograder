@@ -12,10 +12,10 @@ import (
 )
 
 func init() {
-	gob.Register(User{})
+	gob.Register(UserProfile{})
 }
 
-type User struct {
+type UserProfile struct {
 	lock     sync.RWMutex
 	mainlock sync.Mutex
 
@@ -46,8 +46,8 @@ type User struct {
 // NewUser tries to find the user in storage with the username
 // and loads this on success. If no user with the given
 // login name is found it will give a blank User object.
-func NewUser(login string) (u *User, err error) {
-	u = new(User)
+func NewUser(login string) (u *UserProfile, err error) {
+	u = new(UserProfile)
 	u.Username = login
 
 	err = u.loadStoredData()
@@ -71,8 +71,8 @@ func NewUser(login string) (u *User, err error) {
 // it returns the User object which is owner. If not found,
 // it loads user data from Github and makes a new User
 // from this.
-func NewUserWithGithubAccessToken(token string) (u *User, err error) {
-	u = new(User)
+func NewUserWithGithubAccessToken(token string) (u *UserProfile, err error) {
+	u = new(UserProfile)
 
 	if hasToken(token) {
 		u.Username, err = getToken(token)
@@ -111,35 +111,35 @@ func NewUserWithGithubAccessToken(token string) (u *User, err error) {
 }
 
 // SetName will set the name of the user.
-func (u *User) SetName(name string) {
+func (u *UserProfile) SetName(name string) {
 	u.lock.Lock()
 	defer u.lock.Unlock()
 	u.Name = name
 }
 
 // SetEmail will set the email of the user.
-func (u *User) SetEmail(email *mail.Address) {
+func (u *UserProfile) SetEmail(email *mail.Address) {
 	u.lock.Lock()
 	defer u.lock.Unlock()
 	u.Email = email
 }
 
 // SetLocation will set the location of the user.
-func (u *User) SetLocation(location string) {
+func (u *UserProfile) SetLocation(location string) {
 	u.lock.Lock()
 	defer u.lock.Unlock()
 	u.Location = location
 }
 
 // SetScope will set the scope of the user.
-func (u *User) SetScope(scope string) {
+func (u *UserProfile) SetScope(scope string) {
 	u.lock.Lock()
 	defer u.lock.Unlock()
 	u.Scope = scope
 }
 
 // IncScoreBy increases the total score with given amount.
-func (u *User) IncScoreBy(score int) {
+func (u *UserProfile) IncScoreBy(score int) {
 	u.lock.Lock()
 	defer u.lock.Unlock()
 	u.TotalScore += int64(score)
@@ -155,7 +155,7 @@ func (u *User) IncScoreBy(score int) {
 }
 
 // DecScoreBy descreases the total score with given amount.
-func (u *User) DecScoreBy(score int) {
+func (u *UserProfile) DecScoreBy(score int) {
 	u.lock.Lock()
 	defer u.lock.Unlock()
 	if u.TotalScore-int64(score) > 0 {
@@ -176,14 +176,14 @@ func (u *User) DecScoreBy(score int) {
 }
 
 // IncLevel increases the level with one.
-func (u *User) IncLevel() {
+func (u *UserProfile) IncLevel() {
 	u.lock.Lock()
 	defer u.lock.Unlock()
 	u.Level++
 }
 
 // DecLevel decreases the level with one until it equals zero.
-func (u *User) DecLevel() {
+func (u *UserProfile) DecLevel() {
 	u.lock.Lock()
 	defer u.lock.Unlock()
 	if u.Level > 0 {
@@ -192,7 +192,7 @@ func (u *User) DecLevel() {
 }
 
 // GetTrophyChest return the users ThropyChest.
-func (u *User) GetTrophyChest() *trophies.TrophyChest {
+func (u *UserProfile) GetTrophyChest() *trophies.TrophyChest {
 	if u.Trophies == nil {
 		u.Trophies = trophies.NewTrophyChest()
 	}
@@ -201,34 +201,34 @@ func (u *User) GetTrophyChest() *trophies.TrophyChest {
 }
 
 // GetUsername will return the users unique username.
-func (u *User) GetUsername() string {
+func (u *UserProfile) GetUsername() string {
 	return u.Username
 }
 
 // Activate sets the user as active.
-func (u *User) Activate() {
+func (u *UserProfile) Activate() {
 	u.Active = true
 }
 
 // IsActive returns whether or not the user is active.
-func (u *User) IsActive() bool {
+func (u *UserProfile) IsActive() bool {
 	return u.Active
 }
 
 // Deactivate sets the user as deactivated.
-func (u *User) Deactivate() {
+func (u *UserProfile) Deactivate() {
 	u.Active = false
 }
 
 // SetPublicProfile sets if the profile should be open
 // to thepublic to search through.
-func (u *User) SetPublicProfile(public bool) {
+func (u *UserProfile) SetPublicProfile(public bool) {
 	u.PublicProfile = public
 }
 
 // ImportGithubData imports data from the given github
 // data object and stores it in the given User object.
-func (u *User) ImportGithubData(gu *github.User) {
+func (u *UserProfile) ImportGithubData(gu *github.User) {
 	if gu == nil {
 		return
 	}
@@ -260,13 +260,13 @@ func (u *User) ImportGithubData(gu *github.User) {
 
 // loadStoredData fetches the user data stored on disk or in cached memory.
 // ATM a NO-OP
-func (u *User) loadStoredData() (err error) {
+func (u *UserProfile) loadStoredData() (err error) {
 	return nil
 }
 
 // loadDataFromGithub attempts to load user data from
 // github and sets data from there in the user object.
-func (u *User) loadDataFromGithub() (user *github.User, err error) {
+func (u *UserProfile) loadDataFromGithub() (user *github.User, err error) {
 	err = u.connectToGithub()
 	if err != nil {
 		return
@@ -280,12 +280,12 @@ func (u *User) loadDataFromGithub() (user *github.User, err error) {
 // other instances of the same organization. This has to be used
 // when new info is written, to prevent race conditions. Unlock
 // occures when data is finished written to storage.
-func (u *User) Lock() {
+func (u *UserProfile) Lock() {
 	u.mainlock.Lock()
 }
 
 // Unlock will unlock the writers block on the user.
-func (u *User) Unlock() {
+func (u *UserProfile) Unlock() {
 	u.mainlock.Unlock()
 }
 
@@ -294,7 +294,7 @@ func (u *User) Unlock() {
 // writing. If the org is not locked before saving, a runtime error
 // will be called.
 // ATM a NO-OP
-func (u *User) Save() error {
+func (u *UserProfile) Save() error {
 	u.Unlock()
 	return nil
 }

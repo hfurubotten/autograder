@@ -135,7 +135,7 @@ var testIsComplete = []struct {
 }{
 	{
 		&Member{
-			User: User{
+			UserProfile: UserProfile{
 				Name: "Ola Normann",
 			},
 		},
@@ -143,7 +143,7 @@ var testIsComplete = []struct {
 	},
 	{
 		&Member{
-			User: User{
+			UserProfile: UserProfile{
 				Name: "Ola Normann",
 			},
 			StudentID: 112222,
@@ -152,7 +152,7 @@ var testIsComplete = []struct {
 	},
 	{
 		&Member{
-			User: User{
+			UserProfile: UserProfile{
 				Name:     "Ola Normann",
 				Username: "olanormann",
 			},
@@ -162,7 +162,7 @@ var testIsComplete = []struct {
 	},
 	{
 		&Member{
-			User: User{
+			UserProfile: UserProfile{
 				Name:     "Ola Normann",
 				Username: "olanormann",
 			},
@@ -171,7 +171,7 @@ var testIsComplete = []struct {
 	},
 	{
 		&Member{
-			User: User{
+			UserProfile: UserProfile{
 				Username: "olanormann",
 				Email:    &mail.Address{},
 			},
@@ -181,7 +181,7 @@ var testIsComplete = []struct {
 	},
 	{
 		&Member{
-			User: User{
+			UserProfile: UserProfile{
 				Name:     "Ola Normann",
 				Username: "olanormann",
 				Email:    &mail.Address{},
