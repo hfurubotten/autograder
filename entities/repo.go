@@ -9,3 +9,28 @@ type RepositoryOptions struct {
 	Issues   bool
 	Hook     string
 }
+
+type ownerType int
+
+const (
+	orgOwner ownerType = iota
+	usrOwner
+)
+
+// Repo represent a git repository.
+type Repo struct {
+	Name        string
+	Fullname    string
+	Description string
+	Language    string
+
+	// Owners
+	OwnerType ownerType
+	Owner     string
+	Admins    map[string]interface{}
+
+	// URLs
+	HTMLURL  string
+	CloneURL string
+	Homepage string
+}

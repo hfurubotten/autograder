@@ -9,15 +9,6 @@ const (
 	GrouptestRepoName  = "groups-test" // Deprecated. Use only the TEST_REPO_NAME.
 	CodeReviewRepoName = "code-reviews"
 	GroupRepoPrefix    = "group"
-
-	// Standard team names
-	studentsTeam = "students"
-	teachersTeam = "Owners" //TODO Should be changed to 'teachers' and correspondingly we need to create this team at the start of the course.
-
-	// Team premission names on github
-	AdminPermission = "admin"
-	PullPermission  = "pull"
-	PushPermission  = "push"
 )
 
 const (

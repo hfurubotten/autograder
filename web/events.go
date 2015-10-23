@@ -72,7 +72,7 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 			body = TeacherActionMsg
 			user.IncScoreBy(points.COMMENT)
 		} else {
-			err = events.DistributeScores(points.COMMENT, user, nil, org)
+			err = events.DistributeScores(points.COMMENT, user, org)
 			if err != nil {
 				statuscode = 500
 				body = ScoreDistributionErrorMsg
@@ -104,7 +104,7 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 			body = TeacherActionMsg
 			user.IncScoreBy(points.COMMENT)
 		} else {
-			err = events.DistributeScores(points.COMMENT, user, nil, org)
+			err = events.DistributeScores(points.COMMENT, user, org)
 			if err != nil {
 				statuscode = 500
 				body = ScoreDistributionErrorMsg
@@ -144,7 +144,7 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 			body = TeacherActionMsg
 			user.IncScoreBy(p)
 		} else {
-			err = events.DistributeScores(p, user, nil, org)
+			err = events.DistributeScores(p, user, org)
 			if err != nil {
 				statuscode = 500
 				body = ScoreDistributionErrorMsg
@@ -206,7 +206,7 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 			body = TeacherActionMsg
 			user.IncScoreBy(points.COMMENT)
 		} else {
-			err = events.DistributeScores(points.COMMENT, user, nil, org)
+			err = events.DistributeScores(points.COMMENT, user, org)
 			if err != nil {
 				statuscode = 500
 				body = ScoreDistributionErrorMsg

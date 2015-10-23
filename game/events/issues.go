@@ -55,7 +55,6 @@ func HandleIssues(b []byte) {
 	}
 
 	gu := payload.Sender
-	gr := payload.Repo
 	o := payload.Organization
 
 	p, ta, err := FindIssuesPointsAndTrophyAction(payload)
@@ -65,10 +64,9 @@ func HandleIssues(b []byte) {
 	}
 
 	user, _ := git.NewUserWithGithubData(gu)
-	repo, _ := git.GetRepo(gr)
 	org, _ := git.NewOrganizationWithGithubDataX(o)
 
-	err = DistributeScores(p, user, repo, org)
+	err = DistributeScores(p, user, org)
 	if err != nil {
 		log.Println("Error distributing scores:", err)
 	}

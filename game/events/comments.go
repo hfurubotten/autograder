@@ -17,14 +17,12 @@ func HandlePullRequestComments(b []byte) {
 	}
 
 	gu := payload.Comment.User
-	gr := payload.Repo
 	o := payload.Organization
 
 	user, _ := git.NewUserWithGithubData(gu)
-	repo, _ := git.GetRepo(gr)
 	org, _ := git.NewOrganizationWithGithubDataX(o)
 
-	err = DistributeScores(points.COMMENT, user, repo, org)
+	err = DistributeScores(points.COMMENT, user, org)
 	if err != nil {
 		log.Println("Error distributing scores:", err)
 	}
@@ -40,14 +38,12 @@ func HandleIssueComment(b []byte) {
 	}
 
 	gu := payload.Comment.User
-	gr := payload.Repo
 	o := payload.Organization
 
 	user, _ := git.NewUserWithGithubData(gu)
-	repo, _ := git.GetRepo(gr)
 	org, _ := git.NewOrganizationWithGithubDataX(o)
 
-	err = DistributeScores(points.COMMENT, user, repo, org)
+	err = DistributeScores(points.COMMENT, user, org)
 	if err != nil {
 		log.Println("Error distributing scores:", err)
 	}
@@ -63,14 +59,12 @@ func HandleCommitComment(b []byte) {
 	}
 
 	gu := payload.Comment.User
-	gr := payload.Repo
 	o := payload.Organization
 
 	user, _ := git.NewUserWithGithubData(gu)
-	repo, _ := git.GetRepo(gr)
 	org, _ := git.NewOrganizationWithGithubDataX(o)
 
-	err = DistributeScores(points.COMMENT, user, repo, org)
+	err = DistributeScores(points.COMMENT, user, org)
 	if err != nil {
 		log.Println("Error distributing scores:", err)
 	}

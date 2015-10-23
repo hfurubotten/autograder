@@ -14,7 +14,7 @@ import (
 // This function will up also check if the supplied objects also implements the saver
 // interface, and if so lock the writing and save the object when done.
 // locking is handled internally.
-func DistributeScores(score int, user points.SingleScorer, repo, org points.MultiScorer) (err error) {
+func DistributeScores(score int, user points.SingleScorer, org points.MultiScorer) (err error) {
 	if user == nil {
 		panic("User parament cannot be nil when distributing scores.")
 	}
@@ -33,23 +33,6 @@ func DistributeScores(score int, user points.SingleScorer, repo, org points.Mult
 	}
 
 	user.IncScoreBy(score)
-
-	if repo != nil {
-		rsaver, issaver := repo.(entities.Saver)
-
-		if issaver {
-			rsaver.Lock()
-			defer func() {
-				err = rsaver.Save()
-				if err != nil {
-					rsaver.Unlock()
-					log.Println(err)
-				}
-			}()
-		}
-
-		repo.IncScoreBy(user.GetUsername(), score)
-	}
 
 	if org != nil {
 		osaver, issaver := org.(entities.Saver)

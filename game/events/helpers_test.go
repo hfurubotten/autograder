@@ -18,16 +18,8 @@ var distributeScoresTest = []struct {
 
 var userList = make(map[string]*git.UserProfile)
 
+// Does not test if stored correctly, only the point calculation.
 func TestDistributeScores(t *testing.T) {
-	// Does not test if stored correctly, only the point calculation.
-	var user *git.UserProfile
-	var ok bool
-
-	repo, err := git.NewRepoX2("testorg", "testrepo")
-	if err != nil {
-		t.Error("Failed to open new repo:", err)
-		return
-	}
 	org, err := git.NewOrganizationX("testorg")
 	if err != nil {
 		t.Error("Failed to open new org:", err)
@@ -35,7 +27,8 @@ func TestDistributeScores(t *testing.T) {
 	}
 
 	for _, dst := range distributeScoresTest {
-		if user, ok = userList[dst.inUser]; !ok {
+		user, ok := userList[dst.inUser]
+		if !ok {
 			user, err = git.NewUser(dst.inUser)
 			if err != nil {
 				t.Error("Failed to open new user:", err)
@@ -44,17 +37,13 @@ func TestDistributeScores(t *testing.T) {
 			userList[dst.inUser] = user
 		}
 
-		err = DistributeScores(dst.inScore, user, repo, org)
+		err = DistributeScores(dst.inScore, user, org)
 		if err != nil {
 			t.Error(err)
 		}
 
 		if user.TotalScore != dst.wantScore {
 			t.Errorf("Want score %d for %s, but got %d.", dst.wantScore, dst.inUser, user.TotalScore)
-		}
-
-		if repo.GetUserScore(dst.inUser) != dst.wantScore {
-			t.Errorf("Want score %d for %s in testrepo, but got %d.", dst.wantScore, dst.inUser, repo.GetUserScore(dst.inUser))
 		}
 
 		if org.GetUserScore(dst.inUser) != dst.wantScore {
@@ -70,7 +59,7 @@ func TestDistributeScores(t *testing.T) {
 	// checks panic on nil user value
 	defer PanicHandler(false)
 
-	DistributeScores(0, nil, nil, nil)
+	DistributeScores(0, nil, nil)
 }
 
 func TestPanicHandler(t *testing.T) {
