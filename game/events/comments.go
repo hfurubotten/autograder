@@ -3,6 +3,7 @@ package events
 import (
 	"log"
 
+	git "github.com/hfurubotten/autograder/entities"
 	"github.com/hfurubotten/autograder/game/entities"
 	. "github.com/hfurubotten/autograder/game/githubobjects"
 	"github.com/hfurubotten/autograder/game/points"
@@ -20,7 +21,7 @@ func HandlePullRequestComments(b []byte) {
 	gr := payload.Repo
 	o := payload.Organization
 
-	user, _ := entities.NewUserWithGithubData(gu)
+	user, _ := git.NewUserWithGithubData(gu)
 	repo, _ := entities.NewRepoWithGithubData(gr)
 	org, _ := entities.NewOrganizationWithGithubData(o)
 
@@ -43,7 +44,7 @@ func HandleIssueComment(b []byte) {
 	gr := payload.Repo
 	o := payload.Organization
 
-	user, _ := entities.NewUserWithGithubData(gu)
+	user, _ := git.NewUserWithGithubData(gu)
 	repo, _ := entities.NewRepoWithGithubData(gr)
 	org, _ := entities.NewOrganizationWithGithubData(o)
 
@@ -66,7 +67,7 @@ func HandleCommitComment(b []byte) {
 	gr := payload.Repo
 	o := payload.Organization
 
-	user, _ := entities.NewUserWithGithubData(gu)
+	user, _ := git.NewUserWithGithubData(gu)
 	repo, _ := entities.NewRepoWithGithubData(gr)
 	org, _ := entities.NewOrganizationWithGithubData(o)
 

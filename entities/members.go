@@ -98,22 +98,6 @@ func NewMember(token string) (m *Member, err error) {
 	return
 }
 
-// NewUserWithGithubData creates a new User object from a github User object.
-// It will copy all information from the given GitHub data to the new User object.
-func NewUserWithGithubData(gu *github.User) (u *Member, err error) {
-	if gu == nil {
-		return nil, errors.New("github user object is required")
-	}
-	u, err = GetMember(*gu.Login) //TODO Need to pass in token also??
-	if err != nil {
-		return nil, err
-	}
-
-	u.ImportGithubData(gu)
-
-	return
-}
-
 // GetMember returns the member associated with the given userName.
 //TODO should this also take token?
 func GetMember(userName string) (m *Member, err error) {
@@ -144,26 +128,6 @@ func GetMember(userName string) (m *Member, err error) {
 		AssistantCourses: make(map[string]interface{}),
 	}
 	return m, nil
-}
-
-func (m *Member) loadDataFromGithub() (err error) {
-	err = m.connectToGithub()
-	if err != nil {
-		return
-	}
-
-	user, _, err := m.githubclient.Users.Get("")
-	if err != nil {
-		return
-	}
-
-	if user.Login != nil {
-		m.Username = *user.Login
-	}
-
-	m.ImportGithubData(user)
-
-	return
 }
 
 // Update database under a lock regime to ensure safety.
@@ -308,24 +272,6 @@ func (m *Member) GetNotes(course string, lab int) string {
 	}
 
 	return g.Assignments[lab].Notes
-}
-
-// ListOrgs will list all organisations the user is a member of on github.
-func (m *Member) ListOrgs() (ls []string, err error) {
-	err = m.connectToGithub()
-	if err != nil {
-		return
-	}
-
-	orgs, _, err := m.githubclient.Organizations.List("", nil)
-
-	ls = make([]string, len(orgs))
-
-	for i, org := range orgs {
-		ls[i] = *org.Login
-	}
-
-	return
 }
 
 // AddOrganization will add a new github organization to attending courses.

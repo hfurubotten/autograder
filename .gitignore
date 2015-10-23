@@ -31,3 +31,7 @@ diskvtobolt
 
 *.db
 *.config
+
+# Hein's private token is in this file; make sure to never commit it:
+members_github_test.go
+

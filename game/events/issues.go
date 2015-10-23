@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 
+	git "github.com/hfurubotten/autograder/entities"
 	"github.com/hfurubotten/autograder/game/entities"
 	. "github.com/hfurubotten/autograder/game/githubobjects"
 	"github.com/hfurubotten/autograder/game/points"
@@ -64,7 +65,7 @@ func HandleIssues(b []byte) {
 		return
 	}
 
-	user, _ := entities.NewUserWithGithubData(gu)
+	user, _ := git.NewUserWithGithubData(gu)
 	repo, _ := entities.NewRepoWithGithubData(gr)
 	org, _ := entities.NewOrganizationWithGithubData(o)
 
