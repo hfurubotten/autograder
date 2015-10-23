@@ -1,6 +1,6 @@
 package entities
 
-// RepositoryOptions represent the option when needed to create a repository within a organization.
+// RepositoryOptions are used when creating a repository within a organization.
 type RepositoryOptions struct {
 	Name     string
 	Private  bool
@@ -17,7 +17,7 @@ const (
 	usrOwner
 )
 
-// Repo represent a git repository.
+// Repo represent a git repository. This is currently not used.
 type Repo struct {
 	Name        string
 	Fullname    string
