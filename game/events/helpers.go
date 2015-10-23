@@ -85,7 +85,7 @@ func RegisterAction(action int, user trophies.TrophyHunter) (err error) {
 // the panicing go rutine.
 func PanicHandler(printstack bool) {
 	if r := recover(); r != nil {
-		log.Println("Recovered from panicing go rutine: ", r)
+		log.Println("Recovered from panicing goroutine: ", r)
 		if printstack {
 			fmt.Println(string(debug.Stack()))
 		}
