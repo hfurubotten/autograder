@@ -58,6 +58,24 @@ func connect(token string) (*github.Client, error) {
 	return github.NewClient(tc), nil
 }
 
+// connectToGithub sets up the nesassery github client to talk to github.
+func (u *User) connectToGithub() error {
+	if u.githubclient != nil {
+		return nil
+	}
+
+	if u.accessToken == "" {
+		return errors.New("Missing AccessToken to the member. Can't contact github.")
+	}
+
+	ts := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: u.accessToken},
+	)
+	tc := oauth2.NewClient(oauth2.NoContext, ts)
+	u.githubclient = github.NewClient(tc)
+	return nil
+}
+
 // connectToGithub creates a new github client.
 //TODO CUrrently not used
 func (m *Member) xconnectToGithub() error {

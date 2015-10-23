@@ -2,7 +2,6 @@ package entities
 
 import (
 	"encoding/gob"
-	"errors"
 	"net/mail"
 	"sync"
 	"time"
@@ -10,7 +9,6 @@ import (
 	"github.com/google/go-github/github"
 	"github.com/hfurubotten/autograder/game/levels"
 	"github.com/hfurubotten/autograder/game/trophies"
-	"golang.org/x/oauth2"
 )
 
 func init() {
@@ -41,7 +39,7 @@ type User struct {
 
 	// remote access
 	githubclient *github.Client
-	accessToken  token
+	accessToken  string
 	Scope        string
 }
 
@@ -75,12 +73,11 @@ func NewUser(login string) (u *User, err error) {
 // from this.
 func NewUserWithGithubAccessToken(token string) (u *User, err error) {
 	u = new(User)
-	u.accessToken = NewToken(token)
 
-	if u.accessToken.HasTokenInStore() {
-		u.Username, err = u.accessToken.GetUsernameFromTokenInStore()
+	if hasToken(token) {
+		u.Username, err = getToken(token)
 		if err != nil {
-			return
+			return nil, err
 		}
 
 		err = u.loadStoredData()
@@ -277,24 +274,6 @@ func (u *User) loadDataFromGithub() (user *github.User, err error) {
 
 	user, _, err = u.githubclient.Users.Get("")
 	return
-}
-
-// connectToGithub sets up the nesassery github client to talk to github.
-func (u *User) connectToGithub() error {
-	if u.githubclient != nil {
-		return nil
-	}
-
-	if !u.accessToken.HasToken() {
-		return errors.New("Missing AccessToken to the member. Can't contact github.")
-	}
-
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: u.accessToken.GetToken()},
-	)
-	tc := oauth2.NewClient(oauth2.NoContext, ts)
-	u.githubclient = github.NewClient(tc)
-	return nil
 }
 
 // Lock will lock the user name from being written to by
