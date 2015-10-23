@@ -5,7 +5,6 @@ import (
 	"log"
 
 	git "github.com/hfurubotten/autograder/entities"
-	"github.com/hfurubotten/autograder/game/entities"
 	. "github.com/hfurubotten/autograder/game/githubobjects"
 	"github.com/hfurubotten/autograder/game/points"
 	"github.com/hfurubotten/autograder/game/trophies"
@@ -66,7 +65,7 @@ func HandleIssues(b []byte) {
 	}
 
 	user, _ := git.NewUserWithGithubData(gu)
-	repo, _ := entities.NewRepoWithGithubData(gr)
+	repo, _ := git.NewRepoWithGithubData(gr)
 	org, _ := git.NewOrganizationWithGithubDataX(o)
 
 	err = DistributeScores(p, user, repo, org)

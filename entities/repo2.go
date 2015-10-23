@@ -69,14 +69,14 @@ func NewRepoWithGithubData(gr *github.Repository) (repo *RepoX, err error) {
 		err = nil
 	}
 
-	repo.ImportGithubData(gr)
+	repo.ImportGithubDataX(gr)
 
 	return
 }
 
 // ImportGithubData imports data from the given github
 // data object and stores it in the given Repo object.
-func (r *RepoX) ImportGithubData(gr *github.Repository) {
+func (r *RepoX) ImportGithubDataX(gr *github.Repository) {
 	if gr == nil {
 		return
 	}

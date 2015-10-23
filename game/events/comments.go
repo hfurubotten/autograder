@@ -4,7 +4,6 @@ import (
 	"log"
 
 	git "github.com/hfurubotten/autograder/entities"
-	"github.com/hfurubotten/autograder/game/entities"
 	. "github.com/hfurubotten/autograder/game/githubobjects"
 	"github.com/hfurubotten/autograder/game/points"
 )
@@ -22,7 +21,7 @@ func HandlePullRequestComments(b []byte) {
 	o := payload.Organization
 
 	user, _ := git.NewUserWithGithubData(gu)
-	repo, _ := entities.NewRepoWithGithubData(gr)
+	repo, _ := git.NewRepoWithGithubData(gr)
 	org, _ := git.NewOrganizationWithGithubDataX(o)
 
 	err = DistributeScores(points.COMMENT, user, repo, org)
@@ -45,7 +44,7 @@ func HandleIssueComment(b []byte) {
 	o := payload.Organization
 
 	user, _ := git.NewUserWithGithubData(gu)
-	repo, _ := entities.NewRepoWithGithubData(gr)
+	repo, _ := git.NewRepoWithGithubData(gr)
 	org, _ := git.NewOrganizationWithGithubDataX(o)
 
 	err = DistributeScores(points.COMMENT, user, repo, org)
@@ -68,7 +67,7 @@ func HandleCommitComment(b []byte) {
 	o := payload.Organization
 
 	user, _ := git.NewUserWithGithubData(gu)
-	repo, _ := entities.NewRepoWithGithubData(gr)
+	repo, _ := git.NewRepoWithGithubData(gr)
 	org, _ := git.NewOrganizationWithGithubDataX(o)
 
 	err = DistributeScores(points.COMMENT, user, repo, org)

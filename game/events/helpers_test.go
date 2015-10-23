@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	git "github.com/hfurubotten/autograder/entities"
-	"github.com/hfurubotten/autograder/game/entities"
 )
 
 var distributeScoresTest = []struct {
@@ -24,7 +23,7 @@ func TestDistributeScores(t *testing.T) {
 	var user *git.UserProfile
 	var ok bool
 
-	repo, err := entities.NewRepo("testorg", "testrepo")
+	repo, err := git.NewRepo("testorg", "testrepo")
 	if err != nil {
 		t.Error("Failed to open new repo:", err)
 		return
