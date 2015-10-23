@@ -32,6 +32,6 @@ diskvtobolt
 *.db
 *.config
 
-# Hein's private token is in this file; make sure to never commit it:
-members_github_test.go
+# This file can safely hold a personal github token; make sure to never commit it:
+mytoken_personal_test.go
 
