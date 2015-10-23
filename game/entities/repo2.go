@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	gob.Register(Repo{})
+	gob.Register(RepoX{})
 }
 
 const (
@@ -19,7 +19,7 @@ const (
 )
 
 // Repo represent the repository of TODO.
-type Repo struct {
+type RepoX struct {
 	points.Leaderboard
 	// lock sync.Mutex
 
@@ -41,8 +41,8 @@ type Repo struct {
 
 // NewRepo will try to load repository info from storage. If
 // nothing is found a new empty repo object is returend back.
-func NewRepo(owner, name string) (repo *Repo, err error) {
-	repo = new(Repo)
+func NewRepo(owner, name string) (repo *RepoX, err error) {
+	repo = new(RepoX)
 	repo.Owner = owner
 	repo.Name = name
 	repo.Fullname = owner + "/" + name
@@ -58,14 +58,14 @@ func NewRepo(owner, name string) (repo *Repo, err error) {
 // NewRepoWithGithubData will use github data to load repository
 // info from storage. The information will also be updated with
 // latest from github.
-func NewRepoWithGithubData(gr *github.Repository) (repo *Repo, err error) {
+func NewRepoWithGithubData(gr *github.Repository) (repo *RepoX, err error) {
 	if gr == nil {
 		return nil, errors.New("Cannot parse nil object.")
 	}
 
 	repo, err = NewRepo(*gr.Owner.Login, *gr.Name)
 	if err != nil {
-		repo = new(Repo)
+		repo = new(RepoX)
 		err = nil
 	}
 
@@ -76,7 +76,7 @@ func NewRepoWithGithubData(gr *github.Repository) (repo *Repo, err error) {
 
 // ImportGithubData imports data from the given github
 // data object and stores it in the given Repo object.
-func (r *Repo) ImportGithubData(gr *github.Repository) {
+func (r *RepoX) ImportGithubData(gr *github.Repository) {
 	if gr == nil {
 		return
 	}
@@ -123,7 +123,7 @@ func (r *Repo) ImportGithubData(gr *github.Repository) {
 
 // loadStoredData fetches the repository data stored on disk or in cached memory.
 // ATM a NO-OP
-func (r *Repo) loadStoredData() (err error) {
+func (r *RepoX) loadStoredData() (err error) {
 	return nil
 }
 
@@ -142,7 +142,7 @@ func (r *Repo) loadStoredData() (err error) {
 
 // Save stores the repo object to memory cache and disk.
 // ATM a NO-OP
-func (r *Repo) Save() (err error) {
+func (r *RepoX) Save() (err error) {
 	// r.Unlock() //TODO why Unlock here??
 	return nil
 }

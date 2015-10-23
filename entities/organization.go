@@ -17,7 +17,6 @@ import (
 	"github.com/boltdb/bolt"
 	"github.com/google/go-github/github"
 	"github.com/hfurubotten/autograder/database"
-	"github.com/hfurubotten/autograder/game/entities"
 	"github.com/hfurubotten/autograder/global"
 	"golang.org/x/oauth2"
 )
@@ -39,7 +38,7 @@ func init() {
 
 // Organization represent a course and a organization on github.
 type Organization struct {
-	entities.Organization
+	OrganizationX
 
 	GroupAssignments      int
 	IndividualAssignments int
@@ -90,13 +89,13 @@ func NewOrganization(name string, readonly bool) (org *Organization, err error) 
 		return org, nil
 	}
 
-	o, err := entities.NewOrganization(name)
+	o, err := NewOrganizationX(name)
 	if err != nil {
 		return nil, err
 	}
 
 	org = &Organization{
-		Organization:         *o,
+		OrganizationX:        *o,
 		IndividualLabFolders: make(map[int]string),
 		GroupLabFolders:      make(map[int]string),
 		PendingGroup:         make(map[int]interface{}),
@@ -140,7 +139,7 @@ func NewOrganizationWithGithubData(gorg *github.Organization, readonly bool) (or
 		return nil, err
 	}
 
-	org.ImportGithubData(gorg)
+	org.ImportGithubDataX(gorg)
 	return
 }
 

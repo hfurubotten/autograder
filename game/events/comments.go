@@ -23,7 +23,7 @@ func HandlePullRequestComments(b []byte) {
 
 	user, _ := git.NewUserWithGithubData(gu)
 	repo, _ := entities.NewRepoWithGithubData(gr)
-	org, _ := entities.NewOrganizationWithGithubData(o)
+	org, _ := git.NewOrganizationWithGithubDataX(o)
 
 	err = DistributeScores(points.COMMENT, user, repo, org)
 	if err != nil {
@@ -46,7 +46,7 @@ func HandleIssueComment(b []byte) {
 
 	user, _ := git.NewUserWithGithubData(gu)
 	repo, _ := entities.NewRepoWithGithubData(gr)
-	org, _ := entities.NewOrganizationWithGithubData(o)
+	org, _ := git.NewOrganizationWithGithubDataX(o)
 
 	err = DistributeScores(points.COMMENT, user, repo, org)
 	if err != nil {
@@ -69,7 +69,7 @@ func HandleCommitComment(b []byte) {
 
 	user, _ := git.NewUserWithGithubData(gu)
 	repo, _ := entities.NewRepoWithGithubData(gr)
-	org, _ := entities.NewOrganizationWithGithubData(o)
+	org, _ := git.NewOrganizationWithGithubDataX(o)
 
 	err = DistributeScores(points.COMMENT, user, repo, org)
 	if err != nil {

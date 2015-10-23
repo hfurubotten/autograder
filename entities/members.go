@@ -23,7 +23,7 @@ func init() {
 
 // Member represent a student in autograder.
 type Member struct {
-	UserProfile //TODO clean up; make clearer separation between User and Member and the game stuff
+	UserProfile
 
 	StudentID   int
 	IsTeacher   bool

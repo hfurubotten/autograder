@@ -29,7 +29,7 @@ func TestDistributeScores(t *testing.T) {
 		t.Error("Failed to open new repo:", err)
 		return
 	}
-	org, err := entities.NewOrganization("testorg")
+	org, err := git.NewOrganizationX("testorg")
 	if err != nil {
 		t.Error("Failed to open new org:", err)
 		return
