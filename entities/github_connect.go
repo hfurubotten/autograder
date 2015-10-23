@@ -16,30 +16,12 @@ var (
 
 // NewUserWithGithubData creates a new User object from a github User object.
 // It will copy all information from the given GitHub data to the new User object.
-//TODO Figuring out which to keep... (also in user.go)
+//TODO Find better name
 func NewUserWithGithubData(gu *github.User) (u *Member, err error) {
 	if gu == nil {
 		return nil, errors.New("github user object is required")
 	}
 	u, err = GetMember(*gu.Login) //TODO Need to pass in token also??
-	if err != nil {
-		return nil, err
-	}
-
-	u.ImportGithubData(gu)
-
-	return
-}
-
-// NewUserWithGithubData creates a new User object from a
-// github User object. It will copy all information from
-// the given GitHub data to the new User object.
-//TODO Figuring out which to keep... (also in github_connet.go)
-func xNewUserWithGithubData(gu *github.User) (u *UserProfile, err error) {
-	if gu == nil {
-		return nil, errors.New("Cannot parse nil User object.")
-	}
-	u, err = NewUser(*gu.Login)
 	if err != nil {
 		return nil, err
 	}
