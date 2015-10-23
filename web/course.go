@@ -159,7 +159,7 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	templaterepos := make(map[string]git.Repo)
+	templaterepos := make(map[string]bool)
 	if r.FormValue("template") != "" {
 		templateorg, _ := git.NewOrganization(r.FormValue("template"), true)
 		templaterepos, err = templateorg.ListRepos()

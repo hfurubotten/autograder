@@ -725,7 +725,7 @@ func (o *Organization) ListTeams() (teams map[string]Team, err error) {
 }
 
 // ListRepos lists all the repositories in the organization on github.
-func (o *Organization) ListRepos() (repos map[string]Repo, err error) {
+func (o *Organization) ListRepos() (repos map[string]bool, err error) {
 	err = o.connectAdminToGithub()
 	if err != nil {
 		return nil, err
@@ -733,7 +733,7 @@ func (o *Organization) ListRepos() (repos map[string]Repo, err error) {
 
 	repolist, _, err := o.githubadmin.Repositories.ListByOrg(o.Name, nil)
 	for _, r := range repolist {
-		repos[*r.Name] = NewRepo(&r)
+		repos[*r.Name] = true
 	}
 	return
 }
