@@ -732,31 +732,9 @@ func (o *Organization) ListRepos() (repos map[string]Repo, err error) {
 	}
 
 	repolist, _, err := o.githubadmin.Repositories.ListByOrg(o.Name, nil)
-
-	repos = make(map[string]Repo)
-
-	var repo Repo
 	for _, r := range repolist {
-		repo = Repo{}
-		if r.Name != nil {
-			repo.Name = *r.Name
-		}
-		if r.HTMLURL != nil {
-			repo.HTMLURL = *r.HTMLURL
-		}
-		if r.CloneURL != nil {
-			repo.CloneURL = *r.CloneURL
-		}
-		if r.Private != nil {
-			repo.Private = *r.Private
-		}
-		if r.TeamID != nil {
-			repo.TeamID = *r.TeamID
-		}
-
-		repos[repo.Name] = repo
+		repos[*r.Name] = NewRepo(&r)
 	}
-
 	return
 }
 

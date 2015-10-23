@@ -23,7 +23,7 @@ func TestDistributeScores(t *testing.T) {
 	var user *git.UserProfile
 	var ok bool
 
-	repo, err := git.NewRepo("testorg", "testrepo")
+	repo, err := git.NewRepoX2("testorg", "testrepo")
 	if err != nil {
 		t.Error("Failed to open new repo:", err)
 		return

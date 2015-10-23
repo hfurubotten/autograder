@@ -39,60 +39,37 @@ type RepoX struct {
 	Homepage string
 }
 
+//TODO Hide NewRepo functions
+
 // NewRepo will try to load repository info from storage. If
 // nothing is found a new empty repo object is returend back.
-func NewRepo(owner, name string) (repo *RepoX, err error) {
+func NewRepoX2(owner, name string) (repo *RepoX, err error) {
 	repo = new(RepoX)
 	repo.Owner = owner
 	repo.Name = name
 	repo.Fullname = owner + "/" + name
 
-	err = repo.loadStoredData()
-	if err != nil {
-		return nil, err
-	}
+	// err = repo.loadStoredData()
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	return
 }
 
-// NewRepoWithGithubData will use github data to load repository
-// info from storage. The information will also be updated with
-// latest from github.
-func NewRepoWithGithubData(gr *github.Repository) (repo *RepoX, err error) {
-	if gr == nil {
-		return nil, errors.New("Cannot parse nil object.")
-	}
-
-	repo, err = NewRepo(*gr.Owner.Login, *gr.Name)
-	if err != nil {
-		repo = new(RepoX)
-		err = nil
-	}
-
-	repo.ImportGithubDataX(gr)
-
-	return
-}
-
-// ImportGithubData imports data from the given github
-// data object and stores it in the given Repo object.
-func (r *RepoX) ImportGithubDataX(gr *github.Repository) {
-	if gr == nil {
-		return
-	}
-
+// NewRepo creates a new Repo object from the provided github repoistory.
+// It is an error to pass nil to this function.
+func NewRepoX(gr *github.Repository) (r *RepoX) {
+	r = &RepoX{}
 	if gr.FullName != nil {
 		r.Fullname = *gr.FullName
 	}
-
 	if gr.Description != nil {
 		r.Description = *gr.Description
 	}
-
 	if gr.Language != nil {
 		r.Language = *gr.Language
 	}
-
 	if gr.Language != nil {
 		r.Language = *gr.Language
 	}
@@ -104,51 +81,37 @@ func (r *RepoX) ImportGithubDataX(gr *github.Repository) {
 	} else if *gr.Owner.Type == githubobjects.ORGANIZATIONTYPE {
 		r.OwnerType = orgOwner
 	}
-
 	r.Owner = *gr.Owner.Login
 
 	// URLs
 	if gr.HTMLURL != nil {
 		r.HTMLURL = *gr.HTMLURL
 	}
-
 	if gr.CloneURL != nil {
 		r.CloneURL = *gr.CloneURL
 	}
-
 	if gr.Homepage != nil {
 		r.Homepage = *gr.Homepage
 	}
+
+	return r
 }
 
-// loadStoredData fetches the repository data stored on disk or in cached memory.
-// ATM a NO-OP
-func (r *RepoX) loadStoredData() (err error) {
-	return nil
-}
+var repoCache map[string]*RepoX
 
-// Lock will lock the user name from being written to by
-// other instances of the same organization. This has to be used
-// when new info is written, to prevent race conditions. Unlock
-// occures when data is finished written to storage.
-// func (r *Repo) Lock() {
-// 	r.lock.Lock()
-// }
-
-// Unlock will unlock the writers block on the user.
-// func (r *Repo) Unlock() {
-// 	r.lock.Unlock()
-// }
-
-// Save stores the repo object to memory cache and disk.
-// ATM a NO-OP
-func (r *RepoX) Save() (err error) {
-	// r.Unlock() //TODO why Unlock here??
-	return nil
-}
-
-// HasRepo checks if there is registered a repo with the given login name.
-// ATM a NO-OP
-func HasRepo(owner, repo string) bool {
-	return false
+// GetRepo returns a Repo object based on the provided github repoistory.
+// It is an error to pass nil to this function.
+func GetRepo(gr *github.Repository) (repo *RepoX, err error) {
+	if repoCache == nil {
+		repoCache = make(map[string]*RepoX)
+	}
+	if gr == nil {
+		return nil, errors.New("no repository provided")
+	}
+	if repo, ok := repoCache[*gr.FullName]; ok {
+		return repo, nil
+	}
+	repo = NewRepoX(gr)
+	repoCache[*gr.FullName] = repo
+	return
 }
