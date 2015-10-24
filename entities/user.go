@@ -43,6 +43,16 @@ type UserProfile struct {
 	Scope        string
 }
 
+// CreateUserProfile returns a new UserProfile populated with data from github.
+func CreateUserProfile(userName string) (u *UserProfile, err error) {
+	u = &UserProfile{
+		Username:     userName,
+		WeeklyScore:  make(map[int]int64),
+		MonthlyScore: make(map[time.Month]int64),
+	}
+	return u, nil
+}
+
 // NewUser tries to find the user in storage with the username
 // and loads this on success. If no user with the given
 // login name is found it will give a blank User object.
@@ -71,7 +81,7 @@ func NewUser(login string) (u *UserProfile, err error) {
 // it returns the User object which is owner. If not found,
 // it loads user data from Github and makes a new User
 // from this.
-func NewUserWithGithubAccessToken(token string) (u *UserProfile, err error) {
+func notinuseNewUserWithGithubAccessToken(token string) (u *UserProfile, err error) {
 	u = new(UserProfile)
 
 	if hasToken(token) {

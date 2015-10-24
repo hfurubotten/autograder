@@ -23,7 +23,7 @@ func init() {
 
 // Member represent a student in autograder.
 type Member struct {
-	UserProfile
+	*UserProfile
 
 	StudentID   int
 	IsTeacher   bool
@@ -36,6 +36,51 @@ type Member struct {
 
 	accessToken  string
 	githubclient *github.Client
+}
+
+// LookupMember does a reverse lookup based on the provided token to
+// obtain a member from the database.
+func LookupMember(token string) (m *Member, err error) {
+	if token == "" {
+		return nil, errors.New("non-empty OAuth token is required")
+	}
+	if !hasToken(token) {
+		return nil, errors.New("unknown OAuth token")
+	}
+	userName, err := getToken(token)
+	if err != nil {
+		return nil, err
+	}
+	m, err = GetMember(userName)
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+// CreateMember creates a member based on the provided userName.
+// Note that this will also create the underlying UserProfile.
+func CreateMember(userName string) (m *Member, err error) {
+	if HasMember(userName) {
+		return nil, errors.New("user already in database: " + userName)
+	}
+	u, err := CreateUserProfile(userName)
+	if err != nil {
+		return nil, err
+	}
+	m = &Member{
+		UserProfile:      u,
+		Teaching:         make(map[string]interface{}),
+		Courses:          make(map[string]Course),
+		AssistantCourses: make(map[string]interface{}),
+	}
+
+	// save newly created member for future lookups
+	err = database.Put(MemberBucketName, m.Username, m)
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 // NewMember tries to use the given oauth token to find the
@@ -51,15 +96,15 @@ func NewMember(token string) (m *Member, err error) {
 		if err != nil {
 			return nil, err
 		}
-		m, err = GetMember(user) //TODO need to pass in token also
+		m, err = GetMember(user)
 		if err != nil {
 			return nil, err
 		}
-		// m.accessToken = token //TODO or just set it here!!
+		// m.accessToken = token
 	} else {
 		//TODO clean up this code later
 		//TODO This code branch is probably not being tested; it should be
-		u := UserProfile{
+		u := &UserProfile{
 			Username:     user,
 			WeeklyScore:  make(map[int]int64),
 			MonthlyScore: make(map[time.Month]int64),
@@ -98,33 +143,17 @@ func NewMember(token string) (m *Member, err error) {
 }
 
 // GetMember returns the member associated with the given userName.
-//TODO should this also take token?
 func GetMember(userName string) (m *Member, err error) {
 	err = database.Get(MemberBucketName, userName, &m)
 	if err == nil {
-		// TODO We should make sure that the access token is always saved whenever
-		// we put a member into the MemberBucketName. So that we can remove this code.
-		// unless token for userName is already stored
-		if !hasToken(m.accessToken) {
-			// make reverse lookup association from token to userName.
-			putToken(m.accessToken, m.Username)
-		}
 		// userName found in database; return early
 		return m, nil
 	}
 
 	// userName not found in database; create new member object
-	u := UserProfile{
-		Username:     userName,
-		WeeklyScore:  make(map[int]int64),
-		MonthlyScore: make(map[time.Month]int64),
-	}
-	m = &Member{
-		// accessToken:      token,
-		UserProfile:      u,
-		Teaching:         make(map[string]interface{}),
-		Courses:          make(map[string]Course),
-		AssistantCourses: make(map[string]interface{}),
+	m, err = CreateMember(userName)
+	if err != nil {
+		return nil, err
 	}
 	return m, nil
 }
