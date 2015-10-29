@@ -53,99 +53,32 @@ func CreateUserProfile(userName string) (u *UserProfile, err error) {
 	return u, nil
 }
 
-// NewUser tries to find the user in storage with the username
-// and loads this on success. If no user with the given
-// login name is found it will give a blank User object.
-func NewUser(login string) (u *UserProfile, err error) {
-	u = new(UserProfile)
-	u.Username = login
+// NewUserProfile returns a new UserProfile populated with data from github.
+func NewUserProfile(token string) (u *UserProfile, err error) {
+	u = &UserProfile{
+		accessToken:  token,
+		WeeklyScore:  make(map[int]int64),
+		MonthlyScore: make(map[time.Month]int64),
+	}
 
-	err = u.loadStoredData()
+	client, err := connect(token)
 	if err != nil {
 		return nil, err
 	}
+	u.githubclient = client
 
-	if u.WeeklyScore == nil {
-		u.WeeklyScore = make(map[int]int64)
+	gu, err := getGithubUser(client)
+	if err != nil {
+		return nil, err
 	}
+	u.Username = *gu.Login
+	u.ImportGithubData(gu)
 
-	if u.MonthlyScore == nil {
-		u.MonthlyScore = make(map[time.Month]int64)
-	}
-
-	return
+	return u, nil
 }
 
-// NewUserWithGithubAccessToken will attemt to find the owner
-// of the access token in storage. If the owner is found,
-// it returns the User object which is owner. If not found,
-// it loads user data from Github and makes a new User
-// from this.
-func notinuseNewUserWithGithubAccessToken(token string) (u *UserProfile, err error) {
-	u = new(UserProfile)
-
-	if hasToken(token) {
-		u.Username, err = getToken(token)
-		if err != nil {
-			return nil, err
-		}
-
-		err = u.loadStoredData()
-		if err != nil {
-			return
-		}
-	} else {
-		gu, err := u.loadDataFromGithub()
-		if err != nil {
-			return u, err
-		}
-		u.Username = *gu.Login
-
-		err = u.loadStoredData()
-		if err != nil {
-			return u, err
-		}
-
-		u.ImportGithubData(gu)
-	}
-
-	if u.WeeklyScore == nil {
-		u.WeeklyScore = make(map[int]int64)
-	}
-
-	if u.MonthlyScore == nil {
-		u.MonthlyScore = make(map[time.Month]int64)
-	}
-
-	return
-}
-
-// SetName will set the name of the user.
-func (u *UserProfile) SetName(name string) {
-	u.lock.Lock()
-	defer u.lock.Unlock()
-	u.Name = name
-}
-
-// SetEmail will set the email of the user.
-func (u *UserProfile) SetEmail(email *mail.Address) {
-	u.lock.Lock()
-	defer u.lock.Unlock()
-	u.Email = email
-}
-
-// SetLocation will set the location of the user.
-func (u *UserProfile) SetLocation(location string) {
-	u.lock.Lock()
-	defer u.lock.Unlock()
-	u.Location = location
-}
-
-// SetScope will set the scope of the user.
-func (u *UserProfile) SetScope(scope string) {
-	u.lock.Lock()
-	defer u.lock.Unlock()
-	u.Scope = scope
+func (u *UserProfile) hasAccessToken() bool {
+	return u.accessToken != "" && len(u.accessToken) > 0
 }
 
 // IncScoreBy increases the total score with given amount.
@@ -243,47 +176,24 @@ func (u *UserProfile) ImportGithubData(gu *github.User) {
 		return
 	}
 
-	if gu.AvatarURL != nil {
-		u.AvatarURL = *gu.AvatarURL
-	}
-
-	if gu.HTMLURL != nil {
-		u.ProfileURL = *gu.HTMLURL
-	}
-
 	if gu.Name != nil {
 		u.Name = *gu.Name
 	}
-
+	if gu.AvatarURL != nil {
+		u.AvatarURL = *gu.AvatarURL
+	}
+	if gu.HTMLURL != nil {
+		u.ProfileURL = *gu.HTMLURL
+	}
 	if gu.Location != nil {
 		u.Location = *gu.Location
 	}
-
 	if gu.Email != nil {
 		m, err := mail.ParseAddress(*gu.Email)
 		if err == nil {
 			u.Email = m
 		}
 	}
-
-}
-
-// loadStoredData fetches the user data stored on disk or in cached memory.
-// ATM a NO-OP
-func (u *UserProfile) loadStoredData() (err error) {
-	return nil
-}
-
-// loadDataFromGithub attempts to load user data from
-// github and sets data from there in the user object.
-func (u *UserProfile) loadDataFromGithub() (user *github.User, err error) {
-	err = u.connectToGithub()
-	if err != nil {
-		return
-	}
-
-	user, _, err = u.githubclient.Users.Get("")
-	return
 }
 
 // Lock will lock the user name from being written to by
@@ -297,20 +207,4 @@ func (u *UserProfile) Lock() {
 // Unlock will unlock the writers block on the user.
 func (u *UserProfile) Unlock() {
 	u.mainlock.Unlock()
-}
-
-// Save will store the Organization object to disk and be cached in
-// memory. The save function will also unlock the organization for
-// writing. If the org is not locked before saving, a runtime error
-// will be called.
-// ATM a NO-OP
-func (u *UserProfile) Save() error {
-	u.Unlock()
-	return nil
-}
-
-// HasUser checks if there is registered a user with the given login name.
-// ATM a NO-OP
-func HasUser(login string) bool {
-	return false
 }

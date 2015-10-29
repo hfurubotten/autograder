@@ -40,40 +40,15 @@ func connect(token string) (*github.Client, error) {
 	return github.NewClient(tc), nil
 }
 
-// connectToGithub sets up the nesassery github client to talk to github.
-func (u *UserProfile) connectToGithub() error {
-	if u.githubclient != nil {
-		return nil
+// getGithubUser returns the github user associated with the provided client.
+// The function assumes that the client was created with the appropriate OAuth
+// token, for example using the connect function above.
+func getGithubUser(client *github.Client) (user *github.User, err error) {
+	if client == nil {
+		return nil, ErrNotConnected
 	}
-
-	if u.accessToken == "" {
-		return errors.New("Missing AccessToken to the member. Can't contact github.")
-	}
-
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: u.accessToken},
-	)
-	tc := oauth2.NewClient(oauth2.NoContext, ts)
-	u.githubclient = github.NewClient(tc)
-	return nil
-}
-
-// connectToGithub creates a new github client.
-//TODO CUrrently not used
-func (m *Member) xconnectToGithub() error {
-	if m.githubclient != nil {
-		return nil
-	}
-	if !m.hasAccessToken() {
-		return errors.New("unable to connect to github; missing access token for " + m.Username)
-	}
-
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: m.accessToken},
-	)
-	tc := oauth2.NewClient(oauth2.NoContext, ts)
-	m.githubclient = github.NewClient(tc)
-	return nil
+	user, _, err = client.Users.Get("")
+	return
 }
 
 func (m *Member) loadDataFromGithub() (err error) {

@@ -33,20 +33,11 @@ type Member struct {
 	Teaching         map[string]interface{}
 	Courses          map[string]Course
 	AssistantCourses map[string]interface{}
-
-	accessToken  string
-	githubclient *github.Client
 }
 
 // LookupMember does a reverse lookup based on the provided token to
 // obtain a member from the database.
 func LookupMember(token string) (m *Member, err error) {
-	if token == "" {
-		return nil, errors.New("non-empty OAuth token is required")
-	}
-	if !hasToken(token) {
-		return nil, errors.New("unknown OAuth token")
-	}
 	userName, err := getToken(token)
 	if err != nil {
 		return nil, err
@@ -83,10 +74,40 @@ func CreateMember(userName string) (m *Member, err error) {
 	return m, nil
 }
 
-// NewMember tries to use the given oauth token to find the
+// NewMember creates a new member based on the provided OAuth token.
+// This function also creates the embedded UserProfile object. This may involve
+// fetching user profile data from an online source such as github.
+func NewMember(token string) (m *Member, err error) {
+	if hasToken(token) {
+		return nil, errors.New("OAuth token already in database")
+	}
+	u, err := NewUserProfile(token)
+	if err != nil {
+		return nil, err
+	}
+	m = &Member{
+		UserProfile:      u,
+		Teaching:         make(map[string]interface{}),
+		Courses:          make(map[string]Course),
+		AssistantCourses: make(map[string]interface{}),
+	}
+
+	// record token -> Username mapping to allow reverse lookup
+	if err = putToken(token, u.Username); err != nil {
+		return nil, err
+	}
+
+	// save newly created member for future lookups
+	if err = database.Put(MemberBucketName, m.Username, m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+// NueMember tries to use the given oauth token to find the
 // user stored on disk/memory. If not found it will load user
 // data from github and make a new user.
-func NewMember(token string) (m *Member, err error) {
+func NueMember(token string) (m *Member, err error) {
 	if token == "" {
 		return nil, errors.New("non-empty OAuth token is required")
 	}
@@ -106,12 +127,12 @@ func NewMember(token string) (m *Member, err error) {
 		//TODO This code branch is probably not being tested; it should be
 		u := &UserProfile{
 			Username:     user,
+			accessToken:  token,
 			WeeklyScore:  make(map[int]int64),
 			MonthlyScore: make(map[time.Month]int64),
 		}
 		m = &Member{
 			UserProfile:      u,
-			accessToken:      token,
 			Teaching:         make(map[string]interface{}),
 			Courses:          make(map[string]Course),
 			AssistantCourses: make(map[string]interface{}),
@@ -124,10 +145,10 @@ func NewMember(token string) (m *Member, err error) {
 
 	//TODO Refactor: This code should be moved elsewhere
 	if m.IsTeacher {
-		var org *Organization
 		for k := range m.Teaching {
-			org, err = NewOrganization(k, true)
+			org, err := NewOrganization(k, true)
 			if err != nil {
+				// TODO log or report error
 				continue
 			}
 
@@ -142,20 +163,33 @@ func NewMember(token string) (m *Member, err error) {
 	return
 }
 
-// GetMember returns the member associated with the given userName.
+// GetMember returns the member associated with the given userName. If member
+// is not in the database, a new member object will be created and stored in
+// the database.
 func GetMember(userName string) (m *Member, err error) {
+	//TODO we need to take a lock on the member bucket for this function, to avoid that the multiple versions of the same user is created at the same time.
 	err = database.Get(MemberBucketName, userName, &m)
 	if err == nil {
 		// userName found in database; return early
 		return m, nil
 	}
 
-	// userName not found in database; create new member object
+	// userName not found in database; create new member object (and store in DB)
 	m, err = CreateMember(userName)
 	if err != nil {
 		return nil, err
 	}
 	return m, nil
+}
+
+// RemoveMember deletes the member from the database and removes its token
+// from the token lookup table.
+func (m *Member) RemoveMember() (err error) {
+	err = database.Remove(MemberBucketName, m.Username)
+	if err != nil {
+		return err
+	}
+	return removeToken(m.accessToken)
 }
 
 // Update database under a lock regime to ensure safety.
@@ -179,10 +213,6 @@ func (m *Member) IsComplete() bool {
 	}
 
 	return true
-}
-
-func (m *Member) hasAccessToken() bool {
-	return m.accessToken != "" && len(m.accessToken) > 0
 }
 
 // connectToGithub creates a new github client.

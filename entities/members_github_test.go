@@ -24,7 +24,7 @@ func TestGetGithubMember(t *testing.T) {
 	if err != nil {
 		t.Errorf("Could not get github user %v", err)
 	}
-	t.Logf("g: %v, x: %v\n", gu, xu)
+	t.Logf("g: %v\nx: %v\n", gu, xu)
 
 	m, err := NewUserWithGithubData(gu)
 	if err != nil {
@@ -32,5 +32,34 @@ func TestGetGithubMember(t *testing.T) {
 	}
 	if m.Username != *gu.Login {
 		t.Errorf("unexpected github user %v returned", m.Username)
+	}
+}
+
+func TestLookupAndNewMember(t *testing.T) {
+	m, err := LookupMember(mytoken)
+	if err == nil || m != nil {
+		t.Errorf("Expected error, but found member: %v", m)
+	}
+	m, err = NewMember(mytoken)
+	if err != nil || m == nil {
+		t.Errorf("Expected member, but got error: %v", err)
+	}
+	if m.accessToken != mytoken {
+		t.Errorf("Expected member with access token: %s, but got: %s", mytoken, m.accessToken)
+	}
+
+	// we should already be connected by previous call to connect() from NewMember
+	gu, err := getGithubUser(m.githubclient)
+	if err != nil {
+		t.Errorf("Expected github user, but got error: %v", err)
+	}
+	if m.Username != *gu.Login {
+		t.Errorf("Expected member with Username: %s, but got: %s", m.Username, *gu.Login)
+	}
+
+	// remove member inserted into database; it won't be needed in other tests
+	err = m.RemoveMember()
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
 	}
 }
