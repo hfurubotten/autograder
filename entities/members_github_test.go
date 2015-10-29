@@ -26,12 +26,12 @@ func TestGetGithubMember(t *testing.T) {
 	}
 	t.Logf("g: %v\nx: %v\n", gu, xu)
 
-	m, err := NewUserWithGithubData(gu)
+	m, err := GetMember(*gu.Login)
 	if err != nil {
-		t.Errorf("Could not create github user %v", err)
+		t.Errorf("Could not create member: %v", err)
 	}
 	if m.Username != *gu.Login {
-		t.Errorf("unexpected github user %v returned", m.Username)
+		t.Errorf("expected: %s, but got: %s", *gu.Login, m.Username)
 	}
 }
 

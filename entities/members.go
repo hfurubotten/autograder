@@ -7,9 +7,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/google/go-github/github"
 	"github.com/hfurubotten/autograder/database"
-	"golang.org/x/oauth2"
 )
 
 // MemberBucketName is the bucket name for members in the DB.
@@ -108,40 +106,6 @@ func NewMember(token string) (m *Member, err error) {
 // user stored on disk/memory. If not found it will load user
 // data from github and make a new user.
 func NueMember(token string) (m *Member, err error) {
-	if token == "" {
-		return nil, errors.New("non-empty OAuth token is required")
-	}
-	var user string
-	if hasToken(token) {
-		user, err = getToken(token)
-		if err != nil {
-			return nil, err
-		}
-		m, err = GetMember(user)
-		if err != nil {
-			return nil, err
-		}
-		// m.accessToken = token
-	} else {
-		//TODO clean up this code later
-		//TODO This code branch is probably not being tested; it should be
-		u := &UserProfile{
-			Username:     user,
-			accessToken:  token,
-			WeeklyScore:  make(map[int]int64),
-			MonthlyScore: make(map[time.Month]int64),
-		}
-		m = &Member{
-			UserProfile:      u,
-			Teaching:         make(map[string]interface{}),
-			Courses:          make(map[string]Course),
-			AssistantCourses: make(map[string]interface{}),
-		}
-		err = m.loadDataFromGithub()
-		if err != nil {
-			return nil, err
-		}
-	}
 
 	//TODO Refactor: This code should be moved elsewhere
 	if m.IsTeacher {
@@ -213,23 +177,6 @@ func (m *Member) IsComplete() bool {
 	}
 
 	return true
-}
-
-// connectToGithub creates a new github client.
-func (m *Member) connectToGithub() error {
-	if m.githubclient != nil {
-		return nil
-	}
-	if !m.hasAccessToken() {
-		return errors.New("unable to connect to github; missing access token for " + m.Username)
-	}
-
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: m.accessToken},
-	)
-	tc := oauth2.NewClient(oauth2.NoContext, ts)
-	m.githubclient = github.NewClient(tc)
-	return nil
 }
 
 // AddBuildResult will add a build result to the group.
@@ -412,7 +359,7 @@ func (m *Member) GetToken() (token string) {
 
 // String will stringify the member.
 func (m *Member) String() string {
-	return fmt.Sprintf("Student: %s %s, Student ID: %d, Github: %s", m.Name, m.Email, m.StudentID, m.Username)
+	return fmt.Sprintf("Student: %s %s, ID: %d, Github: %s", m.Name, m.Email, m.StudentID, m.Username)
 }
 
 // ListAllMembers returns the list of all members stored in the system.
