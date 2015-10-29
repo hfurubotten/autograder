@@ -100,6 +100,7 @@ func UpdateMemberHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		//TODO This should be replaced with a Update() transaction with GetMember() and Put()
 		member, err := git.NewMember(value.(string))
 		if err != nil {
 			log.Println(err.Error())

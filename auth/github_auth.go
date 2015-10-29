@@ -69,7 +69,7 @@ func githubOauthHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		accessToken := q.Get("access_token")
+		accessToken := q.Get(sessions.AccessTokenSessionKey)
 		errstr = q.Get("error")
 		approved := false
 
@@ -84,6 +84,7 @@ func githubOauthHandler(w http.ResponseWriter, r *http.Request) {
 		scope := q.Get("scope")
 
 		if scope != "" {
+			//TODO This should probably be LookupMember() (but in a Update() transaction, since we are updating the scope.)
 			m, err := git.NewMember(accessToken)
 			if err != nil {
 				log.Println("Could not open Member object:", err)

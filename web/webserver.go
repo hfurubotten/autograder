@@ -243,6 +243,7 @@ func checkMemberApproval(w http.ResponseWriter, r *http.Request, redirect bool) 
 		return
 	}
 
+	//TODO This should probably be LookupMember()
 	member, err = git.NewMember(value.(string))
 	if err != nil {
 		return nil, err
