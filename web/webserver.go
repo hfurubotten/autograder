@@ -26,7 +26,8 @@ import (
 //
 //go:generate $GOPATH/bin/go-bindata -o=staticfiles/staticfiles.go -pkg=staticfiles css/ fonts/ html/... img/... js/
 
-var htmlBase string
+// the default html base path; used to access assets
+var htmlBase = "html/"
 
 // Server represent a webserver serving the autograder web pages.
 type Server struct {
@@ -41,8 +42,6 @@ func NewServer(port int) Server {
 // Start will start up a new server listening on ws.Port. This
 // method blocks, and will call os.Exit(1) if server error occures.
 func (ws Server) Start() {
-	// setting html base path
-	htmlBase = "html/"
 
 	// OAuth process
 	http.Handle("/login", http.RedirectHandler(global.OAuthRedirectURL+"?client_id="+global.OAuthClientID, 307))
