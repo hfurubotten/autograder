@@ -1,4 +1,4 @@
-package events
+package web
 
 import (
 	"testing"

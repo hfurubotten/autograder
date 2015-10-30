@@ -10,7 +10,6 @@ import (
 
 	ci "github.com/hfurubotten/autograder/ci"
 	git "github.com/hfurubotten/autograder/entities"
-	"github.com/hfurubotten/autograder/game/events"
 	github "github.com/hfurubotten/autograder/game/githubobjects"
 	"github.com/hfurubotten/autograder/game/points"
 	"github.com/hfurubotten/autograder/game/trophies"
@@ -39,9 +38,9 @@ var WebhookEventURL = "/event/hook"
 // On push a build will be done.
 // On Github actions the user will be rawarded points.
 func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
-	defer events.PanicHandler(true)
+	defer PanicHandler(true)
 
-	event := events.GetPayloadType(r)
+	event := GetPayloadType(r)
 	b, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		w.Write([]byte("Bytes received could not be decoded."))
@@ -53,7 +52,7 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 	var body = "Wow, you actually got to see this msg. That shouldn't have happened."
 
 	switch event {
-	case events.COMMMIT_COMMENT:
+	case COMMMIT_COMMENT:
 		body = "Comment rewarded."
 		statusCode = http.StatusOK
 
@@ -72,20 +71,20 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 			body = TeacherActionMsg
 			user.IncScoreBy(points.COMMENT)
 		} else {
-			err = events.DistributeScores(points.COMMENT, user, org)
+			err = DistributeScores(points.COMMENT, user, org)
 			if err != nil {
 				statusCode = http.StatusInternalServerError
 				body = ScoreDistributionErrorMsg
 				break
 			}
 		}
-		err = events.RegisterAction(trophies.TALKACTION, user)
+		err = RegisterAction(trophies.TALKACTION, user)
 		if err != nil {
 			statusCode = http.StatusInternalServerError
 			body = RegisterActionErrorMsg
 		}
 
-	case events.ISSUE_COMMENT:
+	case ISSUE_COMMENT:
 		body = "Comment rewarded."
 		statusCode = http.StatusOK
 
@@ -104,20 +103,20 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 			body = TeacherActionMsg
 			user.IncScoreBy(points.COMMENT)
 		} else {
-			err = events.DistributeScores(points.COMMENT, user, org)
+			err = DistributeScores(points.COMMENT, user, org)
 			if err != nil {
 				statusCode = http.StatusInternalServerError
 				body = ScoreDistributionErrorMsg
 				break
 			}
 		}
-		err = events.RegisterAction(trophies.TALKACTION, user)
+		err = RegisterAction(trophies.TALKACTION, user)
 		if err != nil {
 			statusCode = http.StatusInternalServerError
 			body = RegisterActionErrorMsg
 		}
 
-	case events.ISSUES:
+	case ISSUES:
 		body = "Issue action rewarded."
 		statusCode = http.StatusOK
 
@@ -132,7 +131,7 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 		user, _ := git.GetMemberX(payload.Sender)
 		org, _ := git.NewOrganizationWithGithubData(payload.Organization, true)
 
-		p, ta, err := events.FindIssuesPointsAndTrophyAction(payload)
+		p, ta, err := findIssuesPointsAndTrophyAction(payload)
 		if err != nil {
 			log.Println("Issue event error:", err)
 			statusCode = http.StatusInternalServerError
@@ -144,25 +143,24 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 			body = TeacherActionMsg
 			user.IncScoreBy(p)
 		} else {
-			err = events.DistributeScores(p, user, org)
+			err = DistributeScores(p, user, org)
 			if err != nil {
 				statusCode = http.StatusInternalServerError
 				body = ScoreDistributionErrorMsg
 				break
 			}
 		}
-		err = events.RegisterAction(ta, user)
+		err = RegisterAction(ta, user)
 		if err != nil {
 			statusCode = http.StatusInternalServerError
 			body = RegisterActionErrorMsg
 		}
 
-	case events.PING:
+	case PING:
 		body = "Pong"
 		statusCode = http.StatusOK
 
-	case events.PUSH:
-		// go events.HandlePush(b)
+	case PUSH:
 		body = "Test build started"
 		statusCode = http.StatusOK
 
@@ -181,13 +179,11 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 			//TODO: what? no error handling?
 		}
 
-	case events.PULL_REQUEST:
-		// go events.HandlePullRequest(b)
+	case PULL_REQUEST:
 		body = "Be patient, users will soon get points for push requests also."
 		statusCode = http.StatusNotImplemented
 
-	case events.PULL_REQUEST_COMMENT:
-		// go events.HandlePullRequestComments(b)
+	case PULL_REQUEST_COMMENT:
 		body = "Comment on push request rewarded."
 		statusCode = http.StatusOK
 
@@ -206,31 +202,28 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 			body = TeacherActionMsg
 			user.IncScoreBy(points.COMMENT)
 		} else {
-			err = events.DistributeScores(points.COMMENT, user, org)
+			err = DistributeScores(points.COMMENT, user, org)
 			if err != nil {
 				statusCode = http.StatusInternalServerError
 				body = ScoreDistributionErrorMsg
 				break
 			}
 		}
-		err = events.RegisterAction(trophies.TALKACTION, user)
+		err = RegisterAction(trophies.TALKACTION, user)
 		if err != nil {
 			statusCode = http.StatusInternalServerError
 			body = RegisterActionErrorMsg
 		}
 
-	case events.STATUS:
-		// go events.HandleStatusUpdate(b)
+	case STATUS:
 		body = "Be patient, Status update is soon also processed."
 		statusCode = http.StatusNotImplemented
 
-	case events.WIKI:
-		// go events.HandleWikiUpdate(b)
+	case WIKI:
 		body = "Be patient, wiki updates will be rewarded in time."
 		statusCode = http.StatusNotImplemented
 
-	case events.REPO_CREATE:
-		// go events.HandleNewRepo(b)
+	case REPO_CREATE:
 		body = "New Repos will be added at some point, but not at this time."
 		statusCode = http.StatusNotImplemented
 

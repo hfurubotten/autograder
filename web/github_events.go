@@ -1,10 +1,11 @@
-package events
+package web
 
 import (
 	"net/http"
 	"strings"
 )
 
+//TODO gorename these constants to be github agnostic
 const (
 	GITHUB_COMMMIT_COMMENT             string = "commit_comment"
 	GITHUB_ISSUE_COMMENT               string = "issue_comment"
