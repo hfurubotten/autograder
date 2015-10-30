@@ -63,7 +63,7 @@ func HandleIssues(b []byte) {
 		return
 	}
 
-	user, _ := git.NewUserWithGithubData(gu)
+	user, _ := git.GetMemberX(gu)
 	org, _ := git.NewOrganizationWithGithubDataX(o)
 
 	err = DistributeScores(p, user, org)

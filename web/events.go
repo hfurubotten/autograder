@@ -65,7 +65,7 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		user, _ := git.NewUserWithGithubData(payload.Comment.User)
+		user, _ := git.GetMemberX(payload.Comment.User)
 		org, _ := git.NewOrganizationWithGithubData(payload.Organization, true)
 
 		if org.IsTeacher(user) {
@@ -97,7 +97,7 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		user, _ := git.NewUserWithGithubData(payload.Comment.User)
+		user, _ := git.GetMemberX(payload.Comment.User)
 		org, _ := git.NewOrganizationWithGithubData(payload.Organization, true)
 
 		if org.IsTeacher(user) {
@@ -129,7 +129,7 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		user, _ := git.NewUserWithGithubData(payload.Sender)
+		user, _ := git.GetMemberX(payload.Sender)
 		org, _ := git.NewOrganizationWithGithubData(payload.Organization, true)
 
 		p, ta, err := events.FindIssuesPointsAndTrophyAction(payload)
@@ -199,7 +199,7 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		user, _ := git.NewUserWithGithubData(payload.Comment.User)
+		user, _ := git.GetMemberX(payload.Comment.User)
 		org, _ := git.NewOrganizationWithGithubData(payload.Organization, true)
 
 		if org.IsTeacher(user) {

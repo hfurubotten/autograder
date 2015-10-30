@@ -16,8 +16,8 @@ var (
 
 // NewUserWithGithubData creates a new User object from a github User object.
 // It will copy all information from the given GitHub data to the new User object.
-//TODO Find better name
-func NewUserWithGithubData(gu *github.User) (u *Member, err error) {
+//TODO Remove this method; replace with GetMember().
+func GetMemberX(gu *github.User) (u *Member, err error) {
 	if gu == nil {
 		return nil, errors.New("github user object is required")
 	}

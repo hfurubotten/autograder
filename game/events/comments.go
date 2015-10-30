@@ -19,7 +19,7 @@ func HandlePullRequestComments(b []byte) {
 	gu := payload.Comment.User
 	o := payload.Organization
 
-	user, _ := git.NewUserWithGithubData(gu)
+	user, _ := git.GetMemberX(gu)
 	org, _ := git.NewOrganizationWithGithubDataX(o)
 
 	err = DistributeScores(points.COMMENT, user, org)
@@ -40,7 +40,7 @@ func HandleIssueComment(b []byte) {
 	gu := payload.Comment.User
 	o := payload.Organization
 
-	user, _ := git.NewUserWithGithubData(gu)
+	user, _ := git.GetMemberX(gu)
 	org, _ := git.NewOrganizationWithGithubDataX(o)
 
 	err = DistributeScores(points.COMMENT, user, org)
@@ -61,7 +61,7 @@ func HandleCommitComment(b []byte) {
 	gu := payload.Comment.User
 	o := payload.Organization
 
-	user, _ := git.NewUserWithGithubData(gu)
+	user, _ := git.GetMemberX(gu)
 	org, _ := git.NewOrganizationWithGithubDataX(o)
 
 	err = DistributeScores(points.COMMENT, user, org)
