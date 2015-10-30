@@ -41,7 +41,7 @@ func githubOauthHandler(w http.ResponseWriter, r *http.Request) {
 		requrl := "https://github.com/login/oauth/access_token"
 		req, err := http.NewRequest("POST", requrl, bytes.NewBuffer(postdata))
 		if err != nil {
-			log.Println("Echange error with github: ", err)
+			log.Println("Exchange error with github: ", err)
 			http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
 			return
 		}
@@ -102,6 +102,7 @@ func githubOauthHandler(w http.ResponseWriter, r *http.Request) {
 		sessions.SetSessions(w, r, sessions.AuthSession, sessions.ApprovedSessionKey, approved)
 		sessions.SetSessionsAndRedirect(w, r, sessions.AuthSession, sessions.AccessTokenSessionKey, accessToken, pages.HOMEPAGE)
 	} else {
+		//TODO Check and understand if this should be StatusTemporaryRedirect??
 		http.Redirect(w, r, pages.FRONTPAGE, http.StatusBadRequest)
 	}
 }
