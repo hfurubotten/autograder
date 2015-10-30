@@ -45,23 +45,23 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 	b, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		w.Write([]byte("Bytes received could not be decoded."))
-		w.WriteHeader(503)
+		w.WriteHeader(http.StatusServiceUnavailable)
 		return
 	}
 
-	var statuscode = 503
+	var statusCode = http.StatusServiceUnavailable
 	var body = "Wow, you actually got to see this msg. That shouldn't have happened."
 
 	switch event {
 	case events.COMMMIT_COMMENT:
 		body = "Comment rewarded."
-		statuscode = 200
+		statusCode = http.StatusOK
 
 		payload, err := github.UnmarshalCommitComment(b)
 		if err != nil {
 			log.Println("Error decoding Commit Comment payload:", err)
 			body = DecodeGithubPayloadErrorMsg
-			statuscode = 500
+			statusCode = http.StatusInternalServerError
 			break
 		}
 
@@ -74,26 +74,26 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 		} else {
 			err = events.DistributeScores(points.COMMENT, user, org)
 			if err != nil {
-				statuscode = 500
+				statusCode = http.StatusInternalServerError
 				body = ScoreDistributionErrorMsg
 				break
 			}
 		}
 		err = events.RegisterAction(trophies.TALKACTION, user)
 		if err != nil {
-			statuscode = 500
+			statusCode = http.StatusInternalServerError
 			body = RegisterActionErrorMsg
 		}
 
 	case events.ISSUE_COMMENT:
 		body = "Comment rewarded."
-		statuscode = 200
+		statusCode = http.StatusOK
 
 		payload, err := github.UnmarshalIssueComment(b)
 		if err != nil {
 			log.Println("Error decoding Commit Comment payload:", err)
 			body = DecodeGithubPayloadErrorMsg
-			statuscode = 500
+			statusCode = http.StatusInternalServerError
 			break
 		}
 
@@ -106,26 +106,26 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 		} else {
 			err = events.DistributeScores(points.COMMENT, user, org)
 			if err != nil {
-				statuscode = 500
+				statusCode = http.StatusInternalServerError
 				body = ScoreDistributionErrorMsg
 				break
 			}
 		}
 		err = events.RegisterAction(trophies.TALKACTION, user)
 		if err != nil {
-			statuscode = 500
+			statusCode = http.StatusInternalServerError
 			body = RegisterActionErrorMsg
 		}
 
 	case events.ISSUES:
 		body = "Issue action rewarded."
-		statuscode = 200
+		statusCode = http.StatusOK
 
 		payload, err := github.UnmarshalIssues(b)
 		if err != nil {
 			log.Println("Error decoding Commit Comment payload:", err)
 			body = DecodeGithubPayloadErrorMsg
-			statuscode = 500
+			statusCode = http.StatusInternalServerError
 			break
 		}
 
@@ -135,7 +135,7 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 		p, ta, err := events.FindIssuesPointsAndTrophyAction(payload)
 		if err != nil {
 			log.Println("Issue event error:", err)
-			statuscode = 500
+			statusCode = http.StatusInternalServerError
 			body = "Could not calculate what score to give for the event."
 			break
 		}
@@ -146,31 +146,31 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 		} else {
 			err = events.DistributeScores(p, user, org)
 			if err != nil {
-				statuscode = 500
+				statusCode = http.StatusInternalServerError
 				body = ScoreDistributionErrorMsg
 				break
 			}
 		}
 		err = events.RegisterAction(ta, user)
 		if err != nil {
-			statuscode = 500
+			statusCode = http.StatusInternalServerError
 			body = RegisterActionErrorMsg
 		}
 
 	case events.PING:
 		body = "Pong"
-		statuscode = 200
+		statusCode = http.StatusOK
 
 	case events.PUSH:
 		// go events.HandlePush(b)
 		body = "Test build started"
-		statuscode = 200
+		statusCode = http.StatusOK
 
 		payload, err := github.UnmarshalPush(b)
 		if err != nil {
 			log.Println("Error decoding Push payload:", err)
 			body = DecodeGithubPayloadErrorMsg
-			statuscode = 500
+			statusCode = http.StatusInternalServerError
 			break
 		}
 
@@ -184,18 +184,18 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 	case events.PULL_REQUEST:
 		// go events.HandlePullRequest(b)
 		body = "Be patient, users will soon get points for push requests also."
-		statuscode = 501
+		statusCode = http.StatusNotImplemented
 
 	case events.PULL_REQUEST_COMMENT:
 		// go events.HandlePullRequestComments(b)
 		body = "Comment on push request rewarded."
-		statuscode = 200
+		statusCode = http.StatusOK
 
 		payload, err := github.UnmarshalPullRequestComments(b)
 		if err != nil {
 			log.Println("Error decoding Commit Comment payload:", err)
 			body = DecodeGithubPayloadErrorMsg
-			statuscode = 500
+			statusCode = http.StatusInternalServerError
 			break
 		}
 
@@ -208,38 +208,38 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 		} else {
 			err = events.DistributeScores(points.COMMENT, user, org)
 			if err != nil {
-				statuscode = 500
+				statusCode = http.StatusInternalServerError
 				body = ScoreDistributionErrorMsg
 				break
 			}
 		}
 		err = events.RegisterAction(trophies.TALKACTION, user)
 		if err != nil {
-			statuscode = 500
+			statusCode = http.StatusInternalServerError
 			body = RegisterActionErrorMsg
 		}
 
 	case events.STATUS:
 		// go events.HandleStatusUpdate(b)
 		body = "Be patient, Status update is soon also processed."
-		statuscode = 501
+		statusCode = http.StatusNotImplemented
 
 	case events.WIKI:
 		// go events.HandleWikiUpdate(b)
 		body = "Be patient, wiki updates will be rewarded in time."
-		statuscode = 501
+		statusCode = http.StatusNotImplemented
 
 	case events.REPO_CREATE:
 		// go events.HandleNewRepo(b)
 		body = "New Repos will be added at some point, but not at this time."
-		statuscode = 501
+		statusCode = http.StatusNotImplemented
 
 	default:
 		body = "Unknown payload, thus not processed."
-		statuscode = 503
+		statusCode = http.StatusServiceUnavailable
 	}
 
-	w.WriteHeader(statuscode)
+	w.WriteHeader(statusCode)
 	w.Write([]byte(body))
 }
 

@@ -12,7 +12,7 @@ import (
 
 // ScoreboardView is the stuct used to pass data to the html template compiler.
 type ScoreboardView struct {
-	StdTemplate
+	stdTemplate
 	Org *git.Organization
 }
 
@@ -31,29 +31,29 @@ func ScoreboardHandler(w http.ResponseWriter, r *http.Request) {
 	orgname := ""
 	if path := strings.Split(r.URL.Path, "/"); len(path) == 3 {
 		if !git.HasOrganization(path[2]) {
-			http.Redirect(w, r, HomeURL, 307)
+			http.Redirect(w, r, HomeURL, http.StatusTemporaryRedirect)
 			return
 		}
 
 		orgname = path[2]
 	} else {
-		http.Redirect(w, r, HomeURL, 307)
+		http.Redirect(w, r, HomeURL, http.StatusTemporaryRedirect)
 		return
 	}
 
 	org, err := git.NewOrganization(orgname, true)
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	if !org.IsMember(member) {
-		http.Redirect(w, r, HomeURL, 307)
+		http.Redirect(w, r, HomeURL, http.StatusTemporaryRedirect)
 		return
 	}
 
 	view := ScoreboardView{
-		StdTemplate: StdTemplate{
+		stdTemplate: stdTemplate{
 			Member: member,
 		},
 		Org: org,

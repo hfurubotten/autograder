@@ -11,7 +11,7 @@ import (
 
 // AdminView is the struct passed to the html template compiler.
 type AdminView struct {
-	StdTemplate
+	stdTemplate
 	Members []*git.Member
 }
 
@@ -61,7 +61,7 @@ func SetAdminHandler(w http.ResponseWriter, r *http.Request) {
 
 	m, err := git.GetMember(r.FormValue("user"))
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
 	m.IsAdmin, err = strconv.ParseBool(r.FormValue("admin"))

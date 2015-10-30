@@ -15,7 +15,7 @@ import (
 
 // ProfileView is the view passed to the html template compiler for ProfileHandler.
 type ProfileView struct {
-	StdTemplate
+	stdTemplate
 
 	PointsToNextLvl    int64
 	PercentLvlComplete int
@@ -32,21 +32,21 @@ var ProfileURL = "/profile"
 // users profile settings. The page can also be used to edit profile data.
 func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 	if !auth.IsApprovedUser(r) {
-		http.Redirect(w, r, pages.FRONTPAGE, 307)
+		http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
 		return
 	}
 
 	value, err := sessions.GetSessions(r, sessions.AuthSession, sessions.AccessTokenSessionKey)
 	if err != nil {
 		log.Println("Error getting access token from sessions: ", err)
-		http.Redirect(w, r, pages.FRONTPAGE, 307)
+		http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
 		return
 	}
 
 	m, err := git.NewMember(value.(string))
 	if err != nil {
 		log.Println(err.Error())
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -64,7 +64,7 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	view := ProfileView{
-		StdTemplate: StdTemplate{
+		stdTemplate: stdTemplate{
 			Member:          m,
 			OptinalHeadline: true,
 		},
@@ -84,19 +84,19 @@ var UpdateMemberURL = "/updatemember"
 func UpdateMemberHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		if r.FormValue("name") == "" || r.FormValue("studentid") == "" || r.FormValue("email") == "" {
-			http.Redirect(w, r, pages.REGISTER_REDIRECT, 307)
+			http.Redirect(w, r, pages.REGISTER_REDIRECT, http.StatusTemporaryRedirect)
 			return
 		}
 
 		if !auth.IsApprovedUser(r) {
-			http.Redirect(w, r, pages.FRONTPAGE, 307)
+			http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
 			return
 		}
 
 		value, err := sessions.GetSessions(r, sessions.AuthSession, sessions.AccessTokenSessionKey)
 		if err != nil {
 			log.Println("Error getting access token from sessions: ", err)
-			http.Redirect(w, r, pages.FRONTPAGE, 307)
+			http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
 			return
 		}
 
@@ -104,7 +104,7 @@ func UpdateMemberHandler(w http.ResponseWriter, r *http.Request) {
 		member, err := git.NewMember(value.(string))
 		if err != nil {
 			log.Println(err.Error())
-			http.Error(w, err.Error(), 500)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
@@ -119,7 +119,7 @@ func UpdateMemberHandler(w http.ResponseWriter, r *http.Request) {
 		studentid, err := strconv.Atoi(r.FormValue("studentid"))
 		if err != nil {
 			log.Println("studentid atoi error: ", err)
-			http.Redirect(w, r, pages.REGISTER_REDIRECT, 307)
+			http.Redirect(w, r, pages.REGISTER_REDIRECT, http.StatusTemporaryRedirect)
 			return
 		}
 
@@ -128,13 +128,13 @@ func UpdateMemberHandler(w http.ResponseWriter, r *http.Request) {
 		email, err := mail.ParseAddress(r.FormValue("email"))
 		if err != nil {
 			log.Println("Parsing email error: ", err)
-			http.Redirect(w, r, pages.REGISTER_REDIRECT, 307)
+			http.Redirect(w, r, pages.REGISTER_REDIRECT, http.StatusTemporaryRedirect)
 			return
 		}
 		member.Email = email
 
-		http.Redirect(w, r, pages.HOMEPAGE, 307)
+		http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
 	} else {
-		http.Error(w, "This is not the page you are looking for!\n", 404)
+		http.Error(w, "This is not the page you are looking for!\n", http.StatusNotFound)
 	}
 }

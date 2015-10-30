@@ -12,7 +12,7 @@ import (
 
 // TeachersPanelView is the view passed to the html template compiler in TeachersPanelHandler.
 type TeachersPanelView struct {
-	StdTemplate
+	stdTemplate
 	Org *git.Organization
 
 	PendingUser  map[string]interface{}
@@ -31,7 +31,7 @@ func TeachersPanelHandler(w http.ResponseWriter, r *http.Request) {
 	member, err := checkTeacherApproval(w, r, true)
 	if err != nil {
 		log.Println(err)
-		http.Redirect(w, r, pages.HOMEPAGE, 307)
+		http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
 		return
 	}
 
@@ -39,25 +39,25 @@ func TeachersPanelHandler(w http.ResponseWriter, r *http.Request) {
 	orgname := ""
 	if path := strings.Split(r.URL.Path, "/"); len(path) == 4 {
 		if !git.HasOrganization(path[3]) {
-			http.Redirect(w, r, pages.HOMEPAGE, 307)
+			http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
 			return
 		}
 
 		orgname = path[3]
 	} else {
-		http.Redirect(w, r, pages.HOMEPAGE, 307)
+		http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
 		return
 	}
 
 	org, err := git.NewOrganization(orgname, true)
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	if !org.IsTeacher(member) {
 		log.Println("User is not a teacher for this course.")
-		http.Redirect(w, r, pages.HOMEPAGE, 307)
+		http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
 		return
 	}
 
@@ -139,7 +139,7 @@ func TeachersPanelHandler(w http.ResponseWriter, r *http.Request) {
 	_, _, labtype := org.FindCurrentLab()
 
 	view := TeachersPanelView{
-		StdTemplate: StdTemplate{
+		stdTemplate: stdTemplate{
 			Member: member,
 		},
 		PendingUser:    users,
@@ -152,7 +152,7 @@ func TeachersPanelHandler(w http.ResponseWriter, r *http.Request) {
 
 // ShowResultView is the view passed to the html template compiler in ShowResultHandler.
 type ShowResultView struct {
-	StdTemplate
+	stdTemplate
 	Org      *git.Organization
 	Username string
 	Labnum   int
@@ -176,30 +176,30 @@ func ShowResultHandler(w http.ResponseWriter, r *http.Request) {
 	orgname := ""
 	if path := strings.Split(r.URL.Path, "/"); len(path) == 4 {
 		if !git.HasOrganization(path[3]) {
-			http.Redirect(w, r, pages.HOMEPAGE, 307)
+			http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
 			return
 		}
 
 		orgname = path[3]
 	} else {
-		http.Redirect(w, r, pages.HOMEPAGE, 307)
+		http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
 		return
 	}
 
 	username := r.FormValue("user")
 	if username == "" {
-		http.Redirect(w, r, pages.HOMEPAGE, 307)
+		http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
 		return
 	}
 
 	if !git.HasOrganization(orgname) {
-		http.Redirect(w, r, pages.HOMEPAGE, 307)
+		http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
 		return
 	}
 
 	org, err := git.NewOrganization(orgname, true)
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
 	isgroup := false
@@ -208,14 +208,14 @@ func ShowResultHandler(w http.ResponseWriter, r *http.Request) {
 	if !git.HasMember(username) {
 		groupnum, err := strconv.Atoi(username[len("group"):])
 		if err != nil {
-			http.Redirect(w, r, pages.HOMEPAGE, 307)
+			http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
 			return
 		}
 		if git.HasGroup(groupnum) {
 			isgroup = true
 			group, err := git.NewGroup(org.Name, groupnum, true)
 			if err != nil {
-				http.Redirect(w, r, pages.HOMEPAGE, 307)
+				http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
 				return
 			}
 
@@ -227,13 +227,13 @@ func ShowResultHandler(w http.ResponseWriter, r *http.Request) {
 				labnum = group.CurrentLabNum
 			}
 		} else {
-			http.Redirect(w, r, pages.HOMEPAGE, 307)
+			http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
 			return
 		}
 	} else {
 		user, err := git.GetMember(username)
 		if err != nil {
-			http.Error(w, err.Error(), 500)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 
 		nr := user.Courses[org.Name].CurrentLabNum
@@ -245,7 +245,7 @@ func ShowResultHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	view := ShowResultView{
-		StdTemplate: StdTemplate{
+		stdTemplate: stdTemplate{
 			Member: member,
 		},
 		Org:      org,
@@ -273,7 +273,7 @@ func AddAssistantHandler(w http.ResponseWriter, r *http.Request) {
 	course := r.FormValue("course")
 
 	if !git.HasOrganization(course) {
-		http.Error(w, "Unknown course.", 404)
+		http.Error(w, "Unknown course.", http.StatusNotFound)
 		return
 	}
 
@@ -283,7 +283,7 @@ func AddAssistantHandler(w http.ResponseWriter, r *http.Request) {
 
 	assistant, err := git.GetMember(username)
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -296,7 +296,7 @@ func AddAssistantHandler(w http.ResponseWriter, r *http.Request) {
 
 	org, err := git.NewOrganization(course, false)
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -308,7 +308,7 @@ func AddAssistantHandler(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	if !org.IsTeacher(member) {
-		http.Error(w, "User is not the teacher for this course.", 404)
+		http.Error(w, "User is not the teacher for this course.", http.StatusNotFound)
 		return
 	}
 
@@ -336,7 +336,7 @@ func RemoveAssistantHandler(w http.ResponseWriter, r *http.Request) {
 	course := r.FormValue("course")
 
 	if !git.HasOrganization(course) {
-		http.Error(w, "Unknown course.", 404)
+		http.Error(w, "Unknown course.", http.StatusNotFound)
 		return
 	}
 
@@ -346,7 +346,7 @@ func RemoveAssistantHandler(w http.ResponseWriter, r *http.Request) {
 
 	assistant, err := git.GetMember(username)
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -359,7 +359,7 @@ func RemoveAssistantHandler(w http.ResponseWriter, r *http.Request) {
 
 	org, err := git.NewOrganization(course, false)
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -371,7 +371,7 @@ func RemoveAssistantHandler(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	if !org.IsTeacher(member) {
-		http.Error(w, "User is not the teacher for this course.", 404)
+		http.Error(w, "User is not the teacher for this course.", http.StatusNotFound)
 		return
 	}
 

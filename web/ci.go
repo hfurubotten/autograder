@@ -20,7 +20,7 @@ func ManualCITriggerHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
 	member, err := checkMemberApproval(w, r, false)
 	if err != nil {
-		http.Error(w, err.Error(), 404)
+		http.Error(w, err.Error(), http.StatusNotFound)
 		log.Println(err)
 		return
 	}
@@ -30,13 +30,13 @@ func ManualCITriggerHandler(w http.ResponseWriter, r *http.Request) {
 	lab := r.FormValue("lab")
 
 	if !git.HasOrganization(course) {
-		http.Error(w, "Unknown organization", 404)
+		http.Error(w, "Unknown organization", http.StatusNotFound)
 		return
 	}
 
 	org, err := git.NewOrganization(course, true)
 	if err != nil {
-		http.Error(w, "Organization Error", 404)
+		http.Error(w, "Organization Error", http.StatusNotFound)
 		return
 	}
 
@@ -47,14 +47,14 @@ func ManualCITriggerHandler(w http.ResponseWriter, r *http.Request) {
 				if member.Courses[org.Name].IsGroupMember {
 					user = "group" + strconv.Itoa(member.Courses[org.Name].GroupNum)
 				} else {
-					http.Error(w, "Not a group member", 404)
+					http.Error(w, "Not a group member", http.StatusNotFound)
 					return
 				}
 			} else {
 				user = member.Username
 			}
 		} else {
-			http.Error(w, "Not a member of the course", 404)
+			http.Error(w, "Not a member of the course", http.StatusNotFound)
 			return
 		}
 	}
@@ -64,7 +64,7 @@ func ManualCITriggerHandler(w http.ResponseWriter, r *http.Request) {
 	if strings.Contains(user, "group") {
 		groupid, err = strconv.Atoi(user[len("group"):])
 		if err != nil {
-			http.Error(w, err.Error(), 500)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
@@ -92,7 +92,7 @@ func ManualCITriggerHandler(w http.ResponseWriter, r *http.Request) {
 		repo = user
 		destfolder = git.GroupsRepoName
 	} else {
-		http.Error(w, "Unknown user", 404)
+		http.Error(w, "Unknown user", http.StatusNotFound)
 		return
 	}
 
@@ -126,7 +126,7 @@ func CIResultHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
 	member, err := checkMemberApproval(w, r, false)
 	if err != nil {
-		http.Error(w, err.Error(), 404)
+		http.Error(w, err.Error(), http.StatusNotFound)
 		log.Println(err)
 		return
 	}
@@ -138,12 +138,12 @@ func CIResultHandler(w http.ResponseWriter, r *http.Request) {
 
 	org, err := git.NewOrganization(orgname, true)
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	if !org.IsMember(member) {
-		http.Error(w, "Not a member for this course.", 404)
+		http.Error(w, "Not a member for this course.", http.StatusNotFound)
 		return
 	}
 
@@ -159,33 +159,33 @@ func CIResultHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if labnum < 0 {
-			http.Error(w, "No lab with that name found.", 404)
+			http.Error(w, "No lab with that name found.", http.StatusNotFound)
 			return
 		}
 
 		groupid, err := strconv.Atoi(username[len(git.GroupRepoPrefix):])
 		if err != nil {
-			http.Error(w, "Could not convert the group ID.", 404)
+			http.Error(w, "Could not convert the group ID.", http.StatusNotFound)
 			return
 		}
 
 		group, err := git.NewGroup(orgname, groupid, true)
 		if err != nil {
 			log.Println(err)
-			http.Error(w, err.Error(), 404)
+			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
 
 		buildid := group.GetLastBuildID(labnum)
 		if buildid < 0 {
-			http.Error(w, "Could not find the build.", 404)
+			http.Error(w, "Could not find the build.", http.StatusNotFound)
 			return
 		}
 
 		res, err = ci.GetBuildResult(buildid)
 		if err != nil {
 			log.Println(err)
-			http.Error(w, err.Error(), 404)
+			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
 	} else {
@@ -198,27 +198,27 @@ func CIResultHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if labnum < 0 {
-			http.Error(w, "No lab with that name found.", 404)
+			http.Error(w, "No lab with that name found.", http.StatusNotFound)
 			return
 		}
 
 		user, err := git.GetMember(username)
 		if err != nil {
 			log.Println(err)
-			http.Error(w, err.Error(), 404)
+			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
 
 		buildid := user.GetLastBuildID(orgname, labnum)
 		if buildid < 0 {
-			http.Error(w, "Could not find the build.", 404)
+			http.Error(w, "Could not find the build.", http.StatusNotFound)
 			return
 		}
 
 		res, err = ci.GetBuildResult(buildid)
 		if err != nil {
 			log.Println(err)
-			http.Error(w, err.Error(), 404)
+			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
 	}
@@ -227,7 +227,7 @@ func CIResultHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = enc.Encode(res)
 	if err != nil {
-		http.Error(w, err.Error(), 404)
+		http.Error(w, err.Error(), http.StatusNotFound)
 	}
 
 }
@@ -251,7 +251,7 @@ func CIResultSummaryHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
 	teacher, err := checkTeacherApproval(w, r, false)
 	if err != nil {
-		http.Error(w, err.Error(), 404)
+		http.Error(w, err.Error(), http.StatusNotFound)
 		log.Println(err)
 		return
 	}
@@ -260,18 +260,18 @@ func CIResultSummaryHandler(w http.ResponseWriter, r *http.Request) {
 	username := r.FormValue("Username")
 
 	if orgname == "" || username == "" {
-		http.Error(w, "Empty request.", 404)
+		http.Error(w, "Empty request.", http.StatusNotFound)
 		return
 	}
 
 	org, err := git.NewOrganization(orgname, true)
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	if !org.IsTeacher(teacher) {
-		http.Error(w, "Not a teacher for this course.", 404)
+		http.Error(w, "Not a teacher for this course.", http.StatusNotFound)
 		return
 	}
 
@@ -283,14 +283,14 @@ func CIResultSummaryHandler(w http.ResponseWriter, r *http.Request) {
 		groupid, err := strconv.Atoi(username[len(git.GroupRepoPrefix):])
 		if err != nil {
 			log.Println(err)
-			http.Error(w, err.Error(), 500)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		group, err := git.NewGroup(orgname, groupid, true)
 		if err != nil {
 			log.Println(err)
-			http.Error(w, err.Error(), 500)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
@@ -314,7 +314,7 @@ func CIResultSummaryHandler(w http.ResponseWriter, r *http.Request) {
 		user, err := git.GetMember(username)
 		if err != nil {
 			log.Println(err)
-			http.Error(w, err.Error(), 500)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
@@ -351,7 +351,7 @@ func CIResultSummaryHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = enc.Encode(view)
 	if err != nil {
-		http.Error(w, err.Error(), 404)
+		http.Error(w, err.Error(), http.StatusNotFound)
 	}
 }
 
@@ -382,7 +382,7 @@ func CIResultListHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
 	teacher, err := checkTeacherApproval(w, r, false)
 	if err != nil {
-		http.Error(w, err.Error(), 404)
+		http.Error(w, err.Error(), http.StatusNotFound)
 		log.Println(err)
 		return
 	}
@@ -393,7 +393,7 @@ func CIResultListHandler(w http.ResponseWriter, r *http.Request) {
 	labnum, err := strconv.Atoi(r.FormValue("Labnum"))
 	if err != nil {
 		log.Println(err)
-		http.Error(w, err.Error(), 404)
+		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 	length, err := strconv.Atoi(r.FormValue("Length"))
@@ -405,13 +405,13 @@ func CIResultListHandler(w http.ResponseWriter, r *http.Request) {
 	org, err := git.NewOrganization(course, true)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	if !org.IsTeacher(teacher) {
 		log.Println(err)
-		http.Error(w, "Not a teacher of this course", 404)
+		http.Error(w, "Not a teacher of this course", http.StatusNotFound)
 		return
 	}
 
@@ -429,13 +429,13 @@ func CIResultListHandler(w http.ResponseWriter, r *http.Request) {
 		group, err := git.NewGroup(org.Name, groupid, true)
 		if err != nil {
 			log.Println(err)
-			http.Error(w, err.Error(), 500)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		if group.Course != org.Name {
 			log.Println(err)
-			http.Error(w, "Not a group in this course", 404)
+			http.Error(w, "Not a group in this course", http.StatusNotFound)
 			return
 		}
 
@@ -456,13 +456,13 @@ func CIResultListHandler(w http.ResponseWriter, r *http.Request) {
 		user, err := git.GetMember(username)
 		if err != nil {
 			log.Println(err)
-			http.Error(w, err.Error(), 500)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		if !org.IsMember(user) {
 			log.Println(err)
-			http.Error(w, "Not a member of this course", 404)
+			http.Error(w, "Not a member of this course", http.StatusNotFound)
 			return
 		}
 
@@ -485,6 +485,6 @@ func CIResultListHandler(w http.ResponseWriter, r *http.Request) {
 	enc := json.NewEncoder(w)
 	err = enc.Encode(view)
 	if err != nil {
-		http.Error(w, err.Error(), 404)
+		http.Error(w, err.Error(), http.StatusNotFound)
 	}
 }

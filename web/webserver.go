@@ -44,7 +44,7 @@ func NewServer(port int) Server {
 func (ws Server) Start() {
 
 	// OAuth process
-	http.Handle("/login", http.RedirectHandler(global.OAuthRedirectURL+"?client_id="+global.OAuthClientID, 307))
+	http.Handle("/login", http.RedirectHandler(global.OAuthRedirectURL+"?client_id="+global.OAuthClientID, http.StatusTemporaryRedirect))
 	http.HandleFunc("/oauth", global.OAuthHandler)
 	http.HandleFunc(pages.SIGNOUT, auth.RemoveApprovalHandler)
 
@@ -117,19 +117,19 @@ func CatchAllHandler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
 		if auth.IsApprovedUser(r) {
-			http.Redirect(w, r, pages.HOMEPAGE, 307)
+			http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
 			return
 		}
 
 		data, err := staticfiles.Asset(htmlBase + "index.html")
 		if err != nil {
-			http.Error(w, "Page not found", 404)
+			http.Error(w, "Page not found", http.StatusNotFound)
 			return
 		}
 
 		if _, err = w.Write(data); err != nil {
 			log.Println(err)
-			http.Error(w, err.Error(), 404)
+			http.Error(w, err.Error(), http.StatusNotFound)
 		}
 
 		// index, err := os.Open(htmlBase + "index.html")
@@ -143,7 +143,7 @@ func CatchAllHandler(w http.ResponseWriter, r *http.Request) {
 		// }
 
 	} else {
-		http.Error(w, "This is not the page you are looking for!\n", 404)
+		http.Error(w, "This is not the page you are looking for!\n", http.StatusNotFound)
 	}
 }
 
@@ -156,7 +156,7 @@ func StaticfilesHandler(w http.ResponseWriter, r *http.Request) {
 
 	data, err := staticfiles.Asset(uri)
 	if err != nil {
-		http.Error(w, "File not found", 404)
+		http.Error(w, "File not found", http.StatusNotFound)
 		return
 	}
 
@@ -170,13 +170,13 @@ func StaticfilesHandler(w http.ResponseWriter, r *http.Request) {
 
 	if _, err = w.Write(data); err != nil {
 		log.Println(err)
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
 // HomeView is the view passed to the html template compailer in HomeHandler.
 type HomeView struct {
-	StdTemplate
+	stdTemplate
 	Teaching  map[string]*git.Organization
 	Assisting map[string]*git.Organization
 	Courses   map[string]*git.Organization
@@ -193,7 +193,7 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	view := HomeView{
-		StdTemplate: StdTemplate{
+		stdTemplate: stdTemplate{
 			Member: member,
 		},
 		Teaching:  make(map[string]*git.Organization),
@@ -212,7 +212,7 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !member.IsComplete() {
-		http.Redirect(w, r, pages.REGISTER_REDIRECT, 307)
+		http.Redirect(w, r, pages.REGISTER_REDIRECT, http.StatusTemporaryRedirect)
 		return
 	}
 
@@ -227,7 +227,7 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 func checkMemberApproval(w http.ResponseWriter, r *http.Request, redirect bool) (member *git.Member, err error) {
 	if !auth.IsApprovedUser(r) {
 		if redirect {
-			http.Redirect(w, r, pages.FRONTPAGE, 307)
+			http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
 		}
 		err = errors.New("The user is not logged in")
 		return
@@ -237,7 +237,7 @@ func checkMemberApproval(w http.ResponseWriter, r *http.Request, redirect bool) 
 	if err != nil {
 		err = errors.New("Error getting access token from sessions")
 		if redirect {
-			http.Redirect(w, r, pages.FRONTPAGE, 307)
+			http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
 		}
 		return
 	}
@@ -250,7 +250,7 @@ func checkMemberApproval(w http.ResponseWriter, r *http.Request, redirect bool) 
 
 	if !member.IsComplete() {
 		if redirect {
-			http.Redirect(w, r, pages.REGISTER_REDIRECT, 307)
+			http.Redirect(w, r, pages.REGISTER_REDIRECT, http.StatusTemporaryRedirect)
 		}
 		err = errors.New("Member got an uncomplete profile, redirecting.")
 		return
@@ -274,7 +274,7 @@ func checkTeacherApproval(w http.ResponseWriter, r *http.Request, redirect bool)
 	if !member.IsTeacher && !member.IsAssistant {
 		err = errors.New("The user is not a teacher.")
 		if redirect {
-			http.Redirect(w, r, pages.HOMEPAGE, 307)
+			http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
 		}
 		return
 	}
@@ -282,7 +282,7 @@ func checkTeacherApproval(w http.ResponseWriter, r *http.Request, redirect bool)
 	if member.Scope == "" && member.IsTeacher {
 		err = errors.New("Teacher need to renew scope.")
 		if redirect {
-			http.Redirect(w, r, global.OAuthRedirectURL+"?client_id="+global.OAuthClientID+"&scope="+global.OAuthScope, 307)
+			http.Redirect(w, r, global.OAuthRedirectURL+"?client_id="+global.OAuthClientID+"&scope="+global.OAuthScope, http.StatusTemporaryRedirect)
 		}
 		return
 	}
@@ -306,7 +306,7 @@ func checkAdminApproval(w http.ResponseWriter, r *http.Request, redirect bool) (
 	if !member.IsAdmin {
 		err = errors.New("The user is not a teacher.")
 		if redirect {
-			http.Redirect(w, r, pages.HOMEPAGE, 307)
+			http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
 		}
 		return
 	}

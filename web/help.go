@@ -16,11 +16,11 @@ func HelpHandler(w http.ResponseWriter, r *http.Request) {
 		addr = "help/index"
 	}
 
-	var view StdTemplate
+	var view stdTemplate
 	// Checks if the user is signed in
 	member, err := checkMemberApproval(w, r, false)
 	if err == nil {
-		view = StdTemplate{Member: member}
+		view = stdTemplate{Member: member}
 	}
 	execTemplate(addr+".html", w, view)
 }

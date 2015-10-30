@@ -16,25 +16,23 @@ func init() {
 }
 
 // SetSessionsAndRedirect will set a session and redirects.
-func SetSessionsAndRedirect(w http.ResponseWriter, r *http.Request, sessionsname string, key interface{}, value interface{}, redirecturl string) (err error) {
+func SetSessionsAndRedirect(w http.ResponseWriter, r *http.Request, sessionsname string, key, value interface{}, redirecturl string) (err error) {
 	session, _ := store.Get(r, sessionsname)
 
 	session.Values[key] = value
 	err = session.Save(r, w)
 
-	handler := http.RedirectHandler(redirecturl, 307)
+	handler := http.RedirectHandler(redirecturl, http.StatusTemporaryRedirect)
 	handler.ServeHTTP(w, r)
-
 	return
 }
 
 // SetSessions sets a session.
-func SetSessions(w http.ResponseWriter, r *http.Request, sessionsname string, key interface{}, value interface{}) (err error) {
+func SetSessions(w http.ResponseWriter, r *http.Request, sessionsname string, key, value interface{}) (err error) {
 	session, _ := store.Get(r, sessionsname)
 
 	session.Values[key] = value
 	err = session.Save(r, w)
-
 	return
 }
 
@@ -45,6 +43,5 @@ func GetSessions(r *http.Request, sessionsname string, key interface{}) (interfa
 	if val, ok := session.Values[key]; ok {
 		return val, nil
 	}
-
-	return nil, errors.New("Couldn't find the key in that session.")
+	return nil, errors.New("could not find the key in session")
 }

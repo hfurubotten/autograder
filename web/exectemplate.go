@@ -10,7 +10,8 @@ import (
 	"github.com/hfurubotten/autograder/web/staticfiles"
 )
 
-type StdTemplate struct {
+// stdTemplate is the standard common view components
+type stdTemplate struct {
 	OptinalHeadline bool
 	Member          *git.Member
 }
@@ -27,16 +28,17 @@ var funcMap = template.FuncMap{
 func execTemplate(page string, w http.ResponseWriter, view interface{}) {
 	pagedata, err := staticfiles.Asset(htmlBase + page)
 	if err != nil {
-		http.Error(w, "Page not found", 404)
+		http.Error(w, "Page not found", http.StatusNotFound)
 		return
 	}
 
 	templatedata, err := staticfiles.Asset(htmlBase + "template.html")
 	if err != nil {
-		http.Error(w, "Template not found", 404)
+		http.Error(w, "Template not found", http.StatusNotFound)
 		return
 	}
 
+	//TODO shouldn't also the errors below be reported back to the web client?
 	t := template.New("template").Funcs(funcMap)
 	t, err = t.Parse(string(templatedata))
 	if err != nil {

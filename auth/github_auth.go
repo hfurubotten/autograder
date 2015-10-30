@@ -33,7 +33,7 @@ func githubOauthHandler(w http.ResponseWriter, r *http.Request) {
 
 		if len(errstr) > 0 {
 			log.Println("OAuth error: " + errstr)
-			http.Redirect(w, r, pages.FRONTPAGE, 307)
+			http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
 			return
 		}
 
@@ -42,7 +42,7 @@ func githubOauthHandler(w http.ResponseWriter, r *http.Request) {
 		req, err := http.NewRequest("POST", requrl, bytes.NewBuffer(postdata))
 		if err != nil {
 			log.Println("Echange error with github: ", err)
-			http.Redirect(w, r, pages.FRONTPAGE, 307)
+			http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
 			return
 		}
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -51,21 +51,21 @@ func githubOauthHandler(w http.ResponseWriter, r *http.Request) {
 		resp, err := client.Do(req)
 		if err != nil {
 			log.Println("Echange error with github: ", err)
-			http.Redirect(w, r, pages.FRONTPAGE, 307)
+			http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
 			return
 		}
 
 		data, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			log.Println("Read error: ", err)
-			http.Redirect(w, r, pages.FRONTPAGE, 307)
+			http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
 			return
 		}
 
 		q, err := url.ParseQuery(string(data))
 		if err != nil {
 			log.Println("Data error from github: ", err)
-			http.Redirect(w, r, pages.FRONTPAGE, 307)
+			http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
 			return
 		}
 
@@ -75,7 +75,7 @@ func githubOauthHandler(w http.ResponseWriter, r *http.Request) {
 
 		if len(errstr) > 0 {
 			log.Println("Access token error: " + errstr)
-			http.Redirect(w, r, pages.FRONTPAGE, 307)
+			http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
 			return
 		}
 
@@ -88,7 +88,7 @@ func githubOauthHandler(w http.ResponseWriter, r *http.Request) {
 			m, err := git.NewMember(accessToken)
 			if err != nil {
 				log.Println("Could not open Member object:", err)
-				http.Redirect(w, r, pages.FRONTPAGE, 307)
+				http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
 				return
 			}
 
@@ -102,6 +102,6 @@ func githubOauthHandler(w http.ResponseWriter, r *http.Request) {
 		sessions.SetSessions(w, r, sessions.AuthSession, sessions.ApprovedSessionKey, approved)
 		sessions.SetSessionsAndRedirect(w, r, sessions.AuthSession, sessions.AccessTokenSessionKey, accessToken, pages.HOMEPAGE)
 	} else {
-		http.Redirect(w, r, pages.FRONTPAGE, 400)
+		http.Redirect(w, r, pages.FRONTPAGE, http.StatusBadRequest)
 	}
 }

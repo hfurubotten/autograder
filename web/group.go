@@ -23,19 +23,19 @@ func RequestRandomGroupHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
 	member, err := checkMemberApproval(w, r, false)
 	if err != nil {
-		http.Error(w, err.Error(), 404)
+		http.Error(w, err.Error(), http.StatusNotFound)
 		log.Println(err)
 		return
 	}
 
 	orgname := r.FormValue("course")
 	if !git.HasOrganization(orgname) {
-		http.Error(w, "Does not have organization.", 404)
+		http.Error(w, "Does not have organization.", http.StatusNotFound)
 	}
 
 	org, err := git.NewOrganization(orgname, false)
 	if err != nil {
-		http.Error(w, "Does not have organization.", 404)
+		http.Error(w, "Does not have organization.", http.StatusNotFound)
 	}
 	defer func() {
 		err := org.Save()
@@ -56,7 +56,7 @@ func NewGroupHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in.
 	member, err := checkMemberApproval(w, r, false)
 	if err != nil {
-		http.Error(w, err.Error(), 404)
+		http.Error(w, err.Error(), http.StatusNotFound)
 		log.Println(err)
 		return
 	}
@@ -67,14 +67,14 @@ func NewGroupHandler(w http.ResponseWriter, r *http.Request) {
 	course := r.FormValue("course")
 
 	if _, ok := member.Courses[course]; !ok {
-		http.Redirect(w, r, pages.FRONTPAGE, 307)
+		http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
 		log.Println("Unknown course.")
 		return
 	}
 
 	org, err := git.NewOrganization(course, false)
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.Println(err)
 		return
 	}
@@ -90,14 +90,14 @@ func NewGroupHandler(w http.ResponseWriter, r *http.Request) {
 
 	gid := git.GetNextGroupID()
 	if gid < 0 {
-		http.Redirect(w, r, pages.FRONTPAGE, 307)
+		http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
 		log.Println("Error while getting next group ID.")
 		return
 	}
 
 	group, err := git.NewGroup(course, gid, false)
 	if err != nil {
-		http.Redirect(w, r, pages.FRONTPAGE, 307)
+		http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
 		log.Println("Couldn't make new group object.", err)
 		return
 	}
@@ -152,9 +152,9 @@ func NewGroupHandler(w http.ResponseWriter, r *http.Request) {
 	org.PendingGroup[group.ID] = nil
 
 	if member.IsTeacher {
-		http.Redirect(w, r, "/course/teacher/"+org.Name+"#groups", 307)
+		http.Redirect(w, r, "/course/teacher/"+org.Name+"#groups", http.StatusTemporaryRedirect)
 	} else {
-		http.Redirect(w, r, "/course/"+org.Name+"#groups", 307)
+		http.Redirect(w, r, "/course/"+org.Name+"#groups", http.StatusTemporaryRedirect)
 	}
 }
 
@@ -176,7 +176,7 @@ func ApproveGroupHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
 	member, err := checkTeacherApproval(w, r, false)
 	if err != nil {
-		http.Error(w, err.Error(), 404)
+		http.Error(w, err.Error(), http.StatusNotFound)
 		log.Println(err)
 		return
 	}
@@ -340,26 +340,26 @@ func RemovePendingGroupHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
 	member, err := checkTeacherApproval(w, r, true)
 	if err != nil {
-		http.Redirect(w, r, "/", 307)
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		log.Println(err)
 		return
 	}
 
 	groupid, err := strconv.Atoi(r.FormValue("groupid"))
 	if err != nil {
-		http.Error(w, "Group ID is not a number: "+err.Error(), 404)
+		http.Error(w, "Group ID is not a number: "+err.Error(), http.StatusNotFound)
 		return
 	}
 	course := r.FormValue("course")
 
 	if !git.HasOrganization(course) {
-		http.Error(w, "Unknown course.", 404)
+		http.Error(w, "Unknown course.", http.StatusNotFound)
 		return
 	}
 
 	org, err := git.NewOrganization(course, false)
 	if err != nil {
-		http.Error(w, "Unknown course.", 404)
+		http.Error(w, "Unknown course.", http.StatusNotFound)
 		return
 	}
 
@@ -372,7 +372,7 @@ func RemovePendingGroupHandler(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	if !org.IsTeacher(member) {
-		http.Error(w, "Is not a teacher or assistant for this course.", 404)
+		http.Error(w, "Is not a teacher or assistant for this course.", http.StatusNotFound)
 		return
 	}
 
@@ -383,7 +383,7 @@ func RemovePendingGroupHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		http.Error(w, "Unknown group.", 404)
+		http.Error(w, "Unknown group.", http.StatusNotFound)
 		return
 	}
 
@@ -398,7 +398,7 @@ func RemovePendingGroupHandler(w http.ResponseWriter, r *http.Request) {
 
 	group, err := git.NewGroup(org.Name, groupid, false)
 	if err != nil {
-		http.Error(w, "Could not get the group: "+err.Error(), 404)
+		http.Error(w, "Could not get the group: "+err.Error(), http.StatusNotFound)
 		return
 	}
 

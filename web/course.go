@@ -20,7 +20,7 @@ var NewCourseURL = "/course/new/org"
 
 // CourseView is the struct sent to the html template compiler.
 type CourseView struct {
-	StdTemplate
+	stdTemplate
 	Org  string
 	Orgs []string
 }
@@ -49,7 +49,7 @@ func NewCourseHandler(w http.ResponseWriter, r *http.Request) {
 		view.Orgs, err = member.ListOrgs()
 		if err != nil {
 			log.Println(err)
-			http.Redirect(w, r, pages.SIGNOUT, 307)
+			http.Redirect(w, r, pages.SIGNOUT, http.StatusTemporaryRedirect)
 			return
 		}
 	}
@@ -74,7 +74,7 @@ func SelectOrgHandler(w http.ResponseWriter, r *http.Request) {
 	if path := strings.Split(r.URL.Path, "/"); len(path) == 5 {
 		view.Org = path[4]
 	} else {
-		http.Redirect(w, r, "/course/new", 307)
+		http.Redirect(w, r, "/course/new", http.StatusTemporaryRedirect)
 		return
 	}
 
@@ -82,7 +82,7 @@ func SelectOrgHandler(w http.ResponseWriter, r *http.Request) {
 	view.Orgs, err = member.ListOrgs()
 	if err != nil {
 		log.Println(err)
-		http.Redirect(w, r, pages.SIGNOUT, 307)
+		http.Redirect(w, r, pages.SIGNOUT, http.StatusTemporaryRedirect)
 		return
 	}
 
@@ -147,7 +147,7 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 	indv, err := strconv.Atoi(r.FormValue("indv"))
 	if err != nil {
 		log.Println("Cannot convert number of individual assignments from string to int: ", err)
-		http.Redirect(w, r, pages.HOMEPAGE, 307)
+		http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
 		return
 	}
 	org.IndividualAssignments = indv
@@ -155,7 +155,7 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 	currepos, err := org.ListRepos()
 	if err != nil {
 		log.Println("Problem listing repos in the new course organization: ", err)
-		http.Redirect(w, r, pages.HOMEPAGE, 307)
+		http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
 		return
 	}
 
@@ -165,7 +165,7 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 		templaterepos, err = templateorg.ListRepos()
 		if err != nil {
 			log.Println("Problem listing repos in the template organization: ", err)
-			http.Redirect(w, r, pages.HOMEPAGE, 307)
+			http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
 			return
 		}
 	}
@@ -176,7 +176,7 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 			err = org.Fork(r.FormValue("template"), git.CourseInfoName)
 			if err != nil {
 				log.Println("Couldn't fork the course info repo: ", err)
-				http.Redirect(w, r, pages.HOMEPAGE, 307)
+				http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
 				return
 			}
 		} else {
@@ -207,7 +207,7 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 				err = org.Fork(r.FormValue("template"), git.StandardRepoName)
 				if err != nil {
 					log.Println("Couldn't fork the individual assignment repo: ", err)
-					http.Redirect(w, r, pages.HOMEPAGE, 307)
+					http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
 					return
 				}
 			} else {
@@ -255,7 +255,7 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 				err = org.Fork(r.FormValue("template"), git.TestRepoName)
 				if err != nil {
 					log.Println("Couldn't fork the test repo: ", err)
-					http.Redirect(w, r, pages.HOMEPAGE, 307)
+					http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
 					return
 				}
 			} else {
@@ -312,7 +312,7 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 					err = org.Fork(r.FormValue("template"), git.GroupsRepoName)
 					if err != nil {
 						log.Println("Couldn't fork the group assignment repo: ", err)
-						http.Redirect(w, r, pages.HOMEPAGE, 307)
+						http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
 						return
 					}
 				} else {
@@ -382,7 +382,7 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 
 	member.AddTeachingOrganization(org)
 
-	http.Redirect(w, r, pages.FRONTPAGE, 307)
+	http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
 }
 
 // NewCourseMemberURL is the URL used to call NewCourseMemberHandler.
@@ -390,7 +390,7 @@ var NewCourseMemberURL = "/course/register"
 
 // NewMemberView is the struct passed to the html template compiler in NewCourseMemberHandler and RegisterCourseMemberHandler.
 type NewMemberView struct {
-	StdTemplate
+	stdTemplate
 	Orgs []*git.Organization
 	Org  string
 }
@@ -406,7 +406,7 @@ func NewCourseMemberHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	view := NewMemberView{
-		StdTemplate: StdTemplate{
+		stdTemplate: stdTemplate{
 			Member: member,
 		},
 		Orgs: git.ListRegisteredOrganizations(),
@@ -433,19 +433,19 @@ func RegisterCourseMemberHandler(w http.ResponseWriter, r *http.Request) {
 	orgname := ""
 	if path := strings.Split(r.URL.Path, "/"); len(path) == 4 {
 		if !git.HasOrganization(path[3]) {
-			http.Redirect(w, r, "/course/register", 307)
+			http.Redirect(w, r, "/course/register", http.StatusTemporaryRedirect)
 			return
 		}
 
 		orgname = path[3]
 	} else {
-		http.Redirect(w, r, "/course/register", 307)
+		http.Redirect(w, r, "/course/register", http.StatusTemporaryRedirect)
 		return
 	}
 
 	org, err := git.NewOrganization(orgname, false)
 	if err != nil {
-		http.Redirect(w, r, "/course/register", 307)
+		http.Redirect(w, r, "/course/register", http.StatusTemporaryRedirect)
 		return
 	}
 
@@ -458,7 +458,7 @@ func RegisterCourseMemberHandler(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	if _, ok := org.Members[member.Username]; ok {
-		http.Redirect(w, r, "/course/"+orgname, 307)
+		http.Redirect(w, r, "/course/"+orgname, http.StatusTemporaryRedirect)
 		return
 	}
 
@@ -468,7 +468,7 @@ func RegisterCourseMemberHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	view := NewMemberView{
-		StdTemplate: StdTemplate{
+		stdTemplate: stdTemplate{
 			Member: member,
 		},
 		Org: orgname,
@@ -509,12 +509,12 @@ func ApproveCourseMembershipHandler(w http.ResponseWriter, r *http.Request) {
 	orgname := ""
 	if path := strings.Split(r.URL.Path, "/"); len(path) == 4 {
 		if !git.HasOrganization(path[3]) {
-			http.Redirect(w, r, pages.HOMEPAGE, 307)
+			http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
 			return
 		}
 		orgname = path[3]
 	} else {
-		http.Redirect(w, r, pages.HOMEPAGE, 307)
+		http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
 		return
 	}
 
@@ -634,7 +634,7 @@ var UserCoursePageURL = "/course/"
 
 // MainCourseView is the struct sent to the html template compiler in UserCoursePageHandler.
 type MainCourseView struct {
-	StdTemplate
+	stdTemplate
 	Group       *git.Group
 	Labnum      int
 	GroupLabnum int
@@ -657,24 +657,24 @@ func UserCoursePageHandler(w http.ResponseWriter, r *http.Request) {
 	orgname := ""
 	if path := strings.Split(r.URL.Path, "/"); len(path) == 3 {
 		if !git.HasOrganization(path[2]) {
-			http.Redirect(w, r, pages.HOMEPAGE, 307)
+			http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
 			return
 		}
 
 		orgname = path[2]
 	} else {
-		http.Redirect(w, r, pages.HOMEPAGE, 307)
+		http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
 		return
 	}
 
 	org, err := git.NewOrganization(orgname, true)
 	if err != nil {
-		http.Redirect(w, r, pages.HOMEPAGE, 307)
+		http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
 		return
 	}
 
 	view := MainCourseView{
-		StdTemplate: StdTemplate{
+		stdTemplate: stdTemplate{
 			Member: member,
 		},
 		Org: org,
@@ -726,7 +726,7 @@ func UpdateCourseHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
 	member, err := checkTeacherApproval(w, r, true)
 	if err != nil {
-		http.Redirect(w, r, pages.FRONTPAGE, 307)
+		http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
 		log.Println(err)
 		return
 	}
@@ -736,7 +736,7 @@ func UpdateCourseHandler(w http.ResponseWriter, r *http.Request) {
 
 	org, err := git.NewOrganization(orgname, false)
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -749,20 +749,20 @@ func UpdateCourseHandler(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	if !org.IsTeacher(member) {
-		http.Error(w, "Not valid organization.", 404)
+		http.Error(w, "Not valid organization.", http.StatusNotFound)
 		return
 	}
 
 	indv, err := strconv.Atoi(r.FormValue("indv"))
 	if err != nil {
-		http.Error(w, "Cant use the individual assignment format.", 415)
+		http.Error(w, "Cant use the individual assignment format.", http.StatusUnsupportedMediaType)
 		return
 	}
 	org.IndividualAssignments = indv
 
 	groups, err := strconv.Atoi(r.FormValue("groups"))
 	if err != nil {
-		http.Error(w, "Cant use the group assignment format.", 415)
+		http.Error(w, "Cant use the group assignment format.", http.StatusUnsupportedMediaType)
 		return
 	}
 	org.GroupAssignments = groups
@@ -780,7 +780,7 @@ func UpdateCourseHandler(w http.ResponseWriter, r *http.Request) {
 	org.Slipdays = r.FormValue("slipdays") == "on"
 	maxslipdays, err := strconv.Atoi(r.FormValue("maxslipdays"))
 	if err != nil {
-		http.Error(w, "Cant use the max slip days format.", 415)
+		http.Error(w, "Cant use the max slip days format.", http.StatusUnsupportedMediaType)
 		return
 	}
 	org.SlipdaysMax = maxslipdays
@@ -853,7 +853,7 @@ func UpdateCourseHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	http.Redirect(w, r, "/course/teacher/"+org.Name, 307)
+	http.Redirect(w, r, "/course/teacher/"+org.Name, http.StatusTemporaryRedirect)
 }
 
 // RemovePendingUserURL is the URL used to call RemovePendingUserHandler.
@@ -864,7 +864,7 @@ func RemovePendingUserHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
 	member, err := checkTeacherApproval(w, r, true)
 	if err != nil {
-		http.Redirect(w, r, "/", 307)
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		log.Println(err)
 		return
 	}
@@ -873,13 +873,13 @@ func RemovePendingUserHandler(w http.ResponseWriter, r *http.Request) {
 	course := r.FormValue("course")
 
 	if !git.HasOrganization(course) {
-		http.Error(w, "Unknown course.", 404)
+		http.Error(w, "Unknown course.", http.StatusNotFound)
 		return
 	}
 
 	org, err := git.NewOrganization(course, false)
 	if err != nil {
-		http.Error(w, "Not valid organization.", 404)
+		http.Error(w, "Not valid organization.", http.StatusNotFound)
 		return
 	}
 	defer func() {
@@ -894,7 +894,7 @@ func RemovePendingUserHandler(w http.ResponseWriter, r *http.Request) {
 	defer org.Unlock()
 
 	if !org.IsTeacher(member) {
-		http.Error(w, "Is not a teacher or assistant for this course.", 404)
+		http.Error(w, "Is not a teacher or assistant for this course.", http.StatusNotFound)
 		return
 	}
 
@@ -911,7 +911,7 @@ func RemoveUserHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
 	member, err := checkTeacherApproval(w, r, true)
 	if err != nil {
-		http.Redirect(w, r, "/", 307)
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		log.Println(err)
 		return
 	}
@@ -920,13 +920,13 @@ func RemoveUserHandler(w http.ResponseWriter, r *http.Request) {
 	course := r.FormValue("course")
 
 	if !git.HasOrganization(course) {
-		http.Error(w, "Unknown course.", 404)
+		http.Error(w, "Unknown course.", http.StatusNotFound)
 		return
 	}
 
 	org, err := git.NewOrganization(course, false)
 	if err != nil {
-		http.Error(w, "Not valid organization.", 404)
+		http.Error(w, "Not valid organization.", http.StatusNotFound)
 		return
 	}
 
@@ -939,13 +939,13 @@ func RemoveUserHandler(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	if !org.IsTeacher(member) {
-		http.Error(w, "Is not a teacher or assistant for this course.", 404)
+		http.Error(w, "Is not a teacher or assistant for this course.", http.StatusNotFound)
 		return
 	}
 
 	user, err := git.GetMember(username)
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -961,7 +961,7 @@ func RemoveUserHandler(w http.ResponseWriter, r *http.Request) {
 		org.RemoveMembership(user)
 		user.RemoveOrganization(org)
 	} else {
-		http.Error(w, "Couldn't find this user in this course. ", 404)
+		http.Error(w, "Couldn't find this user in this course. ", http.StatusNotFound)
 		return
 	}
 }
