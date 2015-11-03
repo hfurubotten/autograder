@@ -184,6 +184,8 @@
           <h1>Individual Results</h1>
           <p class="lead">Build and test results from the students. Click on a student to see complete build log.</p>
 
+            <button type="button" id="testplagiarism" class="btn btn-primary">Test Plagiarism</button>
+
           <div class="table-responsive">
             <table class="table table-striped" id="studentresults">
               <thead>
@@ -236,6 +238,8 @@
         <section id="groupresults">
           <h1>Group Results</h1>
           <p class="lead">Build and test results from the students. Click on a group to see complete build log.</p>
+
+            <button type="button" id="grouptestplagiarism" class="btn btn-primary">Test Plagiarism</button>
 
           <div class="table-responsive">
             <table class="table table-striped" id="groupresults">
@@ -512,6 +516,17 @@
                       </div>
                     </div>
                   </div>
+                  <div class="form-group">
+                    <label for="org" class="col-sm-3 control-label">Primary language lab {{$i}}</label>
+                    <div class="col-sm-9">
+                      <select name="lang">
+                        <option value=0>Java</option>
+                        <option value=1>Go</option>
+                        <option value=2>C++</option>
+                        <option value=3>C</option>
+                      </select>
+                    </div>
+                  </div>
                   <hr>
                 {{end}}
 
@@ -543,6 +558,17 @@
                       </div>
                     </div>
                   </div>
+                  <div class="form-group">
+                    <label for="org" class="col-sm-3 control-label">Primary language lab {{$i}}</label>
+                    <div class="col-sm-9">
+                      <select name="lang">
+                        <option value=0>Java</option>
+                        <option value=1>Go</option>
+                        <option value=2>C++</option>
+                        <option value=3>C</option>
+                      </select>
+                    </div>
+                  </div>
                   <hr>
                 {{end}}
 
@@ -566,4 +592,5 @@
   </script>
   <script src="/js/teacher.page.js" type="text/javascript" charset="utf-8"></script>
   <script src="/js/codereview.js" type="text/javascript" charset="utf-8"></script>
+  <script type="text/javascript" src="/js/teacher.panel.js"></script>
 {{end}}

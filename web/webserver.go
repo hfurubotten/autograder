@@ -90,6 +90,7 @@ func (ws Server) Start() {
 	http.HandleFunc(CIResultListURL, CIResultListHandler)
 	http.HandleFunc(NotesURL, NotesHandler)
 	http.HandleFunc(SlipdaysURL, SlipdaysHandler)
+	http.HandleFunc(ManualTestPlagiarismURL, ManualTestPlagiarismHandler)
 
 	// static files
 	// http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("web/js/"))))
