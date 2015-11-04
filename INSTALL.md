@@ -24,12 +24,14 @@ command line arguments (also shown below).
 
 Here is an example autograder.config file:
 
+```
 {
   "HomepageURL": "http://example.com/",
   "ClientID": "123456789",
   "ClientSecret": "123456789abcdef",
   "BasePath": "/usr/share/autograder/"
 }
+```
 
 Before you can start you will need to register the Autograder application
 at GitHub; you will need to do this from the administrator account.
