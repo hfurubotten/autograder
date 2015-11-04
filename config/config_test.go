@@ -17,10 +17,9 @@ func TestMain(m *testing.M) {
 		return
 	}
 	m.Run()
-
 	err = os.RemoveAll(StandardBasePath)
 	if err != nil {
-		log.Println("Unable to clean up database file from filesystem")
+		log.Println("Unable to remove configuration files after test")
 	}
 }
 
@@ -45,11 +44,9 @@ func TestNewConfig(t *testing.T) {
 		if conf.Hostname != in.host {
 			t.Errorf("Field value Hostname does not match. %v != %v", conf.Hostname, in.host)
 		}
-
 		if conf.OAuthID != in.id {
 			t.Errorf("Field value OAuthID does not match. %v != %v", conf.OAuthID, in.id)
 		}
-
 		if conf.OAuthSecret != in.secret {
 			t.Errorf("Field value OAuthSecret does not match. %v != %v", conf.OAuthSecret, in.secret)
 		}
@@ -437,8 +434,5 @@ func compareConfigObjectsToGlobal(c1 *Configuration, t *testing.T) {
 	}
 	if c1.OAuthSecret != global.OAuthClientSecret {
 		t.Errorf("Field value OAuthSecret does not match. %v != %v", c1.OAuthSecret, global.OAuthClientSecret)
-	}
-	if c1.BasePath != global.Basepath {
-		t.Errorf("Field value BasePath does not match. %v != %v", c1.BasePath, global.Basepath)
 	}
 }

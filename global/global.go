@@ -27,7 +27,4 @@ var (
 	OAuthHandler = func(w http.ResponseWriter, r *http.Request) {
 		// Empty placeholder
 	}
-
-	// Basepath globally stores the basepath for the code directory.
-	Basepath string
 )

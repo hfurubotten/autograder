@@ -10,9 +10,6 @@ import (
 	"github.com/hfurubotten/autograder/global"
 )
 
-// Current is the current configuration loaded into autograder.
-var Current *Configuration
-
 // ConfigFileName is the standard file name for the configuration file.
 var ConfigFileName = "autograder.config"
 
@@ -58,12 +55,9 @@ func LoadConfigFile(filename string) (*Configuration, error) {
 
 // ExportToGlobalVars will export the configuration ot the global variables.
 func (c *Configuration) ExportToGlobalVars() {
-	Current = c
-
 	global.Hostname = c.Hostname
 	global.OAuthClientID = c.OAuthID
 	global.OAuthClientSecret = c.OAuthSecret
-	global.Basepath = c.BasePath
 }
 
 // Validate will try to validate the information in the configuration. Returns
@@ -98,15 +92,12 @@ func (c *Configuration) QuickFix() error {
 	if strings.HasSuffix(c.Hostname, "/") {
 		c.Hostname = c.Hostname[:len(c.Hostname)-1]
 	}
-
 	if c.BasePath == "" {
 		c.BasePath = StandardBasePath
 	}
-
 	if !strings.HasSuffix(c.BasePath, "/") {
 		c.BasePath = c.BasePath + "/"
 	}
-
 	return c.Validate()
 }
 
@@ -119,7 +110,7 @@ func (c *Configuration) Save() error {
 			return err
 		}
 	} else if !info.IsDir() {
-		return errors.New("Basepath is not a dir")
+		return errors.New("basepath is not a directory")
 	}
 
 	jsondata, err := json.MarshalIndent(c, "", "  ")
