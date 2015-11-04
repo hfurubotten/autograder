@@ -853,6 +853,36 @@ func UpdateCourseHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	individuallanguages := r.PostForm["individuallanguage"]
+        for i := 1; i <= indv; i = i + 1 {
+                if len(individuallanguages) <= i-1 {
+                        org.SetIndividualLanguage(i, 0)
+                        continue
+                }
+		
+		val, err := strconv.ParseInt(individuallanguages[i - 1], 10, 64)
+		if err != nil {
+			org.SetIndividualLanguage(i, 0)
+		} else {
+			org.SetIndividualLanguage(i, int(val))
+		}
+        }
+
+        grouplanguages := r.PostForm["grouplanguage"]
+        for i := 1; i <= groups; i = i + 1 {
+                if len(grouplanguages) <= i-1 {
+                        org.SetGroupLanguage(i, 0)
+                        continue
+                }
+
+                val, err := strconv.ParseInt(grouplanguages[i - 1], 10, 64)
+                if err != nil {
+                        org.SetGroupLanguage(i, 0)
+                } else {
+                        org.SetGroupLanguage(i, int(val))
+                }
+        }
+
 	http.Redirect(w, r, "/course/teacher/"+org.Name, 307)
 }
 
