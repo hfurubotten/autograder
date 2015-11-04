@@ -24,7 +24,7 @@ command line arguments (also shown below).
 
 Here is an example autograder.config file:
 
-```
+```json
 {
   "HomepageURL": "http://example.com/",
   "ClientID": "123456789",

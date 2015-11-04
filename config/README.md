@@ -7,7 +7,7 @@ need to be set. These variables get stored in a JSON formatted file named
 Here is an example configuration file:
 ```json
 {
-  "URL": "http://example.com",
+  "HomepageURL": "http://example.com/",
   "ClientID": "123456789",
   "ClientSecret": "123456789abcdef",
   "BasePath": "/usr/share/autograder/"
