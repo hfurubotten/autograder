@@ -35,3 +35,5 @@ diskvtobolt
 # This file can safely hold a personal github token; make sure to never commit it:
 mytoken_personal_test.go
 
+# Just a scratch folder
+analysis-and-some-code
