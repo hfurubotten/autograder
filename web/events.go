@@ -53,36 +53,7 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch event {
 	case COMMMIT_COMMENT:
-		body = "Comment rewarded."
-		statusCode = http.StatusOK
-
-		payload, err := github.UnmarshalCommitComment(b)
-		if err != nil {
-			log.Println("Error decoding Commit Comment payload:", err)
-			body = DecodeGithubPayloadErrorMsg
-			statusCode = http.StatusInternalServerError
-			break
-		}
-
-		user, _ := git.GetMemberX(payload.Comment.User)
-		org, _ := git.NewOrganizationWithGithubData(payload.Organization, true)
-
-		if org.IsTeacher(user) {
-			body = TeacherActionMsg
-			user.IncScoreBy(points.COMMENT)
-		} else {
-			err = DistributeScores(points.COMMENT, user, org)
-			if err != nil {
-				statusCode = http.StatusInternalServerError
-				body = ScoreDistributionErrorMsg
-				break
-			}
-		}
-		err = RegisterAction(trophies.TALKACTION, user)
-		if err != nil {
-			statusCode = http.StatusInternalServerError
-			body = RegisterActionErrorMsg
-		}
+		body, statusCode = handleCommitComment(b)
 
 	case ISSUE_COMMENT:
 		body = "Comment rewarded."

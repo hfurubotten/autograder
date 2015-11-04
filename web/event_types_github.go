@@ -48,6 +48,7 @@ var GITHUB_PAYLOADS = map[string]int{
 }
 
 //TODO Make function to return a handler func that can be called with some params similar to a http handler.
+// There is actually mux functionality in the gorilla muxer that could be used to handle this kind of stuff
 
 // GetPayloadType finds the event type of a payload request.
 func GetPayloadType(r *http.Request) int {
