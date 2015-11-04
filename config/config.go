@@ -10,11 +10,10 @@ import (
 	"github.com/hfurubotten/autograder/global"
 )
 
-// ConfigFileName is the standard file name for the configuration file.
-var ConfigFileName = "autograder.config"
+// ConfigFileName is the default file name for the JSON configuration file.
+var ConfigFileName = SystemNameLC + ".config"
 
-// Configuration struct contains needed configuration of the autograder system
-// used to run it correctly.
+// Configuration contains the necessary configuration data for the system.
 type Configuration struct {
 	Hostname    string `json:",omitempty"`
 	OAuthID     string `json:",omitempty"`
@@ -22,7 +21,7 @@ type Configuration struct {
 	BasePath    string `json:",omitempty"`
 }
 
-// NewConfig will create a new configuration object.
+// NewConfig creates a new configuration object.
 func NewConfig(hostname, oauthid, oauthsecret string) (*Configuration, error) {
 	return &Configuration{
 		Hostname:    hostname,

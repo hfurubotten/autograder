@@ -2,11 +2,11 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"runtime"
+	"text/template"
 
 	"github.com/hfurubotten/autograder/config"
 	"github.com/hfurubotten/autograder/database"
@@ -14,14 +14,60 @@ import (
 	"github.com/hfurubotten/autograder/web"
 )
 
+const instructions = `
+The first time you start {{.SystemName}} you will need to supply a few details
+about your host environment, the administrator and the git repository hosting
+environment. Currently, we only support GitHub for hosting git repositories.
+
+{{.SystemName}} can either read a configuration file with the necessary
+information (see the example below), or you can provide these details as
+command line arguments (also shown below).
+
+Here is an example {{.ConfigFileName}} file:
+
+{
+  "HomepageURL": "http://example.com/",
+  "ClientID": "123456789",
+  "ClientSecret": "123456789abcdef",
+  "BasePath": "/usr/share/{{.SystemNameLC}}/"
+}
+
+Before you can start you will need to register the {{.SystemName}} application
+at GitHub; you will need to do this from the administrator account.
+
+1. Go to https://github.com/settings/applications/new
+2. Enter the information requested.
+   - Application name: e.g. "{{.SystemName}} at University of Stavanger"
+   - Homepage URL: e.g. "http://{{.SystemNameLC}}.ux.uis.no"
+   - Authorization callback URL: e.g. "http://{{.SystemNameLC}}.ux.uis.no/oauth"
+
+Note that, the Homepage URL must be a fully qualified URL, including http://.
+This must be the hostname (or an alias) of server running the '{{.SystemNameLC}}'
+program. This server must have a public IP address, since GitHub will make calls
+to this server to support {{.SystemName}}'s functionality. Further, {{.SystemName}}
+requires that the Authorization callback URL is the same as the Homepage URL
+with the added "/oauth" path.
+
+Once you have completed the above steps, the Client ID and Client Secret will be
+available from the GitHub web interface. Simply copy each of these OAuth tokens
+and paste them into the configuration file, or on the command line when starting
+{{.SystemName}} for the first time. You will not need to repeat this process
+when starting {{.SystemName}} in the future.
+
+If you need to obtain the OAuth tokens at a later time, e.g. if you have deleted
+the configuration file, go to: https://github.com/settings/developers and
+select your Application to be able to view the OAuth tokens again.
+
+`
+
 var (
-	admin        = flag.String("admin", "", "Sets up a admin user up agains the system. The value has to be a valid Github username.")
-	hostname     = flag.String("domain", "", "Give the domain name for the autogradersystem.")
-	clientID     = flag.String("clientid", "", "The application ID used in the OAuth process against Github. This can be generated at your settings page at Github.")
-	clientSecret = flag.String("secret", "", "The secret application code used in the OAuth process against Github. This can be generated at your settings page at Github.")
-	help         = flag.Bool("help", false, "List the startup options for the autograder.")
-	configfile   = flag.String("configfile", "", "Path to a custom config file location. Used when a config file not stored in the standard file location is prefered.")
-	basepath     = flag.String("basepath", "", "A custom file path for storing autograder files.")
+	admin        = flag.String("admin", "", "Admin must be a valid GitHub username")
+	hostname     = flag.String("url", "", "Homepage URL for "+config.SystemName)
+	clientID     = flag.String("id", "", "Client ID for OAuth with Github")
+	clientSecret = flag.String("secret", "", "Client Secret for OAuth with Github")
+	help         = flag.Bool("help", false, "Helpful instructions")
+	configfile   = flag.String("config", "", "Path to a custom config file")
+	basepath     = flag.String("basepath", "", "Path for data storage for "+config.SystemName)
 )
 
 func main() {
@@ -33,13 +79,17 @@ func main() {
 
 	// prints the available flags to use on start
 	if *help {
+		data := struct {
+			SystemName, SystemNameLC, ConfigFileName string
+		}{
+			config.SystemName, config.SystemNameLC, config.ConfigFileName,
+		}
+		t := template.Must(template.New("instructions").Parse(instructions))
+		err := t.Execute(os.Stdout, data)
+		if err != nil {
+			log.Fatalln(err)
+		}
 		flag.Usage()
-		fmt.Println("First start up details:")
-		fmt.Println("First time you start the system you need to supply OAuth details, domain name and an admin.")
-		fmt.Println("To register a new application at GitHub, go to this address to generate OAuth tokens: https://github.com/settings/applications/new")
-		fmt.Println("If you already have OAuth codes, you can find then on this address: https://github.com/settings/applications")
-		fmt.Println("The Homepage URL is the domain name you are using to serve the system.")
-		fmt.Println("The Authorization callback URL is your domainname with the path /oauth. (http://example.com/oauth)")
 		return
 	}
 
