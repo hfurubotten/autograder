@@ -78,6 +78,7 @@ func TestLookupMemberBasic(t *testing.T) {
 	m, err = LookupMember(mytoken)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
+		return
 	}
 	// tweak to emulate github lookup
 	m.accessToken = mytoken

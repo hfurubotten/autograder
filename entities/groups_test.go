@@ -215,6 +215,7 @@ func TestActivate(t *testing.T) {
 			u, err := GetMember(username)
 			if err != nil {
 				t.Errorf("Error getting user: %v", err)
+				continue
 			}
 
 			if u.Courses[tcase.want.Course].GroupNum != tcase.want.ID {
@@ -364,11 +365,13 @@ func TestSaveHasAndDelete(t *testing.T) {
 			u, err := GetMember(username)
 			if err != nil {
 				t.Errorf("Error getting user: %v", err)
+				continue
 			}
 
 			org, err := NewOrganization(tcase.in.Course, true)
 			if err != nil {
 				t.Errorf("Error creating org: %v", err)
+				continue
 			}
 
 			u.AddOrganization(org)
@@ -382,7 +385,6 @@ func TestSaveHasAndDelete(t *testing.T) {
 		if err != nil {
 			t.Errorf("Error saving the group: %v", err)
 		}
-
 		if !HasGroup(tcase.in.ID) {
 			t.Error("Couldnt find the group after save.")
 		}
@@ -391,7 +393,6 @@ func TestSaveHasAndDelete(t *testing.T) {
 		if err != nil {
 			t.Errorf("Error deleting the group: %v", err)
 		}
-
 		if HasGroup(tcase.in.ID) {
 			t.Error("Found the group after save.")
 		}
