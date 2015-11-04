@@ -3,12 +3,13 @@ package database
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/boltdb/bolt"
 )
 
-var tmploc = "test.db"
+var tmploc = "/tmp"
 var tmpbucket = "test"
 var agentBucket = "agent"
 
@@ -215,7 +216,7 @@ func cleanUpBucket() {
 // cleanUpDB will close and remove the database.
 func removeDB() {
 	db.Close()
-	if err := os.Remove(tmploc); err != nil {
-		panic("Couldn't remove database." + err.Error())
+	if err := os.Remove(filepath.Join(tmploc, databaseFileName)); err != nil {
+		panic("Couldn't remove database: " + err.Error())
 	}
 }

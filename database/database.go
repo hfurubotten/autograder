@@ -2,17 +2,21 @@ package database
 
 import (
 	"errors"
+	"path/filepath"
 
 	"github.com/boltdb/bolt"
 )
 
-var db *bolt.DB
-var registeredBucketNames = make([]string, 0)
+var (
+	db                    *bolt.DB
+	registeredBucketNames = make([]string, 0)
+	databaseFileName      = "database"
+)
 
-// Start will start the database using the provided dbloc file.
+// Start will start the database using the provided dbloc path.
 // If the database does not exist, a new database will be created.
-func Start(dbloc string) (err error) {
-	db, err = bolt.Open(dbloc, 0666, nil)
+func Start(dbpath string) (err error) {
+	db, err = bolt.Open(filepath.Join(dbpath, databaseFileName), 0666, nil)
 	if err != nil {
 		return err
 	}

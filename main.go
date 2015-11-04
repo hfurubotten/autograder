@@ -5,12 +5,11 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"runtime"
 	"text/template"
 
 	"github.com/hfurubotten/autograder/config"
 	"github.com/hfurubotten/autograder/database"
-	git "github.com/hfurubotten/autograder/entities"
+	"github.com/hfurubotten/autograder/entities"
 	"github.com/hfurubotten/autograder/web"
 )
 
@@ -66,18 +65,13 @@ var (
 	clientID     = flag.String("id", "", "Client ID for OAuth with Github")
 	clientSecret = flag.String("secret", "", "Client Secret for OAuth with Github")
 	help         = flag.Bool("help", false, "Helpful instructions")
-	configfile   = flag.String("config", "", "Path to a custom config file")
-	basepath     = flag.String("basepath", "", "Path for data storage for "+config.SystemName)
+	path         = flag.String("basepath", config.StandardBasePath, "Path for data storage for "+config.SystemName)
 )
 
 func main() {
-	// enables multi core use.
-	runtime.GOMAXPROCS(runtime.NumCPU())
-
-	// Parse flags
 	flag.Parse()
 
-	// prints the available flags to use on start
+	// print instructions and command usage
 	if *help {
 		data := struct {
 			SystemName, SystemNameLC, ConfigFileName string
@@ -93,29 +87,21 @@ func main() {
 		return
 	}
 
-	// loads config file either from custom path or standard file path and validates.
+	// load configuration data from the provided base path
 	var conf *config.Configuration
 	var err error
-	if *configfile != "" {
-		conf, err = config.LoadConfigFile(*configfile)
+	if *path != "" {
+		conf, err = config.Load(*path)
 		if err != nil {
-			log.Fatal(err)
-		}
-	} else if *basepath != "" {
-		conf, err = config.LoadConfigFile(*basepath + config.ConfigFileName)
-		if err != nil {
-			log.Fatal(err)
-		}
+			log.Println(err)
+			conf, err = config.NewConfig(*hostname, *clientID, *clientSecret, *path)
+			if err != nil {
 
-		conf.BasePath = *basepath
-	} else {
-		conf, err = config.LoadStandardConfigFile()
-		if err != nil {
-			log.Fatal(err)
+			}
 		}
 	}
 
-	// Updates config with evt. new information
+	// Updates config with new information, if available
 
 	// checks for a domain name
 	if *hostname != "" {
@@ -137,19 +123,21 @@ func main() {
 
 	conf.ExportToGlobalVars()
 
-	// saves configurations
+	// save configuration
 	if err := conf.Save(); err != nil {
 		log.Fatal(err)
 	}
 
-	// starting database
-	database.Start(conf.BasePath + "autograder.db")
+	// start database
+	if err := database.Start(conf.BasePath); err != nil {
+		log.Fatal(err)
+	}
 	defer database.Close()
 
 	// checks for an admin username
 	if *admin != "" {
 		log.Println("New admin added to the system: ", *admin)
-		m, err := git.GetMember(*admin)
+		m, err := entities.GetMember(*admin)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -171,9 +159,7 @@ func main() {
 	// log print appearance
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
-	// starts up the webserver
-	log.Println("Server starting")
-
+	log.Println("Starting webserver")
 	server := web.NewServer(80)
 	server.Start()
 
@@ -181,5 +167,5 @@ func main() {
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, os.Kill, os.Interrupt)
 	<-signalChan
-	log.Println("Application closed by user.")
+	log.Println("Application shutdown by user.")
 }

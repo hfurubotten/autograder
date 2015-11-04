@@ -4,13 +4,14 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/hfurubotten/autograder/global"
 )
 
 func TestMain(m *testing.M) {
-	StandardBasePath = "testfiles/"
+	StandardBasePath = "testfiles"
 	err := os.Mkdir(StandardBasePath, 0777)
 	if err != nil {
 		log.Println(err)
@@ -24,18 +25,18 @@ func TestMain(m *testing.M) {
 }
 
 var testNewConfigInput = []struct {
-	host, id, secret string
+	host, id, secret, path string
 }{
-	{"http://example.com", "1234", "abcd"},
-	{"http://example2.com", "123456789", "abcdef"},
-	{"http://example3.com", "987654321", "abcd123456789"},
-	{"http://example4.com", "1234acd544", "abcd455813aa"},
-	{"http://example5.com", "123accd224", "422abcd54adcb4442272882adedff35f3fe3"},
+	{"http://example.com", "1234", "abcd", "/tmp"},
+	{"http://example2.com", "123456789", "abcdef", "/tmp"},
+	{"http://example3.com", "987654321", "abcd123456789", "/tmp"},
+	{"http://example4.com", "1234acd544", "abcd455813aa", "/tmp"},
+	{"http://example5.com", "123accd224", "422abcd54adcb4442272882adedff35f3fe3", "/usr/share/ag"},
 }
 
 func TestNewConfig(t *testing.T) {
 	for _, in := range testNewConfigInput {
-		conf, err := NewConfig(in.host, in.id, in.secret)
+		conf, err := NewConfig(in.host, in.id, in.secret, in.path)
 		if err != nil {
 			t.Error(err)
 			continue
@@ -49,6 +50,9 @@ func TestNewConfig(t *testing.T) {
 		}
 		if conf.OAuthSecret != in.secret {
 			t.Errorf("Field value OAuthSecret does not match. %v != %v", conf.OAuthSecret, in.secret)
+		}
+		if conf.BasePath != in.path {
+			t.Errorf("BasePath does not match. %v != %v", conf.BasePath, in.path)
 		}
 	}
 }
@@ -103,83 +107,13 @@ var testLoadStandardConfigFileInput = []struct {
 
 func TestLoadStandardConfigFile(t *testing.T) {
 	for _, in := range testLoadStandardConfigFileInput {
-		err := ioutil.WriteFile(StandardBasePath+ConfigFileName, []byte(in.filedata), 0666)
+		err := ioutil.WriteFile(filepath.Join(StandardBasePath, ConfigFileName), []byte(in.filedata), 0666)
 		if err != nil {
 			t.Error(err)
 			continue
 		}
 
-		conf, err := LoadStandardConfigFile()
-		if err != nil {
-			t.Error(err)
-			continue
-		}
-
-		compareConfigObjects(conf, in.conf, t)
-	}
-}
-
-var testLoadConfigFileInput = []struct {
-	filedata string
-	fileloc  string
-	conf     *Configuration
-}{
-	{
-		filedata: "{\n" +
-			"\"Hostname\":\"http://example.com\",\n" +
-			"\"OAuthID\":\"1234\",\n" +
-			"\"OAuthSecret\":\"abcd\",\n" +
-			"\"BasePath\":\"/example/\"\n" +
-			"}",
-		fileloc: "testfiles/a.config",
-		conf: &Configuration{
-			Hostname:    "http://example.com",
-			OAuthID:     "1234",
-			OAuthSecret: "abcd",
-			BasePath:    "/example/",
-		},
-	},
-	{
-		filedata: "{\n" +
-			"\"Hostname\":\"http://example2.com\",\n" +
-			"\"OAuthID\":\"123456789\",\n" +
-			"\"OAuthSecret\":\"abcdef123456789\",\n" +
-			"\"BasePath\":\"/usr/\"\n" +
-			"}",
-		fileloc: "testfiles/b.config",
-		conf: &Configuration{
-			Hostname:    "http://example2.com",
-			OAuthID:     "123456789",
-			OAuthSecret: "abcdef123456789",
-			BasePath:    "/usr/",
-		},
-	},
-	{
-		filedata: "{\n" +
-			"\"Hostname\":\"http://example3.com\",\n" +
-			"\"OAuthID\":\"123454685139\",\n" +
-			"\"OAuthSecret\":\"abcdef123454accd58be5f5ee6789\",\n" +
-			"\"BasePath\":\"/usr/share/\"\n" +
-			"}",
-		fileloc: "testfiles/c.config",
-		conf: &Configuration{
-			Hostname:    "http://example3.com",
-			OAuthID:     "123454685139",
-			OAuthSecret: "abcdef123454accd58be5f5ee6789",
-			BasePath:    "/usr/share/",
-		},
-	},
-}
-
-func TestLoadConfigFile(t *testing.T) {
-	for _, in := range testLoadConfigFileInput {
-		err := ioutil.WriteFile(in.fileloc, []byte(in.filedata), 0666)
-		if err != nil {
-			t.Error(err)
-			continue
-		}
-
-		conf, err := LoadConfigFile(in.fileloc)
+		conf, err := Load(StandardBasePath)
 		if err != nil {
 			t.Error(err)
 			continue
@@ -400,7 +334,7 @@ func TestSave(t *testing.T) {
 			continue
 		}
 
-		conf2, err := LoadStandardConfigFile()
+		conf2, err := Load(StandardBasePath)
 		if err != nil {
 			t.Error(err)
 			continue

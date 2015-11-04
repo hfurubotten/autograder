@@ -5,13 +5,14 @@ import (
 	"errors"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/hfurubotten/autograder/global"
 )
 
 // ConfigFileName is the default file name for the JSON configuration file.
-var ConfigFileName = SystemNameLC + ".config"
+var ConfigFileName = "config"
 
 // Configuration contains the necessary configuration data for the system.
 type Configuration struct {
@@ -22,23 +23,18 @@ type Configuration struct {
 }
 
 // NewConfig creates a new configuration object.
-func NewConfig(hostname, oauthid, oauthsecret string) (*Configuration, error) {
+func NewConfig(hostname, oauthid, oauthsecret, path string) (*Configuration, error) {
 	return &Configuration{
 		Hostname:    hostname,
 		OAuthID:     oauthid,
 		OAuthSecret: oauthsecret,
+		BasePath:    path,
 	}, nil
 }
 
-// LoadStandardConfigFile  will load a configuration file from the standard
-// storage path.
-func LoadStandardConfigFile() (*Configuration, error) {
-	return LoadConfigFile(StandardBasePath + ConfigFileName)
-}
-
-// LoadConfigFile will load a configuration file from the filesystem.
-func LoadConfigFile(filename string) (*Configuration, error) {
-	data, err := ioutil.ReadFile(filename)
+// Load loads the configuration file in the provided directory.
+func Load(path string) (*Configuration, error) {
+	data, err := ioutil.ReadFile(filepath.Join(path, ConfigFileName))
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +44,6 @@ func LoadConfigFile(filename string) (*Configuration, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return conf, nil
 }
 
@@ -100,7 +95,7 @@ func (c *Configuration) QuickFix() error {
 	return c.Validate()
 }
 
-// Save will store the configuration to autograder.config at basepath.
+// Save saves the configuration file in basepath.
 func (c *Configuration) Save() error {
 	info, err := os.Stat(c.BasePath)
 	if err != nil {
@@ -116,5 +111,5 @@ func (c *Configuration) Save() error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(c.BasePath+ConfigFileName, jsondata, 0666)
+	return ioutil.WriteFile(filepath.Join(c.BasePath, ConfigFileName), jsondata, 0666)
 }
