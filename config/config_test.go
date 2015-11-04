@@ -25,7 +25,7 @@ func TestMain(m *testing.M) {
 }
 
 var testNewConfigInput = []struct {
-	host, id, secret, path string
+	url, id, secret, path string
 }{
 	{"http://example.com", "1234", "abcd", "/tmp"},
 	{"http://example2.com", "123456789", "abcdef", "/tmp"},
@@ -36,14 +36,14 @@ var testNewConfigInput = []struct {
 
 func TestNewConfig(t *testing.T) {
 	for _, in := range testNewConfigInput {
-		conf, err := NewConfig(in.host, in.id, in.secret, in.path)
+		conf, err := NewConfig(in.url, in.id, in.secret, in.path)
 		if err != nil {
 			t.Error(err)
 			continue
 		}
 
-		if conf.Hostname != in.host {
-			t.Errorf("Field value Hostname does not match. %v != %v", conf.Hostname, in.host)
+		if conf.Hostname != in.url {
+			t.Errorf("Field value Hostname does not match. %v != %v", conf.Hostname, in.url)
 		}
 		if conf.OAuthID != in.id {
 			t.Errorf("Field value OAuthID does not match. %v != %v", conf.OAuthID, in.id)
@@ -53,6 +53,34 @@ func TestNewConfig(t *testing.T) {
 		}
 		if conf.BasePath != in.path {
 			t.Errorf("BasePath does not match. %v != %v", conf.BasePath, in.path)
+		}
+	}
+}
+
+var testNewConfigFailInput = []struct {
+	url, id, secret, path string
+}{
+	{"", "1234", "abcd", "/tmp"},
+	{"http://example2.com", "", "abcdef", "/tmp"},
+	{"http://example3.com", "987654321", "", "/tmp"},
+	{"http://example4.com", "1234acd544", "abcd455813aa", ""},
+	{"http://example5.com", "123accd224", "", "/usr/share/ag"},
+	{"", "", "", "/usr/share/ag"},
+	{"", "", "", ""},
+}
+
+func TestNewConfigFail(t *testing.T) {
+	for _, in := range testNewConfigFailInput {
+		conf, err := NewConfig(in.url, in.id, in.secret, in.path)
+		if conf != nil {
+			// should not happen
+			t.Errorf("Expected <nil>, got: %v", conf)
+			continue
+		}
+		if err == nil {
+			// should not happen
+			t.Error("Expected non-nil error, didn't get any errors")
+			continue
 		}
 	}
 }

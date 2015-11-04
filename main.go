@@ -94,26 +94,20 @@ func main() {
 		conf, err = config.Load(*path)
 		if err != nil {
 			log.Println(err)
+			// can't load config file; create config based on command line arguments
 			conf, err = config.NewConfig(*hostname, *clientID, *clientSecret, *path)
 			if err != nil {
-
+				// can't continue without proper configuration
+				log.Fatal(err)
+			}
+			// save configuration
+			if err := conf.Save(); err != nil {
+				log.Fatal(err)
 			}
 		}
 	}
 
-	// Updates config with new information, if available
-
-	// checks for a domain name
-	if *hostname != "" {
-		conf.Hostname = *hostname
-	}
-
-	// checks for the application codes to GitHub
-	if *clientID != "" && *clientSecret != "" {
-		conf.OAuthID = *clientID
-		conf.OAuthSecret = *clientSecret
-	}
-
+	//TODO Move to constructor
 	// validates the configurations
 	if conf.Validate() != nil {
 		if err := conf.QuickFix(); err != nil {
@@ -122,11 +116,6 @@ func main() {
 	}
 
 	conf.ExportToGlobalVars()
-
-	// save configuration
-	if err := conf.Save(); err != nil {
-		log.Fatal(err)
-	}
 
 	// start database
 	if err := database.Start(conf.BasePath); err != nil {

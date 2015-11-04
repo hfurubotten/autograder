@@ -23,11 +23,23 @@ type Configuration struct {
 }
 
 // NewConfig creates a new configuration object.
-func NewConfig(hostname, oauthid, oauthsecret, path string) (*Configuration, error) {
+func NewConfig(url, clientID, clientSecret, path string) (*Configuration, error) {
+	if url == "" {
+		return nil, errors.New("homepage url is required")
+	}
+	if clientID == "" {
+		return nil, errors.New("clientID is required")
+	}
+	if clientSecret == "" {
+		return nil, errors.New("clientSecret is required")
+	}
+	if path == "" {
+		return nil, errors.New("path is required")
+	}
 	return &Configuration{
-		Hostname:    hostname,
-		OAuthID:     oauthid,
-		OAuthSecret: oauthsecret,
+		Hostname:    url,
+		OAuthID:     clientID,
+		OAuthSecret: clientSecret,
 		BasePath:    path,
 	}, nil
 }
