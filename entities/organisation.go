@@ -543,7 +543,6 @@ func (o *Organization) SetIndividualLanguage(lab int, lang int) {
         }
 
         o.IndividualLanguages[lab] = lang
-	fmt.Printf("%d: %d\n", lab, lang)
 }
 
 // SetGroupLanguage will set the language of one lab assignment.
@@ -555,7 +554,6 @@ func (o *Organization) SetGroupLanguage(lab int, lang int) {
         }
 
         o.GroupLanguages[lab] = lang
-	fmt.Printf("%d: %d\n", lab, lang)
 }
 
 // AddGroup will add a group to the list of groups in the
