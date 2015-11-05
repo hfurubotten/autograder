@@ -107,14 +107,6 @@ func main() {
 		}
 	}
 
-	//TODO Move to constructor
-	// validates the configurations
-	if conf.Validate() != nil {
-		if err := conf.QuickFix(); err != nil {
-			log.Fatal(err)
-		}
-	}
-
 	conf.ExportToGlobalVars()
 
 	// start database

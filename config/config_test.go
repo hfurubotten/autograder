@@ -57,6 +57,26 @@ func TestNewConfig(t *testing.T) {
 	}
 }
 
+var testNewConfigRemoveSuffixInput = []struct {
+	url, id, secret, path, out string
+}{
+	{"http://example1.com", "1234acd544", "abcd455813aa", "/tmp", "http://example1.com"},
+	{"http://example2.com/", "1234acd544", "abcd455813aa", "/tmp", "http://example2.com"},
+}
+
+func TestNewConfigRemoveSuffix(t *testing.T) {
+	for _, in := range testNewConfigRemoveSuffixInput {
+		conf, err := NewConfig(in.url, in.id, in.secret, in.path)
+		if err != nil {
+			t.Error(err)
+			continue
+		}
+		if conf.Hostname != in.out {
+			t.Errorf("Expected url: '%v', got: '%v'", in.out, conf.Hostname)
+		}
+	}
+}
+
 var testNewConfigFailInput = []struct {
 	url, id, secret, path string
 }{
@@ -73,12 +93,10 @@ func TestNewConfigFail(t *testing.T) {
 	for _, in := range testNewConfigFailInput {
 		conf, err := NewConfig(in.url, in.id, in.secret, in.path)
 		if conf != nil {
-			// should not happen
 			t.Errorf("Expected <nil>, got: %v", conf)
 			continue
 		}
 		if err == nil {
-			// should not happen
 			t.Error("Expected non-nil error, didn't get any errors")
 			continue
 		}
@@ -100,7 +118,7 @@ var testLoadStandardConfigFileInput = []struct {
 			Hostname:    "http://example.com",
 			OAuthID:     "1234",
 			OAuthSecret: "abcd",
-			BasePath:    "/example/",
+			BasePath:    "/example",
 		},
 	},
 	{
@@ -114,7 +132,7 @@ var testLoadStandardConfigFileInput = []struct {
 			Hostname:    "http://example2.com",
 			OAuthID:     "123456789",
 			OAuthSecret: "abcdef123456789",
-			BasePath:    "/usr/",
+			BasePath:    "/usr",
 		},
 	},
 	{
@@ -128,7 +146,35 @@ var testLoadStandardConfigFileInput = []struct {
 			Hostname:    "http://example3.com",
 			OAuthID:     "123454685139",
 			OAuthSecret: "abcdef123454accd58be5f5ee6789",
-			BasePath:    "/usr/share/",
+			BasePath:    "/usr/share",
+		},
+	},
+	{
+		filedata: `{
+		"Hostname": "http://example3.com/",
+		"OAuthID": "1234",
+		"OAuthSecret": "abcd",
+		"BasePath": "/example/"
+		}`,
+		conf: &Configuration{
+			Hostname:    "http://example3.com",
+			OAuthID:     "1234",
+			OAuthSecret: "abcd",
+			BasePath:    "/example",
+		},
+	},
+	{
+		filedata: `{
+		"Hostname": "http://example7.com",
+		"OAuthID": "12039857",
+	  "OAuthSecret": "abcdef123456789",
+	  "BasePath": "/usr/share/"
+		}`,
+		conf: &Configuration{
+			Hostname:    "http://example7.com",
+			OAuthID:     "12039857",
+			OAuthSecret: "abcdef123456789",
+			BasePath:    "/usr/share",
 		},
 	},
 }
@@ -148,6 +194,79 @@ func TestLoadStandardConfigFile(t *testing.T) {
 		}
 
 		compareConfigObjects(conf, in.conf, t)
+	}
+}
+
+var testLoadNonValidInput = []struct {
+	filedata string
+}{
+	{
+		filedata: `{
+		"Hostname": "",
+	  "OAuthID": "12039857",
+	  "OAuthSecret": "abcdef123456789",
+	  "BasePath": "/usr/"
+		}`,
+	},
+	{
+		filedata: `{
+		"Hostname": "http://example2.com",
+	  "OAuthID": "",
+	  "OAuthSecret": "abcdef123456789",
+	  "BasePath": "/usr/"
+		}`,
+	},
+	{
+		filedata: `{
+		"Hostname": "http://example3.com",
+		"OAuthID": "12039857",
+	  "OAuthSecret": "",
+	  "BasePath": "/usr/"
+		}`,
+	},
+	{
+		filedata: `{
+		"Hostname": "http://example4.com",
+		"OAuthID": "12039857",
+	  "OAuthSecret": "abcdef123456789",
+	  "BasePath": ""
+		}`,
+	},
+	{
+		filedata: `{
+		"Hostname": "smb://example5.com",
+	  "OAuthID": "23123",
+	  "OAuthSecret": "abcdef123456789",
+	  "BasePath": "/usr/"
+		}`,
+	},
+	{
+		filedata: `{
+		"Hostname": "http://example6.com/",
+		"OAuthID": "123454685139",
+		"OAuthSecret": "abcdef123454accd58be5f5ee6789",
+		"BasePath": ""
+		}`,
+	},
+}
+
+func TestLoadNonValidInput(t *testing.T) {
+	for _, in := range testLoadNonValidInput {
+		err := ioutil.WriteFile(filepath.Join(StandardBasePath, ConfigFileName), []byte(in.filedata), 0666)
+		if err != nil {
+			t.Error(err)
+			continue
+		}
+
+		conf, err := Load(StandardBasePath)
+		if conf != nil {
+			t.Errorf("Expected <nil> conf, got %v", conf)
+			continue
+		}
+		if err == nil {
+			t.Error("Expected non-nil error, didn't get any errors")
+			continue
+		}
 	}
 }
 
@@ -241,91 +360,11 @@ var testValidateInput = []struct {
 
 func TestValidate(t *testing.T) {
 	for _, in := range testValidateInput {
-		err := in.conf.Validate()
+		err := in.conf.validate()
 		if err != nil && in.valid {
 			t.Error("A valid configuration object was not validated:", err)
 		} else if err == nil && !in.valid {
 			t.Error("A not valid configuration object was validated. Object:", in.conf)
-		}
-	}
-}
-
-var testQuickFixInput = []struct {
-	valid bool
-	conf  *Configuration
-}{
-	{
-		valid: true,
-		conf: &Configuration{
-			Hostname:    "http://example.com/",
-			OAuthID:     "1234",
-			OAuthSecret: "abcd",
-			BasePath:    "/example/",
-		},
-	},
-	{
-		valid: true,
-		conf: &Configuration{
-			Hostname:    "http://example2.com",
-			OAuthID:     "123456789",
-			OAuthSecret: "abcdef123456789",
-			BasePath:    "",
-		},
-	},
-	{
-		valid: true,
-		conf: &Configuration{
-			Hostname:    "http://example3.com",
-			OAuthID:     "123454685139",
-			OAuthSecret: "abcdef123454accd58be5f5ee6789",
-			BasePath:    "/usr",
-		},
-	},
-	{
-		valid: true,
-		conf: &Configuration{
-			Hostname:    "http://example.com/",
-			OAuthID:     "1234",
-			OAuthSecret: "abcd",
-			BasePath:    "/example",
-		},
-	},
-	{
-		valid: true,
-		conf: &Configuration{
-			Hostname:    "http://example.com",
-			OAuthID:     "1234",
-			OAuthSecret: "abcd",
-			BasePath:    "/example/",
-		},
-	},
-	{
-		valid: true,
-		conf: &Configuration{
-			Hostname:    "http://example.com/",
-			OAuthID:     "abcd",
-			OAuthSecret: "abcd",
-			BasePath:    "",
-		},
-	},
-	{
-		valid: false,
-		conf: &Configuration{
-			Hostname:    "http://example.com/",
-			OAuthID:     "abcd",
-			OAuthSecret: "",
-			BasePath:    "",
-		},
-	},
-}
-
-func TestQuickFix(t *testing.T) {
-	for _, in := range testQuickFixInput {
-		err := in.conf.QuickFix()
-		if err != nil && in.valid {
-			t.Error("A valid configuration object was not validated, after quick fix:", err)
-		} else if err == nil && !in.valid {
-			t.Error("A not valid configuration object was validated, after quick fix. Object:", in.conf)
 		}
 	}
 }
@@ -335,40 +374,46 @@ var testSaveInput = []*Configuration{
 		Hostname:    "http://example.com",
 		OAuthID:     "1234",
 		OAuthSecret: "abcd",
+		BasePath:    "example/",
 	},
 	&Configuration{
 		Hostname:    "http://example2.com",
 		OAuthID:     "123456789",
 		OAuthSecret: "abcdef123456789",
+		BasePath:    "share/autograder/",
 	},
 	&Configuration{
 		Hostname:    "http://example3.com",
 		OAuthID:     "123454685139",
 		OAuthSecret: "abcdef123454accd58be5f5ee6789",
+		BasePath:    "share",
 	},
 }
 
 func TestSave(t *testing.T) {
 	// TODO: also test for non existing dir path and wrong dir type
 	for _, conf := range testSaveInput {
-		err := conf.QuickFix()
+		conf.quickFix()
+		err := conf.validate()
 		if err != nil {
 			t.Error(err)
 			continue
 		}
-
 		if err = conf.Save(); err != nil {
 			t.Error(err)
 			continue
 		}
-
-		conf2, err := Load(StandardBasePath)
+		conf2, err := Load(conf.BasePath)
 		if err != nil {
 			t.Error(err)
 			continue
 		}
-
 		compareConfigObjects(conf, conf2, t)
+		err = os.RemoveAll(conf.BasePath)
+		if err != nil {
+			t.Error(err)
+			continue
+		}
 	}
 }
 

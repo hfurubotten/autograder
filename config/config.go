@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -24,24 +25,17 @@ type Configuration struct {
 
 // NewConfig creates a new configuration object.
 func NewConfig(url, clientID, clientSecret, path string) (*Configuration, error) {
-	if url == "" {
-		return nil, errors.New("homepage url is required")
-	}
-	if clientID == "" {
-		return nil, errors.New("clientID is required")
-	}
-	if clientSecret == "" {
-		return nil, errors.New("clientSecret is required")
-	}
-	if path == "" {
-		return nil, errors.New("path is required")
-	}
-	return &Configuration{
+	conf := &Configuration{
 		Hostname:    url,
 		OAuthID:     clientID,
 		OAuthSecret: clientSecret,
 		BasePath:    path,
-	}, nil
+	}
+	conf.quickFix()
+	if err := conf.validate(); err != nil {
+		return nil, err
+	}
+	return conf, nil
 }
 
 // Load loads the configuration file in the provided directory.
@@ -50,10 +44,13 @@ func Load(path string) (*Configuration, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	conf := new(Configuration)
 	err = json.Unmarshal(data, conf)
 	if err != nil {
+		return nil, err
+	}
+	conf.quickFix()
+	if err := conf.validate(); err != nil {
 		return nil, err
 	}
 	return conf, nil
@@ -66,62 +63,55 @@ func (c *Configuration) ExportToGlobalVars() {
 	global.OAuthClientSecret = c.OAuthSecret
 }
 
-// Validate will try to validate the information in the configuration. Returns
-// error if the information cant be validated.
-func (c *Configuration) Validate() error {
+// validate does rudimentary checks on the configuration object's data.
+func (c *Configuration) validate() error {
+	if c.Hostname == "" {
+		return errors.New("homepage url is required")
+	}
 	if !strings.HasPrefix(c.Hostname, "http://") && !strings.HasPrefix(c.Hostname, "https://") {
-		return errors.New("The domain url is not a valid url")
+		return errors.New("homepage url is not a valid url")
 	}
-
 	if strings.Count(c.Hostname, "/") > 2 {
-		return errors.New("The hostename contains too many elements")
+		return errors.New("homepage url cannot contain path elements")
 	}
-
 	if c.OAuthID == "" {
-		return errors.New("Missing OAuth ID")
+		return errors.New("clientID is required")
 	}
-
 	if c.OAuthSecret == "" {
-		return errors.New("Missing OAuth Secret hash")
+		return errors.New("clientSecret is required")
 	}
-
 	if c.BasePath == "" {
-		return errors.New("Missing basepath for storing support files")
+		return errors.New("basepath is required")
 	}
-
 	return nil
 }
 
-// QuickFix will try to fix minor errors in the configuration. Returns error if
-// it cant be fixed or cant be validated afterwards.
-func (c *Configuration) QuickFix() error {
-	if strings.HasSuffix(c.Hostname, "/") {
-		c.Hostname = c.Hostname[:len(c.Hostname)-1]
-	}
-	if c.BasePath == "" {
-		c.BasePath = StandardBasePath
-	}
-	if !strings.HasSuffix(c.BasePath, "/") {
-		c.BasePath = c.BasePath + "/"
-	}
-	return c.Validate()
+// quickFix removes extra slash at end of URL and basepath.
+func (c *Configuration) quickFix() {
+	c.Hostname = strings.TrimSuffix(c.Hostname, "/")
+	c.BasePath = strings.TrimSuffix(c.BasePath, "/")
 }
 
 // Save saves the configuration file in basepath.
 func (c *Configuration) Save() error {
 	info, err := os.Stat(c.BasePath)
 	if err != nil {
-		err := os.Mkdir(c.BasePath, 0777)
+		err := os.MkdirAll(c.BasePath, 0700)
 		if err != nil {
 			return err
 		}
+		log.Printf("Created %s directory: %s", SystemName, c.BasePath)
 	} else if !info.IsDir() {
 		return errors.New("basepath is not a directory")
 	}
 
-	jsondata, err := json.MarshalIndent(c, "", "  ")
+	data, err := json.MarshalIndent(c, "", "  ")
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(filepath.Join(c.BasePath, ConfigFileName), jsondata, 0666)
+	err = ioutil.WriteFile(filepath.Join(c.BasePath, ConfigFileName), data, 0600)
+	if err == nil {
+		log.Printf("Saved %s configuration file in: %s", SystemName, c.BasePath)
+	}
+	return err
 }
