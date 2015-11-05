@@ -12,9 +12,6 @@ import (
 	"github.com/hfurubotten/autograder/global"
 )
 
-// ConfigFileName is the default file name for the JSON configuration file.
-var ConfigFileName = "config"
-
 // Configuration contains the necessary configuration data for the system.
 type Configuration struct {
 	Hostname    string `json:",omitempty"`
@@ -40,7 +37,7 @@ func NewConfig(url, clientID, clientSecret, path string) (*Configuration, error)
 
 // Load loads the configuration file in the provided directory.
 func Load(path string) (*Configuration, error) {
-	data, err := ioutil.ReadFile(filepath.Join(path, ConfigFileName))
+	data, err := ioutil.ReadFile(filepath.Join(path, FileName))
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +97,7 @@ func (c *Configuration) Save() error {
 		if err != nil {
 			return err
 		}
-		log.Printf("Created %s directory: %s", SystemName, c.BasePath)
+		log.Printf("Created %s directory: %s", SysName, c.BasePath)
 	} else if !info.IsDir() {
 		return errors.New("basepath is not a directory")
 	}
@@ -109,9 +106,9 @@ func (c *Configuration) Save() error {
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(filepath.Join(c.BasePath, ConfigFileName), data, 0600)
+	err = ioutil.WriteFile(filepath.Join(c.BasePath, FileName), data, 0600)
 	if err == nil {
-		log.Printf("Saved %s configuration file in: %s", SystemName, c.BasePath)
+		log.Printf("Saved %s configuration file in: %s", SysName, c.BasePath)
 	}
 	return err
 }

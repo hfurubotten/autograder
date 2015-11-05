@@ -10,15 +10,16 @@ import (
 	"github.com/hfurubotten/autograder/global"
 )
 
+var basePath = "testfiles"
+
 func TestMain(m *testing.M) {
-	StandardBasePath = "testfiles"
-	err := os.Mkdir(StandardBasePath, 0777)
+	err := os.Mkdir(basePath, 0777)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 	m.Run()
-	err = os.RemoveAll(StandardBasePath)
+	err = os.RemoveAll(basePath)
 	if err != nil {
 		log.Println("Unable to remove configuration files after test")
 	}
@@ -181,13 +182,13 @@ var testLoadStandardConfigFileInput = []struct {
 
 func TestLoadStandardConfigFile(t *testing.T) {
 	for _, in := range testLoadStandardConfigFileInput {
-		err := ioutil.WriteFile(filepath.Join(StandardBasePath, ConfigFileName), []byte(in.filedata), 0666)
+		err := ioutil.WriteFile(filepath.Join(basePath, FileName), []byte(in.filedata), 0666)
 		if err != nil {
 			t.Error(err)
 			continue
 		}
 
-		conf, err := Load(StandardBasePath)
+		conf, err := Load(basePath)
 		if err != nil {
 			t.Error(err)
 			continue
@@ -252,13 +253,13 @@ var testLoadNonValidInput = []struct {
 
 func TestLoadNonValidInput(t *testing.T) {
 	for _, in := range testLoadNonValidInput {
-		err := ioutil.WriteFile(filepath.Join(StandardBasePath, ConfigFileName), []byte(in.filedata), 0666)
+		err := ioutil.WriteFile(filepath.Join(basePath, FileName), []byte(in.filedata), 0666)
 		if err != nil {
 			t.Error(err)
 			continue
 		}
 
-		conf, err := Load(StandardBasePath)
+		conf, err := Load(basePath)
 		if conf != nil {
 			t.Errorf("Expected <nil> conf, got %v", conf)
 			continue

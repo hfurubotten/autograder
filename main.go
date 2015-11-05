@@ -61,11 +61,11 @@ select your Application to be able to view the OAuth tokens again.
 
 var (
 	admin        = flag.String("admin", "", "Admin must be a valid GitHub username")
-	hostname     = flag.String("url", "", "Homepage URL for "+config.SystemName)
+	url          = flag.String("url", "", "Homepage URL for "+config.SysName)
 	clientID     = flag.String("id", "", "Client ID for OAuth with Github")
 	clientSecret = flag.String("secret", "", "Client Secret for OAuth with Github")
+	path         = flag.String("path", config.StdPath, "Path for data storage for "+config.SysName)
 	help         = flag.Bool("help", false, "Helpful instructions")
-	path         = flag.String("basepath", config.StandardBasePath, "Path for data storage for "+config.SystemName)
 )
 
 func main() {
@@ -76,7 +76,7 @@ func main() {
 		data := struct {
 			SystemName, SystemNameLC, ConfigFileName string
 		}{
-			config.SystemName, config.SystemNameLC, config.ConfigFileName,
+			config.SysName, config.SysNameLC, config.FileName,
 		}
 		t := template.Must(template.New("instructions").Parse(instructions))
 		err := t.Execute(os.Stdout, data)
@@ -87,6 +87,9 @@ func main() {
 		return
 	}
 
+	// set log print appearance
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+
 	// load configuration data from the provided base path
 	var conf *config.Configuration
 	var err error
@@ -95,12 +98,11 @@ func main() {
 		if err != nil {
 			log.Println(err)
 			// can't load config file; create config based on command line arguments
-			conf, err = config.NewConfig(*hostname, *clientID, *clientSecret, *path)
+			conf, err = config.NewConfig(*url, *clientID, *clientSecret, *path)
 			if err != nil {
 				// can't continue without proper configuration
 				log.Fatal(err)
 			}
-			// save configuration
 			if err := conf.Save(); err != nil {
 				log.Fatal(err)
 			}
@@ -137,14 +139,11 @@ func main() {
 	// TODO: install on supported systems
 	// TODO: give notice for those systems not supported
 
-	// log print appearance
-	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
-
 	log.Println("Starting webserver")
 	server := web.NewServer(80)
 	server.Start()
 
-	// Prevent main from returning immediately. Wait for interrupt.
+	// prevent main from returning immediately; wait for interrupt
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, os.Kill, os.Interrupt)
 	<-signalChan
