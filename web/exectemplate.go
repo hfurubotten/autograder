@@ -26,7 +26,7 @@ var funcMap = template.FuncMap{
 	// a drop down menu. It takes as input the current option value
 	// and the option value that is to be selected. It returns
 	// "selected" if they match, otherwise it returns and empty string.
-	"selectitem": func(current int, selected int) template.HTMLAttr {
+	"selectitem": func(current int32, selected int32) template.HTMLAttr {
 		if current == selected {
 			return template.HTMLAttr("selected")
 		}

@@ -49,8 +49,8 @@ type Organization struct {
 	GroupLabFolders      map[int]string
 	IndividualDeadlines  map[int]time.Time
 	GroupDeadlines       map[int]time.Time
-	IndividualLanguages  map[int]int
-	GroupLanguages       map[int]int
+	IndividualLanguages  map[int]int32
+	GroupLanguages       map[int]int32
 
 	StudentTeamID int
 	OwnerTeamID   int
@@ -109,8 +109,8 @@ func NewOrganization(name string, readonly bool) (org *Organization, err error) 
 		Teachers:             make(map[string]interface{}),
 		IndividualDeadlines:  make(map[int]time.Time),
 		GroupDeadlines:       make(map[int]time.Time),
-		IndividualLanguages:  make(map[int]int),
-		GroupLanguages:       make(map[int]int),
+		IndividualLanguages:  make(map[int]int32),
+		GroupLanguages:       make(map[int]int32),
 		CodeReviewlist:       make([]int, 0),
 		CI: CIOptions{
 			Basepath: "/testground/src/github.com/" + name + "/",
@@ -537,9 +537,9 @@ func (o *Organization) SetGroupDeadline(lab int, t time.Time) {
 // SetIndividualLanguage will set the language of one lab assignment.
 //
 // This method needs locking
-func (o *Organization) SetIndividualLanguage(lab int, lang int) {
+func (o *Organization) SetIndividualLanguage(lab int, lang int32) {
         if o.IndividualLanguages == nil {
-                o.IndividualLanguages = make(map[int]int)
+                o.IndividualLanguages = make(map[int]int32)
         }
 
         o.IndividualLanguages[lab] = lang
@@ -548,9 +548,9 @@ func (o *Organization) SetIndividualLanguage(lab int, lang int) {
 // SetGroupLanguage will set the language of one lab assignment.
 //
 // This method needs locking
-func (o *Organization) SetGroupLanguage(lab int, lang int) {
+func (o *Organization) SetGroupLanguage(lab int, lang int32) {
         if o.GroupLanguages == nil {
-                o.GroupLanguages = make(map[int]int)
+                o.GroupLanguages = make(map[int]int32)
         }
 
         o.GroupLanguages[lab] = lang

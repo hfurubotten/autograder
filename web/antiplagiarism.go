@@ -6,6 +6,11 @@ import (
 	"strings"
 
 	git "github.com/hfurubotten/autograder/entities"
+
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+
+	pb "github.com/autograde/antiplagiarism/proto"
 )
 
 // ManualTestPlagiarismURL is the URL used to call ManualTestPlagiarismHandler.
@@ -25,7 +30,7 @@ func ManualTestPlagiarismHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var labs []string
-	var languages []int
+	var languages []int32
 	var repos []string
 
 	if strings.Contains(r.FormValue("labs"), "group") {
@@ -62,9 +67,48 @@ func ManualTestPlagiarismHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	fmt.Printf("Org:       %v\n", r.FormValue("course"))
-	fmt.Printf("Token:     %v\n", org.AdminToken)
-	fmt.Printf("Labs:      %v\n", labs)
-	fmt.Printf("Languages: %v\n", languages)
-	fmt.Printf("Repos:     %v\n", repos)
+	// Create request
+	request := pb.ApRequest{GithubOrg: r.FormValue("course"),
+		GithubToken:  org.AdminToken,
+		StudentRepos: repos,
+		LabNames:     labs,
+		LabLanguages: languages}
+
+	go callAntiplagiarism(request)
+
+	
+}
+
+// callAntiplagiarism sends a request to the anti-plagiarism software.
+// It takes an ApRequest (anti-plagiarism request) as input.
+func callAntiplagiarism(request pb.ApRequest) {
+	endpoint := "localhost:11111"
+	var opts []grpc.DialOption
+	// Currently just on localhost.
+	// TODO: Add transport security.
+	opts = append(opts, grpc.WithInsecure())
+
+	// Create connection
+	conn, err := grpc.Dial(endpoint, opts...)
+	if err != nil {
+		fmt.Printf("Error while connecting to server: %v\n", err)
+		return
+	}
+	defer conn.Close()
+	fmt.Printf("Connected to server on %v\n", endpoint)
+
+	// Create client
+	client := pb.NewApClient(conn)
+
+	// Send request and get response
+	response, err := client.CheckPlagiarism(context.Background(), &request)
+
+	// Check response
+	if err != nil {
+		fmt.Printf("gRPC error: %s\n", err)
+	} else if response.Success == false {
+		fmt.Printf("Anti-plagiarism error: %s\n", response.Err)
+	} else {
+		fmt.Printf("Anti-plagiarism application ran successfully.\n")
+	}
 }

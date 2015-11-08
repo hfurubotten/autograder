@@ -860,11 +860,11 @@ func UpdateCourseHandler(w http.ResponseWriter, r *http.Request) {
                         continue
                 }
 		
-		val, err := strconv.ParseInt(individuallanguages[i - 1], 10, 64)
+		val, err := strconv.ParseInt(individuallanguages[i - 1], 10, 32)
 		if err != nil {
 			org.SetIndividualLanguage(i, 0)
 		} else {
-			org.SetIndividualLanguage(i, int(val))
+			org.SetIndividualLanguage(i, int32(val))
 		}
         }
 
@@ -875,11 +875,11 @@ func UpdateCourseHandler(w http.ResponseWriter, r *http.Request) {
                         continue
                 }
 
-                val, err := strconv.ParseInt(grouplanguages[i - 1], 10, 64)
+                val, err := strconv.ParseInt(grouplanguages[i - 1], 10, 32)
                 if err != nil {
                         org.SetGroupLanguage(i, 0)
                 } else {
-                        org.SetGroupLanguage(i, int(val))
+                        org.SetGroupLanguage(i, int32(val))
                 }
         }
 
