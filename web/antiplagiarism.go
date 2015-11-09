@@ -63,7 +63,7 @@ func ManualTestPlagiarismHandler(w http.ResponseWriter, r *http.Request) {
 
 		// The order of the repos does not matter.
 		for indvName, _ := range org.Members {
-			repos = append(repos, indvName + "-labs")
+			repos = append(repos, indvName+"-labs")
 		}
 	}
 
@@ -76,15 +76,15 @@ func ManualTestPlagiarismHandler(w http.ResponseWriter, r *http.Request) {
 
 	go callAntiplagiarism(request)
 
-	
+	//fmt.Printf("%v\n",request)
 }
 
 // callAntiplagiarism sends a request to the anti-plagiarism software.
 // It takes an ApRequest (anti-plagiarism request) as input.
 func callAntiplagiarism(request pb.ApRequest) {
+	// Currently just on localhost.
 	endpoint := "localhost:11111"
 	var opts []grpc.DialOption
-	// Currently just on localhost.
 	// TODO: Add transport security.
 	opts = append(opts, grpc.WithInsecure())
 

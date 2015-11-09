@@ -7,12 +7,10 @@ $("#grouptestplagiarism").click(function(event){
 });
 
 function performTestPlagiarismClick(labs) {
-  $("div.alert").show(200);
-  $("div.alert").removeClass("alert-primary alert-danger alert-success").addClass("alert-warning").text("Running anti-plagiarism");
   $.post("/event/manualtestplagiarism", {"course": course, "labs": labs}, function(){
-    $("div.alert").removeClass("alert-warning").addClass("alert-success").text("Anti-plagiarism test started.");
+    alert("The anti-plagiarism command was sent. It will take several minutes at the minimum to process. Please be patient. The results will appear in x.");
   }).fail(function(){
-    $("div.alert").removeClass("alert-warning").addClass("alert-danger").text("Anti-plagiarism test failed to start.");
+    alert("The anti-plagiarism command failed.");
   });
   event.preventDefault();
   return false
