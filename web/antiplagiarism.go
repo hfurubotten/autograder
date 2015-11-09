@@ -6,11 +6,10 @@ import (
 	"strings"
 
 	git "github.com/hfurubotten/autograder/entities"
-
-	"golang.org/x/net/context"
-	"google.golang.org/grpc"
-
 	pb "github.com/autograde/antiplagiarism/proto"
+
+        //"golang.org/x/net/context"
+        //"google.golang.org/grpc"
 )
 
 // ManualTestPlagiarismURL is the URL used to call ManualTestPlagiarismHandler.
@@ -74,15 +73,15 @@ func ManualTestPlagiarismHandler(w http.ResponseWriter, r *http.Request) {
 		LabNames:     labs,
 		LabLanguages: languages}
 
-	go callAntiplagiarism(request)
+	go callAntiplagiarism(request, org)
 
-	//fmt.Printf("%v\n",request)
+	fmt.Printf("%v\n",request)
 }
 
 // callAntiplagiarism sends a request to the anti-plagiarism software.
 // It takes an ApRequest (anti-plagiarism request) as input.
-func callAntiplagiarism(request pb.ApRequest) {
-	// Currently just on localhost.
+func callAntiplagiarism(request pb.ApRequest, org *git.Organization) {
+/*	// Currently just on localhost.
 	endpoint := "localhost:11111"
 	var opts []grpc.DialOption
 	// TODO: Add transport security.
@@ -110,5 +109,23 @@ func callAntiplagiarism(request pb.ApRequest) {
 		fmt.Printf("Anti-plagiarism error: %s\n", response.Err)
 	} else {
 		fmt.Printf("Anti-plagiarism application ran successfully.\n")
+	}*/
+
+	// Clear old results
+	for i, _ := range org.Members {
+		//fmt.Printf("Key: %s\nValue: %v\n", i, member)
+		student, _ := git.NewMemberFromUsername(i, false)
+		//for j, _ := range
+		//fmt.Printf("%v\n", student.GetAntiPlagiarismResults(org.Name, 0))
+		results := git.AntiPlagiarismResults{MossPct: 1.0, 
+                        MossUrl: "",
+                        DuplPct: 0.0, 
+                        DuplUrl: "",
+                        JplagPct: 0.0,
+                        JplagUrl: ""}
+		student.AddAntiPlagiarismResults(org.Name, 0, &results)
+		student.Save()
+		//fmt.Printf("%v\n", student.GetAntiPlagiarismResults(org.Name, 0)) 
 	}
+
 }

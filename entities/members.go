@@ -490,6 +490,35 @@ func (m *Member) RemoveAssistingOrganization(org *Organization) (err error) {
 	return
 }
 
+// AddAntiPlagiarismResults add anti-plagiarism results to the lab
+func (m *Member) AddAntiPlagiarismResults(course string, lab int, apResults *AntiPlagiarismResults) {
+	courseOpts, exists := m.Courses[course]
+	if !exists {
+		return
+	}
+
+	if courseOpts.ApResults == nil {
+		courseOpts.ApResults = make(map[int]*AntiPlagiarismResults)
+	}
+
+	courseOpts.ApResults[lab] = apResults
+	m.Courses[course] = courseOpts
+}
+
+// GetAntiPlagiarismResults will get the anti-plagiarism results for the lab.
+func (m *Member) GetAntiPlagiarismResults(course string, lab int) *AntiPlagiarismResults {
+	courseOpts, exists := m.Courses[course]
+	if !exists {
+		return nil
+	}
+
+	if courseOpts.ApResults == nil {
+		courseOpts.ApResults = make(map[int]*AntiPlagiarismResults)
+	}
+
+	return courseOpts.ApResults[lab]
+}
+
 // GetToken returns the users github token.
 func (m Member) GetToken() (token string) {
 	return m.accessToken.GetToken()
