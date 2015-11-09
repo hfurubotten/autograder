@@ -43,6 +43,7 @@ type CourseOptions struct {
 	Course        string
 	CurrentLabNum int
 	Assignments   map[int]*LabAssignmentOptions
+	ApResults     map[int]*AntiPlagiarismResults
 	UsedSlipDays  int
 
 	// Group link
@@ -56,6 +57,7 @@ func NewCourseOptions(course string) CourseOptions {
 		Course:        course,
 		CurrentLabNum: 1,
 		Assignments:   make(map[int]*LabAssignmentOptions),
+		ApResults:     make(map[int]*AntiPlagiarismResults),
 	}
 }
 
@@ -99,4 +101,14 @@ func (co *CourseOptions) RecalculateSlipDays() error {
 	co.UsedSlipDays = days
 
 	return nil
+}
+
+// AntiPlagiarismResults holds the results from the anti-plagiarism application.
+type AntiPlagiarismResults struct {
+	MossPct float32
+	MossUrl string
+	DuplPct float32
+	DuplUrl string
+	JplagPct float32
+	JplagUrl string
 }
