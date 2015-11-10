@@ -42,6 +42,7 @@ type Group struct {
 
 	CurrentLabNum int
 	Assignments   map[int]*LabAssignmentOptions
+	ApResults     map[int]*AntiPlagiarismResults
 
 	lock sync.Mutex
 }
@@ -57,6 +58,7 @@ func NewGroup(org string, groupid int, readonly bool) (g *Group, err error) {
 		Course:        org,
 		Members:       make(map[string]interface{}),
 		Assignments:   make(map[int]*LabAssignmentOptions),
+		ApResults:     make(map[int]*AntiPlagiarismResults),
 		CurrentLabNum: 1,
 	}
 
@@ -223,6 +225,24 @@ func (g *Group) GetNotes(lab int) string {
 	}
 
 	return g.Assignments[lab].Notes
+}
+
+// AddAntiPlagiarismResults add anti-plagiarism results to the lab
+func (g *Group) AddAntiPlagiarismResults(course string, lab int, apResults *AntiPlagiarismResults) {
+	if g.ApResults == nil {
+		g.ApResults = make(map[int]*AntiPlagiarismResults)
+	}
+
+	g.ApResults[lab] = apResults
+}
+
+// GetAntiPlagiarismResults will get the anti-plagiarism results for the lab.
+func (g *Group) GetAntiPlagiarismResults(course string, lab int) *AntiPlagiarismResults {
+	if g.ApResults == nil {
+		g.ApResults = make(map[int]*AntiPlagiarismResults)
+	}
+
+	return g.ApResults[lab]
 }
 
 // Lock will put a writers lock on the group.

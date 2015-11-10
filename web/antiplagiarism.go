@@ -111,21 +111,40 @@ func callAntiplagiarism(request pb.ApRequest, org *git.Organization) {
 		fmt.Printf("Anti-plagiarism application ran successfully.\n")
 	}*/
 
-	// Clear old results
+	// Clear old individual results
 	for i, _ := range org.Members {
-		//fmt.Printf("Key: %s\nValue: %v\n", i, member)
+		fmt.Printf("Key: %s\n", i)
 		student, _ := git.NewMemberFromUsername(i, false)
-		//for j, _ := range
-		//fmt.Printf("%v\n", student.GetAntiPlagiarismResults(org.Name, 0))
-		results := git.AntiPlagiarismResults{MossPct: 1.0, 
+		for j := 0; j < org.IndividualAssignments; j++ {
+			fmt.Printf("%v\n", student.GetAntiPlagiarismResults(org.Name, j))
+			results := git.AntiPlagiarismResults{MossPct: 0.0, 
                         MossUrl: "",
                         DuplPct: 0.0, 
                         DuplUrl: "",
                         JplagPct: 0.0,
                         JplagUrl: ""}
-		student.AddAntiPlagiarismResults(org.Name, 0, &results)
-		student.Save()
-		//fmt.Printf("%v\n", student.GetAntiPlagiarismResults(org.Name, 0)) 
+			student.AddAntiPlagiarismResults(org.Name, j, &results)
+			student.Save()
+			fmt.Printf("%v\n", student.GetAntiPlagiarismResults(org.Name, j))
+		}
+	}
+	
+	// Clear old group results
+	for i, _ := range org.Groups {
+		fmt.Printf("Key: %s\n", i)
+		/*group, _ := git.NewGroup(org.Name, i.ID, false)
+		for j := 0; j < org.GroupAssignments; j++ {
+			fmt.Printf("%v\n", group.GetAntiPlagiarismResults(org.Name, j))
+			results := git.AntiPlagiarismResults{MossPct: 0.0, 
+                        MossUrl: "",
+                        DuplPct: 0.0, 
+                        DuplUrl: "",
+                        JplagPct: 0.0,
+                        JplagUrl: ""}
+			group.AddAntiPlagiarismResults(org.Name, j, &results)
+			group.Save()
+			fmt.Printf("%v\n", group.GetAntiPlagiarismResults(org.Name, j))
+		}*/
 	}
 
 }
