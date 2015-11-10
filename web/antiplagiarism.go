@@ -9,8 +9,8 @@ import (
 	pb "github.com/autograde/antiplagiarism/proto"
 	git "github.com/hfurubotten/autograder/entities"
 
-	//"golang.org/x/net/context"
-	//"google.golang.org/grpc"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
 )
 
 // ManualTestPlagiarismURL is the URL used to call ManualTestPlagiarismHandler.
@@ -119,9 +119,9 @@ func callAntiplagiarism(request pb.ApRequest, org *git.Organization, isGroup boo
 		fmt.Printf("Anti-plagiarism application ran successfully.\n")
 	}
 
-	checkResults()
-	clearPreviousResults(ord, isGroup)
-	saveNewResults()
+	checkResults(org)
+	clearPreviousResults(org, isGroup)
+	saveNewResults(org)
 }
 
 // checkResults checks that there are results in the results directory.
