@@ -3,13 +3,14 @@ package web
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
-	git "github.com/hfurubotten/autograder/entities"
 	pb "github.com/autograde/antiplagiarism/proto"
+	git "github.com/hfurubotten/autograder/entities"
 
-        //"golang.org/x/net/context"
-        //"google.golang.org/grpc"
+	//"golang.org/x/net/context"
+	//"google.golang.org/grpc"
 )
 
 // ManualTestPlagiarismURL is the URL used to call ManualTestPlagiarismHandler.
@@ -31,9 +32,11 @@ func ManualTestPlagiarismHandler(w http.ResponseWriter, r *http.Request) {
 	var labs []string
 	var languages []int32
 	var repos []string
+	isGroup := false
 
 	if strings.Contains(r.FormValue("labs"), "group") {
 		// Get the information for groups
+		isGroup = true
 
 		// Order of labs and languages matters. They must match.
 		length := len(org.GroupLabFolders)
@@ -50,6 +53,7 @@ func ManualTestPlagiarismHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		// Get the information for individuals
+		isGroup = false
 
 		// Order of labs and languages matters. They must match.
 		length := len(org.IndividualLabFolders)
@@ -73,15 +77,17 @@ func ManualTestPlagiarismHandler(w http.ResponseWriter, r *http.Request) {
 		LabNames:     labs,
 		LabLanguages: languages}
 
-	go callAntiplagiarism(request, org)
+	go callAntiplagiarism(request, org, isGroup)
 
-	fmt.Printf("%v\n",request)
+	fmt.Printf("%v\n", request)
 }
 
 // callAntiplagiarism sends a request to the anti-plagiarism software.
-// It takes an ApRequest (anti-plagiarism request) as input.
-func callAntiplagiarism(request pb.ApRequest, org *git.Organization) {
-/*	// Currently just on localhost.
+// It takes as input request, an ApRequest (anti-plagiarism request),
+// org, a database record for the class, and isGroup, whether or not
+// the request if for individual or group assignments.
+func callAntiplagiarism(request pb.ApRequest, org *git.Organization, isGroup bool) {
+	// Currently just on localhost.
 	endpoint := "localhost:11111"
 	var opts []grpc.DialOption
 	// TODO: Add transport security.
@@ -105,46 +111,83 @@ func callAntiplagiarism(request pb.ApRequest, org *git.Organization) {
 	// Check response
 	if err != nil {
 		fmt.Printf("gRPC error: %s\n", err)
+		return
 	} else if response.Success == false {
 		fmt.Printf("Anti-plagiarism error: %s\n", response.Err)
+		return
 	} else {
 		fmt.Printf("Anti-plagiarism application ran successfully.\n")
-	}*/
+	}
 
-	// Clear old individual results
-	for i, _ := range org.Members {
-		fmt.Printf("Key: %s\n", i)
-		student, _ := git.NewMemberFromUsername(i, false)
-		for j := 0; j < org.IndividualAssignments; j++ {
-			fmt.Printf("%v\n", student.GetAntiPlagiarismResults(org.Name, j))
-			results := git.AntiPlagiarismResults{MossPct: 0.0, 
-                        MossUrl: "",
-                        DuplPct: 0.0, 
-                        DuplUrl: "",
-                        JplagPct: 0.0,
-                        JplagUrl: ""}
-			student.AddAntiPlagiarismResults(org.Name, j, &results)
+	checkResults()
+	clearPreviousResults(ord, isGroup)
+	saveNewResults()
+}
+
+// checkResults checks that there are results in the results directory.
+// It takes as input org, a database record for the class.
+func checkResults(org *git.Organization) {
+
+}
+
+// clearPreviousResults clears the previous anti-plagiarim results,
+// because the specific urls can change. It takes as input
+// org, a database record for the class, and isGroup, whether or not
+// the request if for individual or group assignments.
+func clearPreviousResults(org *git.Organization, isGroup bool) {
+	if isGroup {
+		// Clear old group results
+		// For each group
+		for groupName, _ := range org.Groups {
+			// Get the Group ID
+			groupId, err := strconv.Atoi(groupName[len(git.GroupRepoPrefix):])
+			if err != nil {
+				fmt.Printf("Could not get group number from %s. %s\n", groupName, err)
+				continue
+			}
+
+			// Get the database record
+			group, _ := git.NewGroup(org.Name, groupId, false)
+			// For each lab
+			for labIndex := 0; labIndex < org.GroupAssignments; labIndex++ {
+				// Clear the specific lab results
+				results := git.AntiPlagiarismResults{MossPct: 0.0,
+					MossUrl:  "",
+					DuplPct:  0.0,
+					DuplUrl:  "",
+					JplagPct: 0.0,
+					JplagUrl: ""}
+				group.AddAntiPlagiarismResults(org.Name, labIndex, &results)
+			}
+			// Save the database record
+			group.Save()
+		}
+	} else {
+		// Clear old individual results
+		// For each student
+		for username, _ := range org.Members {
+			// Get the database record
+			student, _ := git.NewMemberFromUsername(username, false)
+			// For each lab
+			for labIndex := 0; labIndex < org.IndividualAssignments; labIndex++ {
+				// Clear the specific lab results
+				results := git.AntiPlagiarismResults{MossPct: 0,
+					MossUrl:  "",
+					DuplPct:  0,
+					DuplUrl:  "",
+					JplagPct: 0,
+					JplagUrl: ""}
+				student.AddAntiPlagiarismResults(org.Name, labIndex, &results)
+			}
+			// Save the database record
 			student.Save()
-			fmt.Printf("%v\n", student.GetAntiPlagiarismResults(org.Name, j))
 		}
 	}
-	
-	// Clear old group results
-	for i, _ := range org.Groups {
-		fmt.Printf("Key: %s\n", i)
-		/*group, _ := git.NewGroup(org.Name, i.ID, false)
-		for j := 0; j < org.GroupAssignments; j++ {
-			fmt.Printf("%v\n", group.GetAntiPlagiarismResults(org.Name, j))
-			results := git.AntiPlagiarismResults{MossPct: 0.0, 
-                        MossUrl: "",
-                        DuplPct: 0.0, 
-                        DuplUrl: "",
-                        JplagPct: 0.0,
-                        JplagUrl: ""}
-			group.AddAntiPlagiarismResults(org.Name, j, &results)
-			group.Save()
-			fmt.Printf("%v\n", group.GetAntiPlagiarismResults(org.Name, j))
-		}*/
-	}
+
+}
+
+// saveNewResults saves the results in the results directory to the database.
+// It takes as input org, a database record for the class.
+func saveNewResults(org *git.Organization) {
 
 }
