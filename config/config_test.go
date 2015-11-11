@@ -6,8 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-
-	"github.com/hfurubotten/autograder/global"
 )
 
 var basePath = "testfiles"
@@ -43,19 +41,65 @@ func TestNewConfig(t *testing.T) {
 			continue
 		}
 
-		if conf.Hostname != in.url {
-			t.Errorf("Field value Hostname does not match. %v != %v", conf.Hostname, in.url)
+		if conf.URL != in.url {
+			t.Errorf("URL field mismatch, got: %v, expected: %v", conf.URL, in.url)
 		}
-		if conf.OAuthID != in.id {
-			t.Errorf("Field value OAuthID does not match. %v != %v", conf.OAuthID, in.id)
+		if conf.OAuthClientID != in.id {
+			t.Errorf("OAuthClientID field mismatch, got: %v, expected: %v", conf.OAuthClientID, in.id)
 		}
-		if conf.OAuthSecret != in.secret {
-			t.Errorf("Field value OAuthSecret does not match. %v != %v", conf.OAuthSecret, in.secret)
+		if conf.OAuthClientSecret != in.secret {
+			t.Errorf("OAuthClientSecret field mismatch, got: %v, expected: %v", conf.OAuthClientSecret, in.secret)
 		}
 		if conf.BasePath != in.path {
-			t.Errorf("BasePath does not match. %v != %v", conf.BasePath, in.path)
+			t.Errorf("BasePath field mismatch, got: %v, expected: %v", conf.BasePath, in.path)
 		}
 	}
+}
+
+func TestGetPanic(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Logf("Recovered from panic: %v", r)
+		}
+	}()
+	Get()
+	t.Fatal("Expected panic on call to Get() before initialization")
+}
+
+func TestSetCurrent(t *testing.T) {
+	// this will run setCurrent only once
+	for _, in := range testNewConfigInput[0:1] {
+		conf, _ := NewConfig(in.url, in.id, in.secret, in.path)
+		conf.SetCurrent()
+	}
+}
+
+func TestSetCurrentPanic(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Logf("Recovered from panic: %v", r)
+		}
+	}()
+	for _, in := range testNewConfigInput {
+		conf, _ := NewConfig(in.url, in.id, in.secret, in.path)
+		// this will panic since it was already initialized in TestSetCurrent()
+		conf.SetCurrent()
+	}
+	t.Fatal("Expected panic on repeated setCurrent() invocations")
+}
+
+func TestGet(t *testing.T) {
+	// we can call Get() here because it was initialized above in TestSetCurrent()
+	want := Get()
+	t.Logf("want: %v", want)
+	for i := 0; i < 5; i++ {
+		got := Get()
+		if want != got {
+			t.Errorf("want %v, got %v", want, got)
+		}
+	}
+	c := Get()
+	t.Logf("got: %v", c)
 }
 
 var testNewConfigRemoveSuffixInput = []struct {
@@ -72,8 +116,8 @@ func TestNewConfigRemoveSuffix(t *testing.T) {
 			t.Error(err)
 			continue
 		}
-		if conf.Hostname != in.out {
-			t.Errorf("Expected url: '%v', got: '%v'", in.out, conf.Hostname)
+		if conf.URL != in.out {
+			t.Errorf("Expected url: '%v', got: '%v'", in.out, conf.URL)
 		}
 	}
 }
@@ -109,73 +153,73 @@ var testLoadStandardConfigFileInput = []struct {
 	conf     *Configuration
 }{
 	{
-		filedata: "{\n" +
-			"\"Hostname\":\"http://example.com\",\n" +
-			"\"OAuthID\":\"1234\",\n" +
-			"\"OAuthSecret\":\"abcd\",\n" +
-			"\"BasePath\":\"/example/\"\n" +
-			"}",
+		filedata: `{
+  "URL":"http://example.com",
+  "OAuthClientID":"1234",
+  "OAuthClientSecret":"abcd",
+  "BasePath":"/example/"
+}`,
 		conf: &Configuration{
-			Hostname:    "http://example.com",
-			OAuthID:     "1234",
-			OAuthSecret: "abcd",
-			BasePath:    "/example",
-		},
-	},
-	{
-		filedata: "{\n" +
-			"\"Hostname\":\"http://example2.com\",\n" +
-			"\"OAuthID\":\"123456789\",\n" +
-			"\"OAuthSecret\":\"abcdef123456789\",\n" +
-			"\"BasePath\":\"/usr/\"\n" +
-			"}",
-		conf: &Configuration{
-			Hostname:    "http://example2.com",
-			OAuthID:     "123456789",
-			OAuthSecret: "abcdef123456789",
-			BasePath:    "/usr",
-		},
-	},
-	{
-		filedata: "{\n" +
-			"\"Hostname\":\"http://example3.com\",\n" +
-			"\"OAuthID\":\"123454685139\",\n" +
-			"\"OAuthSecret\":\"abcdef123454accd58be5f5ee6789\",\n" +
-			"\"BasePath\":\"/usr/share/\"\n" +
-			"}",
-		conf: &Configuration{
-			Hostname:    "http://example3.com",
-			OAuthID:     "123454685139",
-			OAuthSecret: "abcdef123454accd58be5f5ee6789",
-			BasePath:    "/usr/share",
+			URL:               "http://example.com",
+			OAuthClientID:     "1234",
+			OAuthClientSecret: "abcd",
+			BasePath:          "/example",
 		},
 	},
 	{
 		filedata: `{
-		"Hostname": "http://example3.com/",
-		"OAuthID": "1234",
-		"OAuthSecret": "abcd",
+  "URL":"http://example2.com",
+  "OAuthClientID":"123456789",
+  "OAuthClientSecret":"abcdef123456789",
+  "BasePath":"/usr/"
+}`,
+		conf: &Configuration{
+			URL:               "http://example2.com",
+			OAuthClientID:     "123456789",
+			OAuthClientSecret: "abcdef123456789",
+			BasePath:          "/usr",
+		},
+	},
+	{
+		filedata: `{
+  "URL":"http://example3.com",
+  "OAuthClientID":"123454685139",
+  "OAuthClientSecret":"abcdef123454accd58be5f5ee6789",
+  "BasePath":"/usr/share/"
+}`,
+		conf: &Configuration{
+			URL:               "http://example3.com",
+			OAuthClientID:     "123454685139",
+			OAuthClientSecret: "abcdef123454accd58be5f5ee6789",
+			BasePath:          "/usr/share",
+		},
+	},
+	{
+		filedata: `{
+		"URL": "http://example3.com/",
+		"OAuthClientID": "1234",
+		"OAuthClientSecret": "abcd",
 		"BasePath": "/example/"
 		}`,
 		conf: &Configuration{
-			Hostname:    "http://example3.com",
-			OAuthID:     "1234",
-			OAuthSecret: "abcd",
-			BasePath:    "/example",
+			URL:               "http://example3.com",
+			OAuthClientID:     "1234",
+			OAuthClientSecret: "abcd",
+			BasePath:          "/example",
 		},
 	},
 	{
 		filedata: `{
-		"Hostname": "http://example7.com",
-		"OAuthID": "12039857",
-	  "OAuthSecret": "abcdef123456789",
+		"URL": "http://example7.com",
+		"OAuthClientID": "12039857",
+	  "OAuthClientSecret": "abcdef123456789",
 	  "BasePath": "/usr/share/"
 		}`,
 		conf: &Configuration{
-			Hostname:    "http://example7.com",
-			OAuthID:     "12039857",
-			OAuthSecret: "abcdef123456789",
-			BasePath:    "/usr/share",
+			URL:               "http://example7.com",
+			OAuthClientID:     "12039857",
+			OAuthClientSecret: "abcdef123456789",
+			BasePath:          "/usr/share",
 		},
 	},
 }
@@ -203,49 +247,49 @@ var testLoadNonValidInput = []struct {
 }{
 	{
 		filedata: `{
-		"Hostname": "",
-	  "OAuthID": "12039857",
-	  "OAuthSecret": "abcdef123456789",
+		"URL": "",
+	  "OAuthClientID": "12039857",
+	  "OAuthClientSecret": "abcdef123456789",
 	  "BasePath": "/usr/"
 		}`,
 	},
 	{
 		filedata: `{
-		"Hostname": "http://example2.com",
-	  "OAuthID": "",
-	  "OAuthSecret": "abcdef123456789",
+		"URL": "http://example2.com",
+	  "OAuthClientID": "",
+	  "OAuthClientSecret": "abcdef123456789",
 	  "BasePath": "/usr/"
 		}`,
 	},
 	{
 		filedata: `{
-		"Hostname": "http://example3.com",
-		"OAuthID": "12039857",
-	  "OAuthSecret": "",
+		"URL": "http://example3.com",
+		"OAuthClientID": "12039857",
+	  "OAuthClientSecret": "",
 	  "BasePath": "/usr/"
 		}`,
 	},
 	{
 		filedata: `{
-		"Hostname": "http://example4.com",
-		"OAuthID": "12039857",
-	  "OAuthSecret": "abcdef123456789",
+		"URL": "http://example4.com",
+		"OAuthClientID": "12039857",
+	  "OAuthClientSecret": "abcdef123456789",
 	  "BasePath": ""
 		}`,
 	},
 	{
 		filedata: `{
-		"Hostname": "smb://example5.com",
-	  "OAuthID": "23123",
-	  "OAuthSecret": "abcdef123456789",
+		"URL": "smb://example5.com",
+	  "OAuthClientID": "23123",
+	  "OAuthClientSecret": "abcdef123456789",
 	  "BasePath": "/usr/"
 		}`,
 	},
 	{
 		filedata: `{
-		"Hostname": "http://example6.com/",
-		"OAuthID": "123454685139",
-		"OAuthSecret": "abcdef123454accd58be5f5ee6789",
+		"URL": "http://example6.com/",
+		"OAuthClientID": "123454685139",
+		"OAuthClientSecret": "abcdef123454accd58be5f5ee6789",
 		"BasePath": ""
 		}`,
 	},
@@ -271,34 +315,6 @@ func TestLoadNonValidInput(t *testing.T) {
 	}
 }
 
-var testExportToGlobalVarsInput = []*Configuration{
-	&Configuration{
-		Hostname:    "http://example.com",
-		OAuthID:     "1234",
-		OAuthSecret: "abcd",
-		BasePath:    "/example/",
-	},
-	&Configuration{
-		Hostname:    "http://example2.com",
-		OAuthID:     "123456789",
-		OAuthSecret: "abcdef123456789",
-		BasePath:    "/usr/",
-	},
-	&Configuration{
-		Hostname:    "http://example3.com",
-		OAuthID:     "123454685139",
-		OAuthSecret: "abcdef123454accd58be5f5ee6789",
-		BasePath:    "/usr/share/",
-	},
-}
-
-func TestExportToGlobalVars(t *testing.T) {
-	for _, conf := range testExportToGlobalVarsInput {
-		conf.ExportToGlobalVars()
-		compareConfigObjectsToGlobal(conf, t)
-	}
-}
-
 var testValidateInput = []struct {
 	valid bool
 	conf  *Configuration
@@ -306,55 +322,55 @@ var testValidateInput = []struct {
 	{
 		valid: true,
 		conf: &Configuration{
-			Hostname:    "http://example.com",
-			OAuthID:     "1234",
-			OAuthSecret: "abcd",
-			BasePath:    "/example/",
+			URL:               "http://example.com",
+			OAuthClientID:     "1234",
+			OAuthClientSecret: "abcd",
+			BasePath:          "/example/",
+		},
+	},
+	{
+		valid: true,
+		conf: &Configuration{
+			URL:               "http://example2.com/",
+			OAuthClientID:     "123456789",
+			OAuthClientSecret: "abcdef123456789",
+			BasePath:          "/usr/",
 		},
 	},
 	{
 		valid: false,
 		conf: &Configuration{
-			Hostname:    "http://example2.com/",
-			OAuthID:     "123456789",
-			OAuthSecret: "abcdef123456789",
-			BasePath:    "/usr/",
+			URL:               "http://example3.com",
+			OAuthClientID:     "123454685139",
+			OAuthClientSecret: "abcdef123454accd58be5f5ee6789",
+			BasePath:          "",
 		},
 	},
 	{
 		valid: false,
 		conf: &Configuration{
-			Hostname:    "http://example3.com",
-			OAuthID:     "123454685139",
-			OAuthSecret: "abcdef123454accd58be5f5ee6789",
-			BasePath:    "",
+			URL:               "example.com",
+			OAuthClientID:     "1234",
+			OAuthClientSecret: "abcd",
+			BasePath:          "/example/",
 		},
 	},
 	{
 		valid: false,
 		conf: &Configuration{
-			Hostname:    "example.com",
-			OAuthID:     "1234",
-			OAuthSecret: "abcd",
-			BasePath:    "/example/",
+			URL:               "http://example.com",
+			OAuthClientID:     "1234",
+			OAuthClientSecret: "",
+			BasePath:          "/example/",
 		},
 	},
 	{
 		valid: false,
 		conf: &Configuration{
-			Hostname:    "http://example.com",
-			OAuthID:     "1234",
-			OAuthSecret: "",
-			BasePath:    "/example/",
-		},
-	},
-	{
-		valid: false,
-		conf: &Configuration{
-			Hostname:    "http://example.com",
-			OAuthID:     "",
-			OAuthSecret: "abcd",
-			BasePath:    "/example/",
+			URL:               "http://example.com",
+			OAuthClientID:     "",
+			OAuthClientSecret: "abcd",
+			BasePath:          "/example/",
 		},
 	},
 }
@@ -372,29 +388,28 @@ func TestValidate(t *testing.T) {
 
 var testSaveInput = []*Configuration{
 	&Configuration{
-		Hostname:    "http://example.com",
-		OAuthID:     "1234",
-		OAuthSecret: "abcd",
-		BasePath:    "example/",
+		URL:               "http://example.com",
+		OAuthClientID:     "1234",
+		OAuthClientSecret: "abcd",
+		BasePath:          "example/",
 	},
 	&Configuration{
-		Hostname:    "http://example2.com",
-		OAuthID:     "123456789",
-		OAuthSecret: "abcdef123456789",
-		BasePath:    "share/autograder/",
+		URL:               "http://example2.com",
+		OAuthClientID:     "123456789",
+		OAuthClientSecret: "abcdef123456789",
+		BasePath:          "share/autograder/",
 	},
 	&Configuration{
-		Hostname:    "http://example3.com",
-		OAuthID:     "123454685139",
-		OAuthSecret: "abcdef123454accd58be5f5ee6789",
-		BasePath:    "share",
+		URL:               "http://example3.com",
+		OAuthClientID:     "123454685139",
+		OAuthClientSecret: "abcdef123454accd58be5f5ee6789",
+		BasePath:          "share",
 	},
 }
 
 func TestSave(t *testing.T) {
 	// TODO: also test for non existing dir path and wrong dir type
 	for _, conf := range testSaveInput {
-		conf.quickFix()
 		err := conf.validate()
 		if err != nil {
 			t.Error(err)
@@ -419,28 +434,16 @@ func TestSave(t *testing.T) {
 }
 
 func compareConfigObjects(c1, c2 *Configuration, t *testing.T) {
-	if c1.Hostname != c2.Hostname {
-		t.Errorf("Field value Hostname does not match. %v != %v", c1.Hostname, c2.Hostname)
+	if c1.URL != c2.URL {
+		t.Errorf("Field value URL does not match. %v != %v", c1.URL, c2.URL)
 	}
-	if c1.OAuthID != c2.OAuthID {
-		t.Errorf("Field value OAuthID does not match. %v != %v", c1.OAuthID, c2.OAuthID)
+	if c1.OAuthClientID != c2.OAuthClientID {
+		t.Errorf("Field value OAuthClientID does not match. %v != %v", c1.OAuthClientID, c2.OAuthClientID)
 	}
-	if c1.OAuthSecret != c2.OAuthSecret {
-		t.Errorf("Field value OAuthSecret does not match. %v != %v", c1.OAuthSecret, c2.OAuthSecret)
+	if c1.OAuthClientSecret != c2.OAuthClientSecret {
+		t.Errorf("Field value OAuthClientSecret does not match. %v != %v", c1.OAuthClientSecret, c2.OAuthClientSecret)
 	}
 	if c1.BasePath != c2.BasePath {
 		t.Errorf("Field value BasePath does not match. %v != %v", c1.BasePath, c2.BasePath)
-	}
-}
-
-func compareConfigObjectsToGlobal(c1 *Configuration, t *testing.T) {
-	if c1.Hostname != global.Hostname {
-		t.Errorf("Field value Hostname does not match. %v != %v", c1.Hostname, global.Hostname)
-	}
-	if c1.OAuthID != global.OAuthClientID {
-		t.Errorf("Field value OAuthID does not match. %v != %v", c1.OAuthID, global.OAuthClientID)
-	}
-	if c1.OAuthSecret != global.OAuthClientSecret {
-		t.Errorf("Field value OAuthSecret does not match. %v != %v", c1.OAuthSecret, global.OAuthClientSecret)
 	}
 }

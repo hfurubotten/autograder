@@ -71,6 +71,9 @@ var (
 func main() {
 	flag.Parse()
 
+	// set log print appearance
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+
 	// print instructions and command usage
 	if *help {
 		data := struct {
@@ -87,14 +90,9 @@ func main() {
 		return
 	}
 
-	// set log print appearance
-	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
-
 	// load configuration data from the provided base path
-	var conf *config.Configuration
-	var err error
 	if *path != "" {
-		conf, err = config.Load(*path)
+		conf, err := config.Load(*path)
 		if err != nil {
 			log.Println(err)
 			// can't load config file; create config based on command line arguments
@@ -107,12 +105,12 @@ func main() {
 				log.Fatal(err)
 			}
 		}
+		// set global configuration struct; will be accessible through config.Get()
+		conf.SetCurrent()
 	}
 
-	conf.ExportToGlobalVars()
-
 	// start database
-	if err := database.Start(conf.BasePath); err != nil {
+	if err := database.Start(config.Get().BasePath); err != nil {
 		log.Fatal(err)
 	}
 	defer database.Close()

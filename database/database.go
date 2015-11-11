@@ -2,9 +2,12 @@ package database
 
 import (
 	"errors"
+	"log"
+	"os"
 	"path/filepath"
 
 	"github.com/boltdb/bolt"
+	"github.com/hfurubotten/autograder/config"
 )
 
 var (
@@ -16,6 +19,17 @@ var (
 // Start will start the database using the provided dbloc path.
 // If the database does not exist, a new database will be created.
 func Start(dbpath string) (err error) {
+	info, err := os.Stat(dbpath)
+	if err != nil {
+		err := os.MkdirAll(dbpath, 0700)
+		if err != nil {
+			return err
+		}
+		log.Printf("Created %s directory: %s", config.SysName, dbpath)
+	} else if !info.IsDir() {
+		return errors.New("dbpath is not a directory")
+	}
+
 	db, err = bolt.Open(filepath.Join(dbpath, databaseFileName), 0666, nil)
 	if err != nil {
 		return err

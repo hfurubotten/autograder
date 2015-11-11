@@ -12,7 +12,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	if err := database.Start("test.db"); err != nil {
+	if err := database.Start("/tmp/ag"); err != nil {
 		log.Println("Failed to start testing, error while setting up the database:", err)
 		return
 	}
@@ -22,7 +22,7 @@ func TestMain(m *testing.M) {
 	if err := database.Close(); err != nil {
 		log.Println("Failed to close database after testing:", err)
 	}
-	if err := os.RemoveAll("test.db"); err != nil {
+	if err := os.RemoveAll("/tmp/ag"); err != nil {
 		log.Println("Unable to clean up database file from filesystem")
 	}
 }

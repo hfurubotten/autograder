@@ -5,15 +5,6 @@ import (
 )
 
 var (
-	// Hostname globally stores the hostname autograder is running under.
-	Hostname string
-
-	// OAuthClientID globally stores the oauth client id used up to github.
-	OAuthClientID string
-
-	// OAuthClientSecret globally stores the secret oauth code used up to github.
-	OAuthClientSecret string
-
 	// OAuthScope globally stores the oauth scope needed to use autograder against github.
 	OAuthScope string
 

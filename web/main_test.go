@@ -9,7 +9,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	err := database.Start("test.db")
+	err := database.Start("/tmp/ag")
 	if err != nil {
 		log.Println("Unable to start database:", err)
 		return
@@ -19,7 +19,7 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.Println("Unable to close the database properly")
 	}
-	err = os.RemoveAll("test.db")
+	err = os.RemoveAll("/tmp/ag")
 	if err != nil {
 		log.Println("Unable to clean up database file from filesystem")
 	}

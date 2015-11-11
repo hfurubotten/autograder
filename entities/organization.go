@@ -16,8 +16,8 @@ import (
 
 	"github.com/boltdb/bolt"
 	"github.com/google/go-github/github"
+	"github.com/hfurubotten/autograder/config"
 	"github.com/hfurubotten/autograder/database"
-	"github.com/hfurubotten/autograder/global"
 	"golang.org/x/oauth2"
 )
 
@@ -614,13 +614,13 @@ func (o *Organization) CreateRepo(opt RepositoryOptions) (err error) {
 	}
 
 	if opt.Hook != "" {
-		config := make(map[string]interface{})
-		config["url"] = global.Hostname + "/event/hook"
-		config["content_type"] = "json"
+		cfg := make(map[string]interface{})
+		cfg["url"] = config.Get().URL + "/event/hook"
+		cfg["content_type"] = "json"
 
 		hook := github.Hook{
 			Name:   github.String("web"),
-			Config: config,
+			Config: cfg,
 			Events: []string{
 				opt.Hook,
 			},

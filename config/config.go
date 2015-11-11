@@ -8,27 +8,40 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/hfurubotten/autograder/global"
+	"sync"
 )
+
+// current holds the current configuration of the running system.
+// It is global state and can only be initialized once.
+var current struct {
+	*Configuration
+	sync.Once
+}
 
 // Configuration contains the necessary configuration data for the system.
 type Configuration struct {
-	Hostname    string `json:",omitempty"`
-	OAuthID     string `json:",omitempty"`
-	OAuthSecret string `json:",omitempty"`
-	BasePath    string `json:",omitempty"`
+	URL               string `json:",omitempty"`
+	OAuthClientID     string `json:",omitempty"`
+	OAuthClientSecret string `json:",omitempty"`
+	BasePath          string `json:",omitempty"`
+}
+
+// Get returns a copy of the current configuration.
+func Get() Configuration {
+	if current.Configuration == nil {
+		panic("current configuration has not been set")
+	}
+	return *current.Configuration
 }
 
 // NewConfig creates a new configuration object.
 func NewConfig(url, clientID, clientSecret, path string) (*Configuration, error) {
 	conf := &Configuration{
-		Hostname:    url,
-		OAuthID:     clientID,
-		OAuthSecret: clientSecret,
-		BasePath:    path,
+		URL:               url,
+		OAuthClientID:     clientID,
+		OAuthClientSecret: clientSecret,
+		BasePath:          path,
 	}
-	conf.quickFix()
 	if err := conf.validate(); err != nil {
 		return nil, err
 	}
@@ -46,47 +59,46 @@ func Load(path string) (*Configuration, error) {
 	if err != nil {
 		return nil, err
 	}
-	conf.quickFix()
 	if err := conf.validate(); err != nil {
 		return nil, err
 	}
 	return conf, nil
 }
 
-// ExportToGlobalVars will export the configuration ot the global variables.
-func (c *Configuration) ExportToGlobalVars() {
-	global.Hostname = c.Hostname
-	global.OAuthClientID = c.OAuthID
-	global.OAuthClientSecret = c.OAuthSecret
+// SetCurrent sets the current configuration. After this it cannot be set again.
+func (c *Configuration) SetCurrent() {
+	current.Do(func() {
+		current.Configuration = c
+	})
+	if current.Configuration != c {
+		panic("current configuration cannot be set again")
+	}
 }
 
 // validate does rudimentary checks on the configuration object's data.
 func (c *Configuration) validate() error {
-	if c.Hostname == "" {
+	// remove extra slash at end of URL and basepath.
+	c.URL = strings.TrimSuffix(c.URL, "/")
+	c.BasePath = strings.TrimSuffix(c.BasePath, "/")
+	if c.URL == "" {
 		return errors.New("homepage url is required")
 	}
-	if !strings.HasPrefix(c.Hostname, "http://") && !strings.HasPrefix(c.Hostname, "https://") {
+	if !strings.HasPrefix(c.URL, "http://") && !strings.HasPrefix(c.URL, "https://") {
 		return errors.New("homepage url is not a valid url")
 	}
-	if strings.Count(c.Hostname, "/") > 2 {
+	if strings.Count(c.URL, "/") > 2 {
 		return errors.New("homepage url cannot contain path elements")
 	}
-	if c.OAuthID == "" {
+	if c.OAuthClientID == "" {
 		return errors.New("clientID is required")
 	}
-	if c.OAuthSecret == "" {
+	if c.OAuthClientSecret == "" {
 		return errors.New("clientSecret is required")
 	}
 	if c.BasePath == "" {
 		return errors.New("basepath is required")
 	}
 	return nil
-}
-
-// quickFix removes extra slash at end of URL and basepath.
-func (c *Configuration) quickFix() {
-	c.Hostname = strings.TrimSuffix(c.Hostname, "/")
-	c.BasePath = strings.TrimSuffix(c.BasePath, "/")
 }
 
 // Save saves the configuration file in basepath.
@@ -106,9 +118,10 @@ func (c *Configuration) Save() error {
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(filepath.Join(c.BasePath, FileName), data, 0600)
+	confFile := filepath.Join(c.BasePath, FileName)
+	err = ioutil.WriteFile(confFile, data, 0600)
 	if err == nil {
-		log.Printf("Saved %s configuration file in: %s", SysName, c.BasePath)
+		log.Printf("Saved %s configuration file in: %s", SysName, confFile)
 	}
 	return err
 }

@@ -7,13 +7,18 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/hfurubotten/autograder/config"
 	git "github.com/hfurubotten/autograder/entities"
 	"github.com/hfurubotten/autograder/global"
 	"github.com/hfurubotten/autograder/web/pages"
 	"github.com/hfurubotten/autograder/web/sessions"
 )
 
-// sets up the github as the oauth provider. To get the variables and functions loaded into the standard that is used, use the init method. This will set this as soon as the package is loaded the first time. Replace or comment out the init method to use another oath provider.
+//TODO do this in the config start up procedure ?? These are github consts??
+// Sets up github as the OAuth provider.
+// To get the variables and functions loaded into the standard that is used,
+// use the init method. This will set this as soon as the package is loaded
+// the first time. Replace or comment out the init method to use another OAuth provider.
 func init() {
 	global.OAuthScope = "admin:org,repo,admin:repo_hook"
 	global.OAuthRedirectURL = "https://github.com/login/oauth/authorize"
@@ -23,8 +28,8 @@ func init() {
 
 func githubOauthHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
-		Clientid := global.OAuthClientID
-		clientsecret := global.OAuthClientSecret
+		clientID := config.Get().OAuthClientID
+		clientSecret := config.Get().OAuthClientSecret
 
 		getvalues := r.URL.Query()
 
@@ -37,7 +42,8 @@ func githubOauthHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		postdata := []byte("client_id=" + Clientid + "&client_secret=" + clientsecret + "&code=" + code)
+		postdata := []byte("client_id=" + clientID + "&client_secret=" + clientSecret + "&code=" + code)
+		//TODO github const?
 		requrl := "https://github.com/login/oauth/access_token"
 		req, err := http.NewRequest("POST", requrl, bytes.NewBuffer(postdata))
 		if err != nil {
@@ -50,7 +56,7 @@ func githubOauthHandler(w http.ResponseWriter, r *http.Request) {
 		client := &http.Client{}
 		resp, err := client.Do(req)
 		if err != nil {
-			log.Println("Echange error with github: ", err)
+			log.Println("Exchange error with github: ", err)
 			http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
 			return
 		}
