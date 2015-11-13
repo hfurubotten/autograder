@@ -2,18 +2,13 @@ package web
 
 import (
 	"errors"
-	//"io"
 	"log"
-	//"net"
 	"net/http"
-	//"os"
 	"strconv"
 	"strings"
 
 	"github.com/hfurubotten/autograder/auth"
-	"github.com/hfurubotten/autograder/config"
 	git "github.com/hfurubotten/autograder/entities"
-	"github.com/hfurubotten/autograder/global"
 	"github.com/hfurubotten/autograder/web/pages"
 	"github.com/hfurubotten/autograder/web/sessions"
 	"github.com/hfurubotten/autograder/web/staticfiles"
@@ -43,10 +38,9 @@ func NewServer(port int) Server {
 // Start will start up a new server listening on ws.Port. This
 // method blocks, and will call os.Exit(1) if server error occures.
 func (ws Server) Start() {
-
-	// OAuth process
-	http.Handle("/login", http.RedirectHandler(global.OAuthRedirectURL+"?client_id="+config.Get().OAuthClientID, http.StatusTemporaryRedirect))
-	http.HandleFunc("/oauth", global.OAuthHandler)
+	// OAuth handlers
+	http.Handle("/login", http.RedirectHandler(auth.OAuthRedirectURL(), http.StatusTemporaryRedirect))
+	http.HandleFunc("/oauth", auth.OAuthHandler)
 	http.HandleFunc(pages.SIGNOUT, auth.RemoveApprovalHandler)
 
 	// Page handlers
@@ -283,7 +277,7 @@ func checkTeacherApproval(w http.ResponseWriter, r *http.Request, redirect bool)
 	if member.Scope == "" && member.IsTeacher {
 		err = errors.New("Teacher need to renew scope.")
 		if redirect {
-			http.Redirect(w, r, global.OAuthRedirectURL+"?client_id="+config.Get().OAuthClientID+"&scope="+global.OAuthScope, http.StatusTemporaryRedirect)
+			http.Redirect(w, r, auth.OAuthScopeRedirectURL(), http.StatusTemporaryRedirect)
 		}
 		return
 	}

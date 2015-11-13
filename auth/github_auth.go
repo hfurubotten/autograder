@@ -8,46 +8,72 @@ import (
 	"net/url"
 
 	"github.com/hfurubotten/autograder/config"
-	git "github.com/hfurubotten/autograder/entities"
-	"github.com/hfurubotten/autograder/global"
+	"github.com/hfurubotten/autograder/entities"
 	"github.com/hfurubotten/autograder/web/pages"
 	"github.com/hfurubotten/autograder/web/sessions"
 )
 
-//TODO do this in the config start up procedure ?? These are github consts??
-// Sets up github as the OAuth provider.
-// To get the variables and functions loaded into the standard that is used,
-// use the init method. This will set this as soon as the package is loaded
-// the first time. Replace or comment out the init method to use another OAuth provider.
-func init() {
-	global.OAuthScope = "admin:org,repo,admin:repo_hook"
-	global.OAuthRedirectURL = "https://github.com/login/oauth/authorize"
+// Constants and methods for using GitHub as OAuth provider for Autograder.
 
-	global.OAuthHandler = githubOauthHandler
+const (
+	// tokenURL is used to fetch the access token for a user.
+	tokenURL = "https://github.com/login/oauth/access_token"
+	// oauthRedirectURL is used for redirecting users to the GitHub login page.
+	oauthRedirectURL = "https://github.com/login/oauth/authorize"
+	// oauthScope defines the scope necessary for teacher access to GitHub.
+	oauthScope = "admin:org,repo,admin:repo_hook"
+)
+
+// OAuthScopeRedirectURL returns a URL for redirecting to obtain a new scope.
+// This is used to authenticate as teacher.
+func OAuthScopeRedirectURL() string {
+	u, err := url.Parse(oauthRedirectURL)
+	if err != nil {
+		// the redirection URL must be a valid URL
+		panic(err)
+	}
+	values := u.Query()
+	values.Set("client_id", config.Get().OAuthClientID)
+	values.Set("scope", oauthScope)
+	u.RawQuery = values.Encode()
+	return u.String()
+	// return oauthRedirectURL + "?client_id=" + config.Get().OAuthClientID + "&scope=" + oauthScope
 }
 
-func githubOauthHandler(w http.ResponseWriter, r *http.Request) {
+// OAuthRedirectURL returns a URL for redirecting to login page.
+func OAuthRedirectURL() string {
+	u, err := url.Parse(oauthRedirectURL)
+	if err != nil {
+		// the redirection URL must be a valid URL
+		panic(err)
+	}
+	values := u.Query()
+	values.Set("client_id", config.Get().OAuthClientID)
+	u.RawQuery = values.Encode()
+	return u.String()
+	// return oauthRedirectURL+"?client_id="+config.Get().OAuthClientID
+}
+
+// OAuthHandler is the OAuth handler for the GitHub.
+func OAuthHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
-		clientID := config.Get().OAuthClientID
-		clientSecret := config.Get().OAuthClientSecret
-
-		getvalues := r.URL.Query()
-
-		code := getvalues.Get("code")
-		errstr := getvalues.Get("error")
-
+		getValues := r.URL.Query()
+		code := getValues.Get("code")
+		errstr := getValues.Get("error")
 		if len(errstr) > 0 {
-			log.Println("OAuth error: " + errstr)
+			log.Println("Failed to obtain temporary OAuth code: " + errstr)
 			http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
 			return
 		}
 
-		postdata := []byte("client_id=" + clientID + "&client_secret=" + clientSecret + "&code=" + code)
-		//TODO github const?
-		requrl := "https://github.com/login/oauth/access_token"
-		req, err := http.NewRequest("POST", requrl, bytes.NewBuffer(postdata))
+		postValues := url.Values{}
+		postValues.Set("client_id", config.Get().OAuthClientID)
+		postValues.Set("client_secret", config.Get().OAuthClientSecret)
+		postValues.Set("code", code)
+		s := postValues.Encode()
+		req, err := http.NewRequest("POST", tokenURL, bytes.NewBuffer([]byte(s)))
 		if err != nil {
-			log.Println("Exchange error with github: ", err)
+			log.Println("Failed to create POST request: ", err)
 			http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
 			return
 		}
@@ -56,59 +82,60 @@ func githubOauthHandler(w http.ResponseWriter, r *http.Request) {
 		client := &http.Client{}
 		resp, err := client.Do(req)
 		if err != nil {
-			log.Println("Exchange error with github: ", err)
+			log.Println("Failed to issue POST request: ", err)
 			http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
 			return
 		}
 
 		data, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			log.Println("Read error: ", err)
+			log.Println("Failed to read response body: ", err)
 			http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
 			return
 		}
 
 		q, err := url.ParseQuery(string(data))
 		if err != nil {
-			log.Println("Data error from github: ", err)
+			log.Println("Failed to parse query data: ", err)
 			http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
 			return
 		}
 
 		accessToken := q.Get(sessions.AccessTokenSessionKey)
 		errstr = q.Get("error")
-		approved := false
-
 		if len(errstr) > 0 {
-			log.Println("Access token error: " + errstr)
+			log.Println("Failed to obtain access token: " + errstr)
 			http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
 			return
 		}
 
-		approved = true
-
 		scope := q.Get("scope")
-
 		if scope != "" {
-			//TODO This should probably be LookupMember() (but in a Update() transaction, since we are updating the scope.)
-			m, err := git.NewMember(accessToken)
+			// TODO Consider if updating scope needs to be in a transaction using the Update() function.
+			m, err := entities.LookupMember(accessToken)
 			if err != nil {
-				log.Println("Could not open Member object:", err)
+				log.Printf("Failed to lookup member with access token (%s):\n%v", accessToken, err)
 				http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
 				return
 			}
+			log.Printf("Current scope (%s) for %s", m.Scope, m.Name)
 
 			m.Scope = scope
 			err = m.Save()
 			if err != nil {
-				m.Unlock()
+				log.Printf("Failed to update scope (%s) for %s:\n%v", scope, m.Name, err)
+			} else {
+				log.Printf("Successfully updated scope (%s) for %s", scope, m.Name)
 			}
 		}
 
-		sessions.SetSessions(w, r, sessions.AuthSession, sessions.ApprovedSessionKey, approved)
+		// mark this session as approved
+		sessions.SetSessions(w, r, sessions.AuthSession, sessions.ApprovedSessionKey, true)
+		// save the access token for this session
 		sessions.SetSessionsAndRedirect(w, r, sessions.AuthSession, sessions.AccessTokenSessionKey, accessToken, pages.HOMEPAGE)
 	} else {
-		//TODO Check and understand if this should be StatusTemporaryRedirect??
+		// was not a GET request method; redirect with a bad request status.
+		log.Println("Bad request: ", r)
 		http.Redirect(w, r, pages.FRONTPAGE, http.StatusBadRequest)
 	}
 }

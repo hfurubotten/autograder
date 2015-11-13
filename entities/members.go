@@ -40,7 +40,7 @@ func LookupMember(token string) (m *Member, err error) {
 	if err != nil {
 		return nil, err
 	}
-	m, err = GetMember(userName)
+	err = database.Get(MemberBucketName, userName, &m)
 	if err != nil {
 		return nil, err
 	}
