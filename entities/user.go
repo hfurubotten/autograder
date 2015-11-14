@@ -1,7 +1,6 @@
 package entities
 
 import (
-	"encoding/gob"
 	"net/mail"
 	"sync"
 	"time"
@@ -10,10 +9,6 @@ import (
 	"github.com/hfurubotten/autograder/game/levels"
 	"github.com/hfurubotten/autograder/game/trophies"
 )
-
-func init() {
-	gob.Register(UserProfile{})
-}
 
 type UserProfile struct {
 	lock     sync.RWMutex
@@ -51,6 +46,17 @@ func CreateUserProfile(userName string) (u *UserProfile, err error) {
 		MonthlyScore: make(map[time.Month]int64),
 	}
 	return u, nil
+}
+
+// NeUserProfile returns a new UserProfile populated with data from github.
+func NeUserProfile(token, user, scope string) *UserProfile {
+	return &UserProfile{
+		Username:     user,
+		Scope:        scope,
+		accessToken:  token,
+		WeeklyScore:  make(map[int]int64),
+		MonthlyScore: make(map[time.Month]int64),
+	}
 }
 
 // NewUserProfile returns a new UserProfile populated with data from github.

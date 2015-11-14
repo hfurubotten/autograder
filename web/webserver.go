@@ -248,7 +248,7 @@ func checkMemberApproval(w http.ResponseWriter, r *http.Request, redirect bool) 
 		if redirect {
 			http.Redirect(w, r, pages.REGISTER_REDIRECT, http.StatusTemporaryRedirect)
 		}
-		err = errors.New("Member got an uncomplete profile, redirecting.")
+		err = errors.New("Member with incomplete profile, redirecting.")
 		return
 	}
 

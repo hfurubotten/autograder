@@ -9,27 +9,53 @@ import (
 var testNewMemberInput = []struct {
 	token    string
 	username string
+	scope    string
 	studid   int
 }{
 	{
 		"123456789abcdef",
 		"user100",
+		"admin:org,repo,admin:repo_hook",
 		123456789,
 	},
 	{
 		"12345674489abcdef",
 		"user101",
+		"admin:org,repo,admin:repo_hook",
 		987654321,
 	},
 	{
 		"12345655789abcdef",
 		"user102",
+		"admin%3Aorg%2Crepo%2Cadmin%3Arepo_hook",
 		156789,
 	},
 }
 
 //TODO Fix other uses of NewMember to adhere to new API style.
 // See auth/github_auth.go and web/profile.go and web/webserver.go
+
+func TestNewMember(t *testing.T) {
+	for _, in := range testNewMemberInput {
+		u := NeUserProfile(in.token, in.username, in.scope)
+		m := NeMember(u)
+		err := PutMember(in.token, m)
+		if err != nil {
+			t.Errorf("Failed to create member with token (%s): %v", in.token, err)
+		}
+		if m.accessToken != in.token {
+			t.Errorf("Access token mismatch: %s, got: %s", in.token, m.accessToken)
+		}
+		if m.Username != in.username {
+			t.Errorf("Username mismatch: %v, got: %v", in.username, m.Username)
+		}
+		if m.Scope != in.scope {
+			t.Errorf("Scope mismatch: %v, got: %v", in.scope, m.Scope)
+		}
+		// clean up database
+		m.RemoveMember()
+	}
+}
 
 func TestNewMemberAlreadyInDatabase(t *testing.T) {
 	for _, in := range testNewMemberInput {
@@ -38,17 +64,14 @@ func TestNewMemberAlreadyInDatabase(t *testing.T) {
 			t.Errorf("Failed to store token for user (%s): %v", in.username, err)
 			continue
 		}
-		_, err := NewMember(in.token)
+		u := NeUserProfile(in.token, in.username, in.scope)
+		m := NeMember(u)
+		err := PutMember(in.token, m)
 		if err == nil {
-			t.Errorf("Failed to create member with token (%s): %v", in.token, err)
+			t.Errorf("Unexpected member creation with token (%s): %v", in.token, err)
 		}
-
-		// if m.accessToken != in.token {
-		// 	t.Errorf("Access token mismatch: %s, got: %s", in.token, m.accessToken)
-		// }
-		// if m.Username != in.username {
-		// 	t.Errorf("Username mismatch: %v, got: %v", in.username, m.Username)
-		// }
+		// clean up database
+		removeToken(in.token)
 	}
 }
 
@@ -171,7 +194,14 @@ func xTestLookupMember(t *testing.T) {
 func BenchmarkNewMember(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		for _, in := range testNewMemberInput {
-			NewMember(in.token)
+			removeToken(in.token)
+			u := NeUserProfile(in.token, in.username, in.scope)
+			m := NeMember(u)
+			err := PutMember(in.token, m)
+			if err != nil {
+				b.Error(err)
+				continue
+			}
 		}
 	}
 }
@@ -184,11 +214,14 @@ func BenchmarkLookupMember(b *testing.B) {
 	}
 }
 
-//TODO Clean up and reactivate
-func failingBenchmarkNewMemberAndSave(b *testing.B) {
+func BenchmarkLookupMemberAndSave(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		for _, in := range testNewMemberInput {
-			m, _ := NewMember(in.token)
+			m, err := LookupMember(in.token)
+			if err != nil {
+				b.Error(err)
+				continue
+			}
 			m.StudentID = in.studid
 			m.Save()
 		}

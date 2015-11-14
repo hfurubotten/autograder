@@ -9,7 +9,12 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	err := database.Start("/tmp/ag")
+	//TODO: redesign to delete in panic handler instead
+	err := os.RemoveAll("/tmp/ag")
+	if err != nil {
+		log.Println("Unable to remove database from file system: ", err)
+	}
+	err = database.Start("/tmp/ag")
 	if err != nil {
 		log.Println("Unable to start database:", err)
 		return
