@@ -43,13 +43,14 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m, err := git.NewMember(value.(string))
+	m, err := git.LookupMember(value.(string))
 	if err != nil {
 		log.Println(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	//TODO Move level calculation to user score object
 	// Level calculations
 	lvlPoint := levels.RequiredForLevel(m.Level - 1)
 	nextLvlPoint := levels.RequiredForLevel(m.Level)
@@ -101,7 +102,7 @@ func UpdateMemberHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		//TODO This should be replaced with a Update() transaction with GetMember() and Put()
-		member, err := git.NewMember(value.(string))
+		member, err := git.LookupMember(value.(string))
 		if err != nil {
 			log.Println(err.Error())
 			http.Error(w, err.Error(), http.StatusInternalServerError)

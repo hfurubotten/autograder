@@ -114,18 +114,32 @@ func OAuthHandler(w http.ResponseWriter, r *http.Request) {
 			// TODO Consider if updating scope needs to be in a transaction using the Update() function.
 			m, err := entities.LookupMember(accessToken)
 			if err != nil {
-				log.Printf("Failed to lookup member with access token (%s):\n%v", accessToken, err)
-				http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
-				return
+				// c, err := github.Connect(accessToken)
+				// if err != nil {
+				//
+				// }
+				// user, _, err = c.Users.Get("")
+				// if err != nil {
+				//
+				// }
+
+				m, err = entities.NewMember(accessToken)
+				if err != nil {
+					log.Printf("Failed to create member with token: %s\n%v", accessToken, err)
+					http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
+					return
+				}
+				log.Printf("Created new member %s", m.Name)
 			}
 			log.Printf("Current scope (%s) for %s", m.Scope, m.Name)
-
-			m.Scope = scope
-			err = m.Save()
-			if err != nil {
-				log.Printf("Failed to update scope (%s) for %s:\n%v", scope, m.Name, err)
-			} else {
-				log.Printf("Successfully updated scope (%s) for %s", scope, m.Name)
+			if m.Scope != scope {
+				m.Scope = scope
+				err = m.Save()
+				if err != nil {
+					log.Printf("Failed to update scope (%s) for %s:\n%v", scope, m.Name, err)
+				} else {
+					log.Printf("Successfully updated scope (%s) for %s", scope, m.Name)
+				}
 			}
 		}
 

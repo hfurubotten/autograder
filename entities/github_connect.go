@@ -51,26 +51,6 @@ func getGithubUser(client *github.Client) (user *github.User, err error) {
 	return
 }
 
-func (m *Member) loadDataFromGithub() (err error) {
-	if m.githubclient == nil {
-		return ErrNotConnected
-	}
-	// err = m.connectToGithub()
-	// if err != nil {
-	// 	return
-	// }
-
-	user, _, err := m.githubclient.Users.Get("")
-	if err != nil {
-		return
-	}
-	if user.Login != nil {
-		m.Username = *user.Login
-	}
-	m.ImportGithubData(user)
-	return
-}
-
 // ListOrgs returns a list github organizations that the user is member of.
 func (m *Member) ListOrgs() (ls []string, err error) {
 	if m.githubclient == nil {

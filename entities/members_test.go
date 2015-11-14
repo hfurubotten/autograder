@@ -64,6 +64,11 @@ func TestLookupMemberBasic(t *testing.T) {
 
 	mytoken := "mytoken"
 	userName := "jamesbond"
+	m, err = CreateMember(userName)
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+		return
+	}
 	if err = putToken(mytoken, userName); err != nil {
 		t.Errorf("Error storing token for '%s': %v", userName, err)
 	}

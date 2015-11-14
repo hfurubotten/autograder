@@ -184,8 +184,10 @@ var HomeURL = "/home"
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	member, err := checkMemberApproval(w, r, true)
 	if err != nil {
+		log.Println(err)
 		return
 	}
+	log.Printf("Found member: %v", member)
 
 	view := HomeView{
 		stdTemplate: stdTemplate{
@@ -237,8 +239,7 @@ func checkMemberApproval(w http.ResponseWriter, r *http.Request, redirect bool) 
 		return
 	}
 
-	//TODO This should probably be LookupMember()
-	member, err = git.NewMember(value.(string))
+	member, err = git.LookupMember(value.(string))
 	if err != nil {
 		return nil, err
 	}
