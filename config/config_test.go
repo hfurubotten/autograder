@@ -58,8 +58,8 @@ func TestNewConfig(t *testing.T) {
 
 func TestGetPanic(t *testing.T) {
 	defer func() {
-		if r := recover(); r != nil {
-			t.Logf("Recovered from panic: %v", r)
+		if r := recover(); r == nil {
+			t.Fatal("Failed to recover from panic")
 		}
 	}()
 	Get()
@@ -76,8 +76,8 @@ func TestSetCurrent(t *testing.T) {
 
 func TestSetCurrentPanic(t *testing.T) {
 	defer func() {
-		if r := recover(); r != nil {
-			t.Logf("Recovered from panic: %v", r)
+		if r := recover(); r == nil {
+			t.Fatal("Failed to recover from panic")
 		}
 	}()
 	for _, in := range testNewConfigInput {
@@ -85,13 +85,12 @@ func TestSetCurrentPanic(t *testing.T) {
 		// this will panic since it was already initialized in TestSetCurrent()
 		conf.SetCurrent()
 	}
-	t.Fatal("Expected panic on repeated setCurrent() invocations")
+	t.Fatal("Expected panic on repeated SetCurrent() invocations")
 }
 
 func TestGet(t *testing.T) {
 	// we can call Get() here because it was initialized above in TestSetCurrent()
 	want := Get()
-	t.Logf("want: %v", want)
 	for i := 0; i < 5; i++ {
 		got := Get()
 		if want != got {
@@ -99,7 +98,7 @@ func TestGet(t *testing.T) {
 		}
 	}
 	c := Get()
-	t.Logf("got: %v", c)
+	_ = c
 }
 
 var testNewConfigRemoveSuffixInput = []struct {
