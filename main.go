@@ -115,20 +115,18 @@ func main() {
 	}
 	defer database.Close()
 
-	// checks for an admin username
+	// check for new admin user
 	if *admin != "" {
-		log.Println("New admin added to the system: ", *admin)
 		m, err := entities.GetMember(*admin)
 		if err != nil {
 			log.Fatal(err)
 		}
-
 		m.IsAdmin = true
 		err = m.Save()
 		if err != nil {
-			m.Unlock()
-			log.Println("Couldn't store admin user in system:", err)
+			log.Fatalln("Failed to update admin user: ", err)
 		}
+		log.Printf("Admin user is now: %s\n", *admin)
 	}
 
 	// TODO: checks if the system should be set up as a deamon that starts on system startup.

@@ -1,7 +1,6 @@
 package entities
 
 import (
-	"encoding/gob"
 	"errors"
 	"fmt"
 	"log"
@@ -14,8 +13,6 @@ import (
 var MemberBucketName = "members"
 
 func init() {
-	gob.Register(Member{})
-
 	database.RegisterBucket(MemberBucketName)
 }
 
@@ -70,6 +67,30 @@ func CreateMember(userName string) (m *Member, err error) {
 		return nil, err
 	}
 	return m, nil
+}
+
+// NeMember creates a new member based on the provided OAuth token.
+func NeMember(u *UserProfile) (m *Member) {
+	return &Member{
+		UserProfile:      u,
+		Teaching:         make(map[string]interface{}),
+		Courses:          make(map[string]Course),
+		AssistantCourses: make(map[string]interface{}),
+	}
+}
+
+// PutMember saves the member in the database and associates the provided token
+// with the provided member.
+func PutMember(token string, m *Member) (err error) {
+	if hasToken(token) {
+		return errors.New("OAuth token already in database")
+	}
+	// record token -> Username mapping to allow reverse lookup
+	if err = putToken(token, m.Username); err != nil {
+		return err
+	}
+	// save member in database for future lookups
+	return database.Put(MemberBucketName, m.Username, m)
 }
 
 // NewMember creates a new member based on the provided OAuth token.

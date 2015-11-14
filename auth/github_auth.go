@@ -112,18 +112,18 @@ func OAuthHandler(w http.ResponseWriter, r *http.Request) {
 		scope := q.Get("scope")
 		if scope != "" {
 			// TODO Consider if updating scope needs to be in a transaction using the Update() function.
+			// check if access token is associated with existing member
 			m, err := entities.LookupMember(accessToken)
 			if err != nil {
-				// c, err := github.Connect(accessToken)
-				// if err != nil {
-				//
-				// }
-				// user, _, err = c.Users.Get("")
-				// if err != nil {
-				//
-				// }
-
-				m, err = entities.NewMember(accessToken)
+				// access token is not in the database; must be a new member
+				u, err := githubUserProfile(accessToken, scope)
+				if err != nil {
+					log.Printf("Failed to get user from GitHub: %v", err)
+					http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
+					return
+				}
+				m = entities.NeMember(u)
+				err = entities.PutMember(accessToken, m)
 				if err != nil {
 					log.Printf("Failed to create member with token: %s\n%v", accessToken, err)
 					http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
@@ -143,7 +143,7 @@ func OAuthHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		// mark this session as approved
+		// mark auth session as approved
 		sessions.SetSessions(w, r, sessions.AuthSession, sessions.ApprovedSessionKey, true)
 		// save the access token for this session
 		sessions.SetSessionsAndRedirect(w, r, sessions.AuthSession, sessions.AccessTokenSessionKey, accessToken, pages.HOMEPAGE)
