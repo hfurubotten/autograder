@@ -11,6 +11,6 @@
 //   go test -v -tags github
 // Or:
 //   go test -v -tags github -run TestRepo
-package entities
+package auth
 
 var mytoken = ""

@@ -34,7 +34,7 @@ type UserProfile struct {
 
 	// remote access
 	githubclient *github.Client
-	accessToken  string
+	accessToken  string // will not be stored in DB (since package private access)
 	Scope        string
 }
 

@@ -41,6 +41,8 @@ func LookupMember(token string) (m *Member, err error) {
 	if err != nil {
 		return nil, err
 	}
+	// access token is not stored in the database for security reasons
+	m.accessToken = token
 	return m, nil
 }
 

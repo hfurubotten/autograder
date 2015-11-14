@@ -1,4 +1,4 @@
-package entities
+package auth
 
 import (
 	"log"

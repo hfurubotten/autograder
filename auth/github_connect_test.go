@@ -11,11 +11,15 @@
 //   go test -v -tags github
 // Or:
 //   go test -v -tags github -run TestGetGithubMember
-package entities
+package auth
 
-import "testing"
+import (
+	"testing"
 
-func TestGetGithubMember(t *testing.T) {
+	"github.com/hfurubotten/autograder/entities"
+)
+
+func TestGetGitHubUser(t *testing.T) {
 	gc, err := connect(mytoken)
 	if err != nil {
 		t.Errorf("Could not connect github user %v", err)
@@ -25,37 +29,34 @@ func TestGetGithubMember(t *testing.T) {
 		t.Errorf("Could not get github user %v", err)
 	}
 	t.Logf("g: %v\nx: %v\n", gu, xu)
-
-	m, err := GetMember(*gu.Login)
-	if err != nil {
-		t.Errorf("Could not create member: %v", err)
-	}
-	if m.Username != *gu.Login {
-		t.Errorf("expected: %s, but got: %s", *gu.Login, m.Username)
-	}
 }
 
 func TestLookupAndNewMember(t *testing.T) {
-	m, err := LookupMember(mytoken)
+	m, err := entities.LookupMember(mytoken)
 	if err == nil || m != nil {
 		t.Errorf("Expected error, but found member: %v", m)
 	}
-	m, err = NewMember(mytoken)
+
+	scope := "admin:org,repo,admin:repo_hook"
+	u, err := githubUserProfile(mytoken, scope)
+	if err != nil {
+		t.Errorf("Failed to get user from GitHub: %v", err)
+	}
+
+	m = entities.NeMember(u)
+	err = entities.PutMember(mytoken, m)
 	if err != nil || m == nil {
 		t.Errorf("Expected member, but got error: %v", err)
 	}
-	if m.accessToken != mytoken {
-		t.Errorf("Expected member with access token: %s, but got: %s", mytoken, m.accessToken)
-	}
 
-	// we should already be connected by previous call to connect() from NewMember
-	gu, err := getGithubUser(m.githubclient)
+	m, err = entities.LookupMember(mytoken)
 	if err != nil {
-		t.Errorf("Expected github user, but got error: %v", err)
+		t.Errorf("Expected member with access token: %s, but got: %s", mytoken, err)
 	}
-	if m.Username != *gu.Login {
-		t.Errorf("Expected member with Username: %s, but got: %s", m.Username, *gu.Login)
+	if m.GetToken() != mytoken {
+		t.Errorf("Expected token: %s, but got: %s", mytoken, m.GetToken())
 	}
+	t.Logf("m: %v\n", m)
 
 	// remove member inserted into database; it won't be needed in other tests
 	err = m.RemoveMember()
