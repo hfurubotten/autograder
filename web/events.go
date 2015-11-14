@@ -67,7 +67,13 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		user, _ := git.GetMemberX(payload.Comment.User)
+		user, err := git.GetMember(*payload.Comment.User.Login)
+		if err != nil {
+			log.Println("Error in member lookup: ", err)
+			body = "Unknown GitHub User"
+			statusCode = http.StatusInternalServerError
+			break
+		}
 		org, _ := git.NewOrganizationWithGithubData(payload.Organization, true)
 
 		if org.IsTeacher(user) {
@@ -99,7 +105,13 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		user, _ := git.GetMemberX(payload.Sender)
+		user, err := git.GetMember(*payload.Sender.Login)
+		if err != nil {
+			log.Println("Error in member lookup: ", err)
+			body = "Unknown GitHub User"
+			statusCode = http.StatusInternalServerError
+			break
+		}
 		org, _ := git.NewOrganizationWithGithubData(payload.Organization, true)
 
 		p, ta, err := findIssuesPointsAndTrophyAction(payload)
@@ -166,7 +178,13 @@ func WebhookEventHandler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		user, _ := git.GetMemberX(payload.Comment.User)
+		user, err := git.GetMember(*payload.Comment.User.Login)
+		if err != nil {
+			log.Println("Error in member lookup: ", err)
+			body = "Unknown GitHub User"
+			statusCode = http.StatusInternalServerError
+			break
+		}
 		org, _ := git.NewOrganizationWithGithubData(payload.Organization, true)
 
 		if org.IsTeacher(user) {

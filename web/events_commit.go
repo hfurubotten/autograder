@@ -24,8 +24,8 @@ func handleCommitComment(b []byte) (body string, statusCode int) {
 
 	user, err := entities.GetMember(*payload.Comment.User.Login)
 	if err != nil {
-		log.Println("error looking up member: ", err)
-		body = "unknown member?"
+		log.Println("Error in member lookup: ", err)
+		body = "Unknown GitHub User"
 		statusCode = http.StatusInternalServerError
 		return
 	}

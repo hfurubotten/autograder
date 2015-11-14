@@ -14,23 +14,6 @@ var (
 	ErrNotConnected = errors.New("member object not connected to github")
 )
 
-// NewUserWithGithubData creates a new User object from a github User object.
-// It will copy all information from the given GitHub data to the new User object.
-//TODO Remove this method; replace with GetMember().
-func GetMemberX(gu *github.User) (u *Member, err error) {
-	if gu == nil {
-		return nil, errors.New("github user object is required")
-	}
-	u, err = GetMember(*gu.Login)
-	if err != nil {
-		return nil, err
-	}
-
-	u.ImportGithubData(gu)
-
-	return
-}
-
 func connect(token string) (*github.Client, error) {
 	if token == "" {
 		return nil, ErrNoAccessToken
