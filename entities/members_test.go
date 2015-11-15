@@ -124,17 +124,19 @@ func TestLookupMemberBasic(t *testing.T) {
 	}
 }
 
-//TODO Clean up and reactivate
-func xTestLookupMember(t *testing.T) {
+func TestLookupMember(t *testing.T) {
 	for _, in := range testNewMemberInput {
-		if err := putToken(in.token, in.username); err != nil {
-			t.Error("Error storing tokens with username:", err)
+		u := NewUserProfile(in.token, in.username, in.scope)
+		m := NewMember(u)
+		err := PutMember(in.token, m)
+		if err != nil {
+			t.Error("Error storing new member: ", err)
 			continue
 		}
 
-		m, err := LookupMember(in.token)
+		m, err = LookupMember(in.token)
 		if err != nil {
-			t.Error("Error creating new member:", err)
+			t.Error("Error looking up member using token: ", err)
 			continue
 		}
 		if m.Username != in.username {
