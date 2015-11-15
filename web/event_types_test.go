@@ -1,7 +1,6 @@
 package web
 
 import (
-	"fmt"
 	"net/http"
 	"testing"
 )
@@ -30,7 +29,6 @@ func TestGetEventType(t *testing.T) {
 	for _, v := range values {
 		req.Header["X-Github-Event"] = []string{v.inType}
 		eventType := GetPayloadType(req)
-		fmt.Println(eventType)
 		if eventType != v.outType {
 			t.Errorf("Expected event type %d, got %d", v.outType, eventType)
 		}

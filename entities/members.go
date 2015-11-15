@@ -3,7 +3,6 @@ package entities
 import (
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"time"
 
@@ -112,28 +111,13 @@ func NueMember(token string) (m *Member, err error) {
 	return
 }
 
-// GetMember returns the member associated with the given userName. If member
-// is not in the database, a new member object will be created and stored in
-// the database.
+// GetMember returns the member associated with the given userName.
 func GetMember(userName string) (m *Member, err error) {
-	//TODO we need to take a lock on the member bucket for this function, to avoid that the multiple versions of the same user is created at the same time.
 	err = database.Get(MemberBucketName, userName, &m)
-	if err == nil {
-		// userName found in database; return early
-		return m, nil
-	}
-	if err == io.EOF {
-		log.Printf("user not found: %s -- %v (m: %v)", userName, err, m)
-		// panic("EOF")
-	}
-
-	// userName not found in database; create new member object (and store in DB)
-	m, err = CreateMember(userName)
 	if err != nil {
-		log.Printf("failed to create user: %s -- %v", userName, err)
 		return nil, err
 	}
-	log.Printf("user created: %s", userName)
+	// userName found in database
 	return m, nil
 }
 

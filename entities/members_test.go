@@ -523,28 +523,34 @@ var testAddMemberBuildResultInput = []struct {
 
 func TestAddAndGetMemberBuildResult(t *testing.T) {
 	for _, in := range testAddMemberBuildResultInput {
+		_, err := CreateMember(in.username)
+		if err != nil {
+			t.Error(err)
+			continue
+		}
+	}
+
+	for _, in := range testAddMemberBuildResultInput {
 		user, err := GetMember(in.username)
 		if err != nil {
 			t.Error(err)
 			continue
 		}
-
 		org, err := NewOrganization(in.course, true)
 		if err != nil {
 			t.Error(err)
+			continue
 		}
-
 		user.AddOrganization(org)
 
 		for labnum, buildids := range in.builds {
 			if user.GetLastBuildID(in.course, labnum) > 0 {
 				t.Error("Found a build id before adding one")
+				continue
 			}
-
 			for _, buildid := range buildids {
 				user.AddBuildResult(in.course, labnum, buildid)
 			}
-
 			if _, ok := user.Courses[in.course]; !ok {
 				t.Error("Missing course struct in user")
 				continue
@@ -555,15 +561,14 @@ func TestAddAndGetMemberBuildResult(t *testing.T) {
 				t.Errorf("The number of build IDs in group does not match number added. %d != %d",
 					len(c.Assignments[labnum].Builds),
 					len(buildids))
+				continue
 			}
-
 			if user.GetLastBuildID(in.course, labnum) != buildids[len(buildids)-1] {
 				t.Errorf("Build ID does not match last one added in GetLastBuildID. %d != %d",
 					user.GetLastBuildID(in.course, labnum),
 					buildids[len(buildids)-1])
 			}
 		}
-
 	}
 }
 
@@ -632,28 +637,33 @@ var testAddAndGetMemberNotesInput = []struct {
 
 func TestAddAndGetMemberNotes(t *testing.T) {
 	for _, in := range testAddAndGetMemberNotesInput {
+		_, err := CreateMember(in.username)
+		if err != nil {
+			t.Error(err)
+			continue
+		}
+	}
+	for _, in := range testAddAndGetMemberNotesInput {
 		user, err := GetMember(in.username)
 		if err != nil {
 			t.Error(err)
 			continue
 		}
-
 		org, err := NewOrganization(in.course, true)
 		if err != nil {
 			t.Error(err)
+			continue
 		}
-
 		user.AddOrganization(org)
 
 		for labnum, notes := range in.notes {
 			if user.GetNotes(in.course, labnum) != "" {
 				t.Error("Found a note before adding one")
+				continue
 			}
-
 			for _, note := range notes {
 				user.AddNotes(in.course, labnum, note)
 			}
-
 			if user.GetNotes(in.course, labnum) != notes[len(notes)-1] {
 				t.Errorf("Build ID does not match last one added in GetLastBuildID. %s != %s",
 					user.GetNotes(in.course, labnum),
@@ -695,16 +705,20 @@ var testMemberSetApprovedBuildInput = []struct {
 
 func TestMemberSetApprovedBuild(t *testing.T) {
 	for _, in := range testMemberSetApprovedBuildInput {
+		_, err := CreateMember(in.User)
+		if err != nil {
+			t.Error(err)
+			continue
+		}
+	}
+	for _, in := range testMemberSetApprovedBuildInput {
 		user, err := GetMember(in.User)
 		if err != nil {
 			t.Error(err)
 			continue
 		}
-
 		user.Courses[in.Course] = NewCourse(in.Course)
-
 		user.SetApprovedBuild(in.Course, in.Labnum, in.BuildID, in.Date)
-
 		opt := user.Courses[in.Course]
 
 		if opt.Assignments[in.Labnum].ApproveDate != in.Date {
@@ -712,8 +726,8 @@ func TestMemberSetApprovedBuild(t *testing.T) {
 				in.Date,
 				opt.Assignments[in.Labnum].ApproveDate,
 				in.User)
+			continue
 		}
-
 		if opt.Assignments[in.Labnum].ApprovedBuild != in.BuildID {
 			t.Errorf("Approved date not set correctly. want %d, got %d for user %s",
 				in.BuildID,
