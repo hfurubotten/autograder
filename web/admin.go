@@ -46,9 +46,10 @@ var SetAdminURL = "/admin/user"
 func SetAdminHandler(w http.ResponseWriter, r *http.Request) {
 	enc := json.NewEncoder(w)
 
+	// TODO: this returns the Member object; why do GetMember() below?
 	_, err := checkAdminApproval(w, r, false)
 	if err != nil {
-		log.Println("Unautorized request of admin page.")
+		log.Println("Unauthorized request for admin page.")
 		err = enc.Encode(ErrNotAdmin)
 		return
 	}
@@ -61,7 +62,9 @@ func SetAdminHandler(w http.ResponseWriter, r *http.Request) {
 
 	m, err := git.GetMember(r.FormValue("user"))
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Println("Member not found: ", err)
+		err = enc.Encode(ErrUnknownMember)
+		return
 	}
 
 	m.IsAdmin, err = strconv.ParseBool(r.FormValue("admin"))
@@ -101,9 +104,10 @@ var SetTeacherURL = "/admin/teacher"
 func SetTeacherHandler(w http.ResponseWriter, r *http.Request) {
 	enc := json.NewEncoder(w)
 
+	// TODO: this returns the Member object; why do GetMember() below?
 	_, err := checkAdminApproval(w, r, false)
 	if err != nil {
-		log.Println("Unautorized request of admin page.")
+		log.Println("Unauthorized request for admin page.")
 		err = enc.Encode(ErrNotAdmin)
 		return
 	}
@@ -116,8 +120,8 @@ func SetTeacherHandler(w http.ResponseWriter, r *http.Request) {
 
 	m, err := git.GetMember(r.FormValue("user"))
 	if err != nil {
-		log.Println("Unautorized request of admin page.") // TODO replace this with more appropiate msg.
-		err = enc.Encode(ErrNotAdmin)                     // TODO replace this with more appropiate msg.
+		log.Println("Member not found: ", err)
+		err = enc.Encode(ErrUnknownMember)
 		return
 	}
 

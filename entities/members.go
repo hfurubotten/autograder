@@ -144,7 +144,11 @@ func (m *Member) RemoveMember() (err error) {
 	if err != nil {
 		return err
 	}
-	return removeToken(m.accessToken)
+	if hasToken(m.accessToken) {
+		return removeToken(m.accessToken)
+	}
+	// if we get here, the member didn't have a token.
+	return nil
 }
 
 // Update database under a lock regime to ensure safety.

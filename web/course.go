@@ -497,6 +497,7 @@ func ApproveCourseMembershipHandler(w http.ResponseWriter, r *http.Request) {
 	view.Error = true // default is an error; if its not we anyway set it to false before encoding
 
 	// Checks if the user is signed in and a teacher.
+	// TODO: this returns the Member object; why do GetMember() below?
 	/*member*/ _, err := checkTeacherApproval(w, r, false)
 	if err != nil {
 		log.Println(err)
@@ -909,6 +910,7 @@ var RemoveUserURL = "/course/removemember"
 // RemoveUserHandler is http handler used to remove users from the list of students on a course.
 func RemoveUserHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
+	// TODO: this returns the Member object; why do GetMember() below?
 	member, err := checkTeacherApproval(w, r, true)
 	if err != nil {
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)

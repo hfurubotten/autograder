@@ -129,6 +129,7 @@ func NewGroupHandler(w http.ResponseWriter, r *http.Request) {
 	for _, username := range members {
 		user, err := git.GetMember(username)
 		if err != nil {
+			log.Println(err)
 			continue
 		}
 

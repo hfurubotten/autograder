@@ -20,14 +20,24 @@ var distributeScoresTest = []struct {
 func TestDistributeScores(t *testing.T) {
 	org, err := git.NewOrganizationX("testorg")
 	if err != nil {
-		t.Error("Failed to open new org:", err)
+		t.Error(err)
 		return
+	}
+
+	for _, dst := range distributeScoresTest {
+		if !git.HasMember(dst.inUser) {
+			_, err := git.CreateMember(dst.inUser)
+			if err != nil {
+				t.Error(err)
+				continue
+			}
+		}
 	}
 
 	for _, dst := range distributeScoresTest {
 		user, err := git.GetMember(dst.inUser)
 		if err != nil {
-			t.Error("Failed to get user from database: ", err)
+			t.Error(err)
 			continue
 		}
 
@@ -36,7 +46,6 @@ func TestDistributeScores(t *testing.T) {
 			t.Error(err)
 			continue
 		}
-
 		if user.TotalScore != dst.wantScore {
 			t.Errorf("Want score %d for %s, but got %d.", dst.wantScore, dst.inUser, user.TotalScore)
 		}
@@ -47,12 +56,8 @@ func TestDistributeScores(t *testing.T) {
 }
 
 func TestNilScore(t *testing.T) {
-	// checks panic on nil user value
-	defer PanicHandler(false)
-	DistributeScores(0, nil, nil)
-}
-
-func TestPanicHandler(t *testing.T) {
-	defer PanicHandler(false)
-	panic("This is the test. Fails if this panic goes through...")
+	err := DistributeScores(0, nil, nil)
+	if err == nil {
+		t.Error("Expected error due to nil input")
+	}
 }

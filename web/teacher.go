@@ -66,6 +66,7 @@ func TeachersPanelHandler(w http.ResponseWriter, r *http.Request) {
 	var status string
 	for username := range users {
 		// check status up against Github
+		//TODO Check for errors from GetMember()
 		users[username], err = git.GetMember(username)
 		if err != nil {
 			continue

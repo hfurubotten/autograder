@@ -26,7 +26,7 @@ var (
 	ErrUnknownMember = &JSONErrorMsg{true, "Unknown student."}
 
 	// ErrNotAdmin is a standard JSON error reply when a user is not a admin.
-	ErrNotAdmin = &JSONErrorMsg{true, "You don't have administrator privileges. If you are an administrator, try to sign in again."}
+	ErrNotAdmin = &JSONErrorMsg{true, "You don't have administrator privileges."}
 
 	// ErrNotTeacher is a standard JSON error reply when a user is not a teacher.
 	ErrNotTeacher = &JSONErrorMsg{true, "You are not a teacher for this course."}
