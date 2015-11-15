@@ -119,7 +119,10 @@ func main() {
 	if *admin != "" {
 		m, err := entities.GetMember(*admin)
 		if err != nil {
-			log.Fatal(err)
+			m, err = entities.CreateMember(*admin)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 		m.IsAdmin = true
 		err = m.Save()
