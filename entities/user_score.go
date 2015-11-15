@@ -15,7 +15,7 @@ func init() {
 
 // UserScore keep track of the scores for a user.
 type UserScore struct {
-	lock *sync.RWMutex
+	*sync.RWMutex
 
 	TotalScore   int64
 	WeeklyScore  map[int]int64
@@ -25,26 +25,18 @@ type UserScore struct {
 }
 
 // NewUserScore returns a new user score object.
-func NewUserScore() (uc *UserScore) {
-	uc = &UserScore{
-		lock:         &sync.RWMutex{},
+func NewUserScore() *UserScore {
+	return &UserScore{
+		RWMutex:      &sync.RWMutex{},
 		WeeklyScore:  make(map[int]int64),
 		MonthlyScore: make(map[time.Month]int64),
 	}
-
-	// if uc.WeeklyScore == nil {
-	// 	uc.WeeklyScore = make(map[int]int64)
-	// }
-	// if uc.MonthlyScore == nil {
-	// 	uc.MonthlyScore = make(map[time.Month]int64)
-	// }
-	return
 }
 
 // IncScoreBy increases the total score with given amount.
 func (u *UserScore) IncScoreBy(score int) {
-	u.lock.Lock()
-	defer u.lock.Unlock()
+	u.Lock()
+	defer u.Unlock()
 	u.TotalScore += int64(score)
 	u.Level = levels.FindLevel(u.TotalScore) // How to tackle level up notification?
 
@@ -59,8 +51,8 @@ func (u *UserScore) IncScoreBy(score int) {
 
 // DecScoreBy descreases the total score with given amount.
 func (u *UserScore) DecScoreBy(score int) {
-	u.lock.Lock()
-	defer u.lock.Unlock()
+	u.Lock()
+	defer u.Unlock()
 	if u.TotalScore-int64(score) > 0 {
 		u.TotalScore -= int64(score)
 	} else {
@@ -80,15 +72,15 @@ func (u *UserScore) DecScoreBy(score int) {
 
 // IncLevel increases the level with one.
 func (u *UserScore) IncLevel() {
-	u.lock.Lock()
-	defer u.lock.Unlock()
+	u.Lock()
+	defer u.Unlock()
 	u.Level++
 }
 
 // DecLevel decreases the level with one until it equals zero.
 func (u *UserScore) DecLevel() {
-	u.lock.Lock()
-	defer u.lock.Unlock()
+	u.Lock()
+	defer u.Unlock()
 	if u.Level > 0 {
 		u.Level--
 	}
