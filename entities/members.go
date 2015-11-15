@@ -53,12 +53,8 @@ func CreateMember(userName string) (m *Member, err error) {
 	if HasMember(userName) {
 		return nil, errors.New("user already in database: " + userName)
 	}
-	u, err := CreateUserProfile(userName)
-	if err != nil {
-		return nil, err
-	}
+	u := CreateUserProfile(userName)
 	m = NewMember(u)
-
 	// save newly created member for future lookups
 	err = database.Put(MemberBucketName, m.Username, m)
 	if err != nil {

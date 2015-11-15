@@ -190,25 +190,21 @@ var testActivate = []struct {
 func TestActivate(t *testing.T) {
 	for _, tcase := range testActivate {
 		for username := range tcase.want.Members {
-			u, err := GetMember(username)
+			u, err := CreateMember(username)
 			if err != nil {
-				t.Errorf("Error getting user: %v", err)
+				t.Errorf("Error creating member: %v", err)
 				continue
 			}
-
 			org, err := NewOrganization(tcase.want.Course, true)
 			if err != nil {
 				t.Errorf("Error creating org: %v", err)
 				continue
 			}
-
 			u.AddOrganization(org)
 			u.Save()
 			testListAllMembersInput = append(testListAllMembersInput, username)
 		}
-
 		tcase.in.Activate()
-
 		compareGroups(tcase.in, tcase.want, t)
 
 		for username := range tcase.want.Members {
@@ -217,11 +213,9 @@ func TestActivate(t *testing.T) {
 				t.Errorf("Error getting user: %v", err)
 				continue
 			}
-
 			if u.Courses[tcase.want.Course].GroupNum != tcase.want.ID {
 				t.Errorf("User not updated with correct group ID. Got %d, want %d.", u.Courses[tcase.want.Course].GroupNum, tcase.want.ID)
 			}
-
 			if !u.Courses[tcase.want.Course].IsGroupMember {
 				t.Errorf("User not updated with group membership. Got %t for IsGroupMember field, want true.", u.Courses[tcase.want.Course].IsGroupMember)
 			}
@@ -311,7 +305,6 @@ func TestAddMember(t *testing.T) {
 		for _, username := range tcase.inUsers {
 			tcase.in.AddMember(username)
 		}
-
 		compareGroups(tcase.in, tcase.want, t)
 	}
 }
@@ -362,18 +355,16 @@ var testSaveHasAndDelete = []struct {
 func TestSaveHasAndDelete(t *testing.T) {
 	for _, tcase := range testSaveHasAndDelete {
 		for username := range tcase.in.Members {
-			u, err := GetMember(username)
+			u, err := CreateMember(username)
 			if err != nil {
-				t.Errorf("Error getting user: %v", err)
+				t.Errorf("Error creating member: %v", err)
 				continue
 			}
-
 			org, err := NewOrganization(tcase.in.Course, true)
 			if err != nil {
 				t.Errorf("Error creating org: %v", err)
 				continue
 			}
-
 			u.AddOrganization(org)
 			u.Save()
 			testListAllMembersInput = append(testListAllMembersInput, username)
@@ -651,16 +642,13 @@ func TestGroupSetApprovedBuild(t *testing.T) {
 			t.Error(err)
 			continue
 		}
-
 		group.SetApprovedBuild(in.Labnum, in.BuildID, in.Date)
-
 		if group.Assignments[in.Labnum].ApproveDate != in.Date {
 			t.Errorf("Approved date not set correctly. want %s, got %s for user %d",
 				in.Date,
 				group.Assignments[in.Labnum].ApproveDate,
 				in.Group)
 		}
-
 		if group.Assignments[in.Labnum].ApprovedBuild != in.BuildID {
 			t.Errorf("Approved date not set correctly. want %d, got %d for user %d",
 				in.BuildID,
@@ -672,52 +660,39 @@ func TestGroupSetApprovedBuild(t *testing.T) {
 
 func compareGroups(in, want *Group, t *testing.T) {
 	if in.Active != want.Active {
-		t.Errorf("Error while comparing groups: got %t for active field value, want %t", in.Active, want.Active)
+		t.Errorf("Active field; got %t, want %t", in.Active, want.Active)
 	}
-
 	if in.Course != want.Course {
-		t.Errorf("Error while comparing groups: got %s for active field value, want %s", in.Course, want.Course)
+		t.Errorf("Course field; got %s, want %s", in.Course, want.Course)
 	}
-
 	if in.CurrentLabNum != want.CurrentLabNum {
-		t.Errorf("Error while comparing groups: got %d for active field value, want %d", in.CurrentLabNum, want.CurrentLabNum)
+		t.Errorf("CurrentLabNum field; got %d, want %d", in.CurrentLabNum, want.CurrentLabNum)
 	}
-
 	if in.ID != want.ID {
-		t.Errorf("Error while comparing groups: got %d for active field value, want %d", in.ID, want.ID)
+		t.Errorf("ID field; got %d, want %d", in.ID, want.ID)
 	}
-
 	if in.TeamID != want.TeamID {
-		t.Errorf("Error while comparing groups: got %d for active field value, want %d", in.TeamID, want.TeamID)
+		t.Errorf("TeamID field; got %d, want %d", in.TeamID, want.TeamID)
 	}
-
 	if in.Members == nil || want.Members == nil {
-		t.Error("store field cannot be nil.")
-	}
-
-	if in.Members == nil || want.Members == nil {
-		t.Error("Members field cannot be nil.")
+		t.Error("Members field cannot be nil")
 		return
 	}
-
 	for username := range in.Members {
 		if _, ok := want.Members[username]; !ok {
-			t.Errorf("Unwanted member %s in member list.", username)
+			t.Errorf("Unwanted member %s in member list", username)
 		}
 	}
-
 	for username := range want.Members {
 		if _, ok := in.Members[username]; !ok {
-			t.Errorf("Missing member %s in member list.", username)
+			t.Errorf("Missing member %s in member list", username)
 		}
 	}
-
 	if in.Assignments == nil || want.Assignments == nil {
-		t.Error("Assignments field cannot be nil.")
+		t.Error("Assignments field cannot be nil")
 		return
 	}
-
 	if len(in.Assignments) != len(want.Assignments) {
-		t.Errorf("Not enough assignments in the group, got length %d, want %d", len(in.Assignments), len(want.Assignments))
+		t.Errorf("Missing assignments in the group, got %d, want %d", len(in.Assignments), len(want.Assignments))
 	}
 }

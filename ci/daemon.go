@@ -77,6 +77,7 @@ func StartTesterDaemon(opt DaemonOptions) {
 
 	// Build for group assignment. Stores build ID in group.
 	if opt.Group > 0 {
+		//TODO move to groups.go
 		group, err := git.NewGroup(opt.Org, opt.Group, false)
 		if err != nil {
 			log.Println(err)
@@ -104,6 +105,7 @@ func StartTesterDaemon(opt DaemonOptions) {
 		}
 		// build for single user. Stores build ID to user.
 	} else {
+		//TODO move to members.go
 		user, err := git.GetMember(opt.User)
 		if err != nil {
 			log.Println(err)

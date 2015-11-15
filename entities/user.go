@@ -41,13 +41,12 @@ type UserProfile struct {
 }
 
 // CreateUserProfile returns a new UserProfile populated with data from github.
-func CreateUserProfile(userName string) (u *UserProfile, err error) {
-	u = &UserProfile{
+func CreateUserProfile(userName string) *UserProfile {
+	return &UserProfile{
 		Username:     userName,
 		WeeklyScore:  make(map[int]int64),
 		MonthlyScore: make(map[time.Month]int64),
 	}
-	return u, nil
 }
 
 // NewUserProfile returns a new UserProfile.

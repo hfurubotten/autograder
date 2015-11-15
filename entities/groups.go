@@ -127,6 +127,7 @@ func (g *Group) Activate() {
 	for username := range g.Members {
 		user, err := GetMember(username)
 		if err != nil {
+			log.Println(err)
 			continue
 		}
 
