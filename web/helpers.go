@@ -18,7 +18,6 @@ import (
 func DistributeScores(score int, user points.SingleScorer, org points.MultiScorer) (err error) {
 	if user == nil {
 		return errors.New("user cannot be nil")
-		// panic("User parament cannot be nil when distributing scores.")
 	}
 
 	usaver, issaver := user.(entities.Saver)

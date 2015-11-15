@@ -122,7 +122,7 @@ func OAuthHandler(w http.ResponseWriter, r *http.Request) {
 					http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
 					return
 				}
-				m = entities.NeMember(u)
+				m = entities.NewMember(u)
 				err = entities.PutMember(accessToken, m)
 				if err != nil {
 					log.Printf("Failed to create member with token: %s\n%v", accessToken, err)

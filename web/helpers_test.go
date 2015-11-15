@@ -34,12 +34,12 @@ func TestDistributeScores(t *testing.T) {
 		err = DistributeScores(dst.inScore, user, org)
 		if err != nil {
 			t.Error(err)
+			continue
 		}
 
 		if user.TotalScore != dst.wantScore {
 			t.Errorf("Want score %d for %s, but got %d.", dst.wantScore, dst.inUser, user.TotalScore)
 		}
-
 		if org.GetUserScore(dst.inUser) != dst.wantScore {
 			t.Errorf("Want score %d for %s in testorg, but got %d.", dst.wantScore, dst.inUser, org.GetUserScore(dst.inUser))
 		}

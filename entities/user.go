@@ -10,6 +10,8 @@ import (
 	"github.com/hfurubotten/autograder/game/trophies"
 )
 
+// UserProfile contains information about a user. Often this information will
+// be gleaned from external sources such as GitHub.
 type UserProfile struct {
 	lock     sync.RWMutex
 	mainlock sync.Mutex
@@ -48,8 +50,8 @@ func CreateUserProfile(userName string) (u *UserProfile, err error) {
 	return u, nil
 }
 
-// NeUserProfile returns a new UserProfile populated with data from github.
-func NeUserProfile(token, user, scope string) *UserProfile {
+// NewUserProfile returns a new UserProfile.
+func NewUserProfile(token, user, scope string) *UserProfile {
 	return &UserProfile{
 		Username:     user,
 		Scope:        scope,
@@ -57,30 +59,6 @@ func NeUserProfile(token, user, scope string) *UserProfile {
 		WeeklyScore:  make(map[int]int64),
 		MonthlyScore: make(map[time.Month]int64),
 	}
-}
-
-// NewUserProfile returns a new UserProfile populated with data from github.
-func NewUserProfile(token string) (u *UserProfile, err error) {
-	u = &UserProfile{
-		accessToken:  token,
-		WeeklyScore:  make(map[int]int64),
-		MonthlyScore: make(map[time.Month]int64),
-	}
-
-	client, err := connect(token)
-	if err != nil {
-		return nil, err
-	}
-	u.githubclient = client
-
-	gu, err := getGithubUser(client)
-	if err != nil {
-		return nil, err
-	}
-	u.Username = *gu.Login
-	u.ImportGithubData(gu)
-
-	return u, nil
 }
 
 func (u *UserProfile) hasAccessToken() bool {
@@ -173,33 +151,6 @@ func (u *UserProfile) Deactivate() {
 // to thepublic to search through.
 func (u *UserProfile) SetPublicProfile(public bool) {
 	u.PublicProfile = public
-}
-
-// ImportGithubData imports data from the given github
-// data object and stores it in the given User object.
-func (u *UserProfile) ImportGithubData(gu *github.User) {
-	if gu == nil {
-		return
-	}
-
-	if gu.Name != nil {
-		u.Name = *gu.Name
-	}
-	if gu.AvatarURL != nil {
-		u.AvatarURL = *gu.AvatarURL
-	}
-	if gu.HTMLURL != nil {
-		u.ProfileURL = *gu.HTMLURL
-	}
-	if gu.Location != nil {
-		u.Location = *gu.Location
-	}
-	if gu.Email != nil {
-		m, err := mail.ParseAddress(*gu.Email)
-		if err == nil {
-			u.Email = m
-		}
-	}
 }
 
 // Lock will lock the user name from being written to by

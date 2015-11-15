@@ -43,7 +43,7 @@ func TestLookupAndNewMember(t *testing.T) {
 		t.Errorf("Failed to get user from GitHub: %v", err)
 	}
 
-	m = entities.NeMember(u)
+	m = entities.NewMember(u)
 	err = entities.PutMember(mytoken, m)
 	if err != nil || m == nil {
 		t.Errorf("Expected member, but got error: %v", err)

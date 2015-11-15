@@ -3,6 +3,7 @@ package entities
 import (
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"time"
 
@@ -56,12 +57,7 @@ func CreateMember(userName string) (m *Member, err error) {
 	if err != nil {
 		return nil, err
 	}
-	m = &Member{
-		UserProfile:      u,
-		Teaching:         make(map[string]interface{}),
-		Courses:          make(map[string]Course),
-		AssistantCourses: make(map[string]interface{}),
-	}
+	m = NewMember(u)
 
 	// save newly created member for future lookups
 	err = database.Put(MemberBucketName, m.Username, m)
@@ -71,8 +67,8 @@ func CreateMember(userName string) (m *Member, err error) {
 	return m, nil
 }
 
-// NeMember creates a new member based on the provided OAuth token.
-func NeMember(u *UserProfile) (m *Member) {
+// NewMember creates a new member based on the provided OAuth token.
+func NewMember(u *UserProfile) (m *Member) {
 	return &Member{
 		UserProfile:      u,
 		Teaching:         make(map[string]interface{}),
@@ -93,36 +89,6 @@ func PutMember(token string, m *Member) (err error) {
 	}
 	// save member in database for future lookups
 	return database.Put(MemberBucketName, m.Username, m)
-}
-
-// NewMember creates a new member based on the provided OAuth token.
-// This function also creates the embedded UserProfile object. This may involve
-// fetching user profile data from an online source such as github.
-func NewMember(token string) (m *Member, err error) {
-	if hasToken(token) {
-		return nil, errors.New("OAuth token already in database")
-	}
-	u, err := NewUserProfile(token)
-	if err != nil {
-		return nil, err
-	}
-	m = &Member{
-		UserProfile:      u,
-		Teaching:         make(map[string]interface{}),
-		Courses:          make(map[string]Course),
-		AssistantCourses: make(map[string]interface{}),
-	}
-
-	// record token -> Username mapping to allow reverse lookup
-	if err = putToken(token, u.Username); err != nil {
-		return nil, err
-	}
-
-	// save newly created member for future lookups
-	if err = database.Put(MemberBucketName, m.Username, m); err != nil {
-		return nil, err
-	}
-	return m, nil
 }
 
 // NueMember tries to use the given oauth token to find the
@@ -160,12 +126,18 @@ func GetMember(userName string) (m *Member, err error) {
 		// userName found in database; return early
 		return m, nil
 	}
+	if err == io.EOF {
+		log.Printf("user not found: %s -- %v (m: %v)", userName, err, m)
+		// panic("EOF")
+	}
 
 	// userName not found in database; create new member object (and store in DB)
 	m, err = CreateMember(userName)
 	if err != nil {
+		log.Printf("failed to create user: %s -- %v", userName, err)
 		return nil, err
 	}
+	log.Printf("user created: %s", userName)
 	return m, nil
 }
 

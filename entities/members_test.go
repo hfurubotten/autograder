@@ -37,8 +37,8 @@ var testNewMemberInput = []struct {
 
 func TestNewMember(t *testing.T) {
 	for _, in := range testNewMemberInput {
-		u := NeUserProfile(in.token, in.username, in.scope)
-		m := NeMember(u)
+		u := NewUserProfile(in.token, in.username, in.scope)
+		m := NewMember(u)
 		err := PutMember(in.token, m)
 		if err != nil {
 			t.Errorf("Failed to create member with token (%s): %v", in.token, err)
@@ -53,7 +53,10 @@ func TestNewMember(t *testing.T) {
 			t.Errorf("Scope mismatch: %v, got: %v", in.scope, m.Scope)
 		}
 		// clean up database
-		m.RemoveMember()
+		err = m.RemoveMember()
+		if err != nil {
+			t.Errorf("Failed to remove member: %v", err)
+		}
 	}
 }
 
@@ -64,14 +67,17 @@ func TestNewMemberAlreadyInDatabase(t *testing.T) {
 			t.Errorf("Failed to store token for user (%s): %v", in.username, err)
 			continue
 		}
-		u := NeUserProfile(in.token, in.username, in.scope)
-		m := NeMember(u)
+		u := NewUserProfile(in.token, in.username, in.scope)
+		m := NewMember(u)
 		err := PutMember(in.token, m)
 		if err == nil {
 			t.Errorf("Unexpected member creation with token (%s): %v", in.token, err)
 		}
 		// clean up database
-		removeToken(in.token)
+		err = removeToken(in.token)
+		if err != nil {
+			t.Errorf("Failed to remove token: %v", err)
+		}
 	}
 }
 
@@ -195,8 +201,8 @@ func BenchmarkNewMember(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		for _, in := range testNewMemberInput {
 			removeToken(in.token)
-			u := NeUserProfile(in.token, in.username, in.scope)
-			m := NeMember(u)
+			u := NewUserProfile(in.token, in.username, in.scope)
+			m := NewMember(u)
 			err := PutMember(in.token, m)
 			if err != nil {
 				b.Error(err)

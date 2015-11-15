@@ -37,7 +37,7 @@ func githubUserProfile(token, scope string) (*entities.UserProfile, error) {
 	if gu.Login == nil {
 		return nil, errors.New("missing login name for github account")
 	}
-	u := entities.NeUserProfile(token, *gu.Login, scope)
+	u := entities.NewUserProfile(token, *gu.Login, scope)
 	if gu.Name != nil {
 		u.Name = *gu.Name
 	}
