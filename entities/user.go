@@ -3,17 +3,13 @@ package entities
 import (
 	"net/mail"
 	"sync"
-	"time"
 
 	"github.com/google/go-github/github"
-	"github.com/hfurubotten/autograder/game/levels"
-	"github.com/hfurubotten/autograder/game/trophies"
 )
 
 // UserProfile contains information about a user. Often this information will
 // be gleaned from external sources such as GitHub.
 type UserProfile struct {
-	lock     sync.RWMutex
 	mainlock sync.Mutex
 
 	Name          string
@@ -22,17 +18,8 @@ type UserProfile struct {
 	Location      string
 	Active        bool
 	PublicProfile bool
-
-	// Scores
-	TotalScore   int64
-	WeeklyScore  map[int]int64
-	MonthlyScore map[time.Month]int64
-	Level        int
-	Trophies     *trophies.TrophyChest
-
-	// URLs
-	AvatarURL  string
-	ProfileURL string
+	AvatarURL     string
+	ProfileURL    string
 
 	// remote access
 	githubclient *github.Client
@@ -43,87 +30,21 @@ type UserProfile struct {
 // CreateUserProfile returns a new UserProfile populated with data from github.
 func CreateUserProfile(userName string) *UserProfile {
 	return &UserProfile{
-		Username:     userName,
-		WeeklyScore:  make(map[int]int64),
-		MonthlyScore: make(map[time.Month]int64),
+		Username: userName,
 	}
 }
 
 // NewUserProfile returns a new UserProfile.
 func NewUserProfile(token, user, scope string) *UserProfile {
 	return &UserProfile{
-		Username:     user,
-		Scope:        scope,
-		accessToken:  token,
-		WeeklyScore:  make(map[int]int64),
-		MonthlyScore: make(map[time.Month]int64),
+		Username:    user,
+		Scope:       scope,
+		accessToken: token,
 	}
 }
 
 func (u *UserProfile) hasAccessToken() bool {
 	return u.accessToken != "" && len(u.accessToken) > 0
-}
-
-// IncScoreBy increases the total score with given amount.
-func (u *UserProfile) IncScoreBy(score int) {
-	u.lock.Lock()
-	defer u.lock.Unlock()
-	u.TotalScore += int64(score)
-	u.Level = levels.FindLevel(u.TotalScore) // How to tackle level up notification?
-
-	_, week := time.Now().ISOWeek()
-	month := time.Now().Month()
-
-	// updates weekly
-	u.WeeklyScore[week] += int64(score)
-	// updated monthly
-	u.MonthlyScore[month] += int64(score)
-}
-
-// DecScoreBy descreases the total score with given amount.
-func (u *UserProfile) DecScoreBy(score int) {
-	u.lock.Lock()
-	defer u.lock.Unlock()
-	if u.TotalScore-int64(score) > 0 {
-		u.TotalScore -= int64(score)
-	} else {
-		u.TotalScore = 0
-	}
-
-	u.Level = levels.FindLevel(u.TotalScore)
-
-	_, week := time.Now().ISOWeek()
-	month := time.Now().Month()
-
-	// updates weekly
-	u.WeeklyScore[week] -= int64(score)
-	// updated monthly
-	u.MonthlyScore[month] -= int64(score)
-}
-
-// IncLevel increases the level with one.
-func (u *UserProfile) IncLevel() {
-	u.lock.Lock()
-	defer u.lock.Unlock()
-	u.Level++
-}
-
-// DecLevel decreases the level with one until it equals zero.
-func (u *UserProfile) DecLevel() {
-	u.lock.Lock()
-	defer u.lock.Unlock()
-	if u.Level > 0 {
-		u.Level--
-	}
-}
-
-// GetTrophyChest return the users ThropyChest.
-func (u *UserProfile) GetTrophyChest() *trophies.TrophyChest {
-	if u.Trophies == nil {
-		u.Trophies = trophies.NewTrophyChest()
-	}
-
-	return u.Trophies
 }
 
 // GetUsername will return the users unique username.

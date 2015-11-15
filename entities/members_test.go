@@ -434,9 +434,8 @@ func TestListAllMembers(t *testing.T) {
 			t.Errorf("Found unexpected member: %s", user.Username)
 		}
 	}
-
 	if len(testListAllMembersInput) != len(list) {
-		t.Errorf("Missing members: expected: %d, got: %d", len(testListAllMembersInput), len(list))
+		t.Errorf("Expected: %d, got: %d members", len(testListAllMembersInput), len(list))
 	}
 }
 

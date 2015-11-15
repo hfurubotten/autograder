@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/hfurubotten/autograder/database"
@@ -19,6 +20,7 @@ func init() {
 // Member represent a student in autograder.
 type Member struct {
 	*UserProfile
+	*UserScore
 
 	StudentID   int
 	IsTeacher   bool
@@ -29,6 +31,20 @@ type Member struct {
 	Courses          map[string]Course
 	AssistantCourses map[string]interface{}
 }
+
+// NewMember creates a new member based on the provided user profile.
+func NewMember(u *UserProfile) (m *Member) {
+	return &Member{
+		UserProfile:      u,
+		UserScore:        NewUserScore(),
+		Teaching:         make(map[string]interface{}),
+		Courses:          make(map[string]Course),
+		AssistantCourses: make(map[string]interface{}),
+	}
+}
+
+//TODO Make in-memory cache to avoid having to create new lock object
+// for each time we obtain a member object from the DB.
 
 // LookupMember does a reverse lookup based on the provided token to
 // obtain a member from the database.
@@ -43,37 +59,12 @@ func LookupMember(token string) (m *Member, err error) {
 	}
 	// access token is not stored in the database for security reasons
 	m.accessToken = token
+	m.mu = &sync.RWMutex{}
 	return m, nil
 }
 
-// CreateMember creates a member based on the provided userName.
-// Note that this will also create the underlying UserProfile.
-func CreateMember(userName string) (m *Member, err error) {
-	if HasMember(userName) {
-		return nil, errors.New("user already in database: " + userName)
-	}
-	u := CreateUserProfile(userName)
-	m = NewMember(u)
-	// save newly created member for future lookups
-	err = database.Put(MemberBucketName, m.Username, m)
-	if err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-// NewMember creates a new member based on the provided OAuth token.
-func NewMember(u *UserProfile) (m *Member) {
-	return &Member{
-		UserProfile:      u,
-		Teaching:         make(map[string]interface{}),
-		Courses:          make(map[string]Course),
-		AssistantCourses: make(map[string]interface{}),
-	}
-}
-
-// PutMember saves the member in the database and associates the provided token
-// with the provided member.
+// PutMember saves the provided member in the database and
+// associates the token with the member.
 func PutMember(token string, m *Member) (err error) {
 	if hasToken(token) {
 		return errors.New("OAuth token already in database")
@@ -111,12 +102,32 @@ func NueMember(token string) (m *Member, err error) {
 	return
 }
 
+// CreateMember creates a member based on the provided userName,
+// and also creates the underlying UserProfile.
+// Note that this function only operates with userName and does not have
+// an access token. This function is currently only used for testing.
+// TODO: make this function package private.
+func CreateMember(userName string) (m *Member, err error) {
+	if HasMember(userName) {
+		return nil, errors.New("user already in database: " + userName)
+	}
+	u := CreateUserProfile(userName)
+	m = NewMember(u)
+	// save newly created member for future lookups
+	err = database.Put(MemberBucketName, m.Username, m)
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // GetMember returns the member associated with the given userName.
 func GetMember(userName string) (m *Member, err error) {
 	err = database.Get(MemberBucketName, userName, &m)
 	if err != nil {
 		return nil, err
 	}
+	m.mu = &sync.RWMutex{}
 	// userName found in database
 	return m, nil
 }
@@ -348,14 +359,13 @@ func ListAllMembers() (members []*Member) {
 		if err == nil {
 			members = append(members, m)
 		}
-		// continue also if member couldn't be created
+		// continue also if member couldn't be obtained
 		return nil
 	}
 	err := database.ForEach(MemberBucketName, fn)
 	if err != nil {
 		log.Println(err)
 	}
-
 	return members
 }
 
