@@ -66,8 +66,8 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 
 	view := ProfileView{
 		stdTemplate: stdTemplate{
-			Member:          m,
-			OptinalHeadline: true,
+			Member:           m,
+			OptionalHeadline: true,
 		},
 		PointsToNextLvl:    diffUser,
 		PercentLvlComplete: percentDone,

@@ -115,6 +115,8 @@ func main() {
 	}
 	defer database.Close()
 
+	//TODO should the admin user name be saved in the config??
+
 	// check for new admin user
 	if *admin != "" {
 		m, err := entities.GetMember(*admin)

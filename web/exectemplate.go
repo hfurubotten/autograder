@@ -12,8 +12,8 @@ import (
 
 // stdTemplate is the standard common view components
 type stdTemplate struct {
-	OptinalHeadline bool
-	Member          *git.Member
+	OptionalHeadline bool
+	Member           *git.Member
 }
 
 var funcMap = template.FuncMap{

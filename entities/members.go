@@ -106,7 +106,6 @@ func NueMember(token string) (m *Member, err error) {
 // and also creates the underlying UserProfile.
 // Note that this function only operates with userName and does not have
 // an access token. This function is currently only used for testing.
-// TODO: make this function package private.
 func CreateMember(userName string) (m *Member, err error) {
 	if HasMember(userName) {
 		return nil, errors.New("user already in database: " + userName)

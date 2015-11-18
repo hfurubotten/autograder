@@ -36,7 +36,6 @@ func NewCourseHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	view := CourseView{}
-
 	view.Member = member
 
 	var page string

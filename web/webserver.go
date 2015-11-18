@@ -298,9 +298,10 @@ func checkAdminApproval(w http.ResponseWriter, r *http.Request, redirect bool) (
 	if err != nil {
 		return
 	}
+	log.Printf("admin check: %v", member.IsAdmin)
 
 	if !member.IsAdmin {
-		err = errors.New("The user is not a teacher.")
+		err = errors.New("user is not an administrator: " + member.Username)
 		if redirect {
 			http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
 		}

@@ -9,12 +9,6 @@ import (
 	git "github.com/hfurubotten/autograder/entities"
 )
 
-// AdminView is the struct passed to the html template compiler.
-type AdminView struct {
-	stdTemplate
-	Members []*git.Member
-}
-
 // AdminURL is the URL used to call AdminHandler.
 var AdminURL = "/admin"
 
@@ -25,11 +19,14 @@ func AdminHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
-
-	view := AdminView{}
-	view.Member = member
-	view.Members = git.ListAllMembers()
-	execTemplate("admin.html", w, view)
+	adminView := struct {
+		OptionalHeadline bool
+		Member           *git.Member
+		Members          []*git.Member
+	}{
+		false, member, git.ListAllMembers(),
+	}
+	execTemplate("admin.html", w, adminView)
 }
 
 // SetAdminView represents the view sendt back the JSON reply in SetAdminHandler.
@@ -90,7 +87,7 @@ func SetAdminHandler(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-// SetTeacherView represents the view sendt back the JSON reply in SetTeacherHandler.
+// SetTeacherView represents the view sent back the JSON reply in SetTeacherHandler.
 type SetTeacherView struct {
 	JSONErrorMsg
 	User    string `json:"User"`

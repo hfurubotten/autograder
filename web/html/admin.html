@@ -1,6 +1,6 @@
-{{define "PageTitle"}}UIS Autograder - Admin pages{{end}}
+{{define "PageTitle"}}{{.SysName}} - Admin Panel{{end}}
 {{define "Headline"}}Admin Panel{{end}}
-{{define "Subtext"}}Manage members teacher and administrator privileges.{{end}}
+{{define "Subtext"}}Manage member privileges: teachers and administrators.{{end}}
 {{define "body"}}
 
 	<div class="container">
@@ -27,8 +27,10 @@
 						<tr id="{{.Username}}">
 							<td>{{.Username}}</td>
 							<td>{{.Name}}</td>
-							<td><button type="button" onclick="toggleteacher('{{.Username}}')" class="btn btn-default teacher">{{if .IsTeacher}}Yes{{else}}No{{end}}</button></td>
-							<td><button type="button" onclick="toggleadmin('{{.Username}}')" class="btn btn-default admin">{{if .IsAdmin}}Yes{{else}}No{{end}}</button></td>
+							<td><button type="button" onclick="toggleteacher('{{.Username}}')" class="btn btn-default teacher">
+								{{if .IsTeacher}}Yes{{else}}No{{end}}</button></td>
+							<td><button type="button" onclick="toggleadmin('{{.Username}}')" class="btn btn-default admin">
+								{{if .IsAdmin}}Yes{{else}}No{{end}}</button></td>
 						</tr>
 						{{end}}
 					</tbody>
