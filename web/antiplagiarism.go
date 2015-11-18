@@ -12,8 +12,8 @@ import (
 	pb "github.com/autograde/antiplagiarism/proto"
 	git "github.com/hfurubotten/autograder/entities"
 
-	//"golang.org/x/net/context"
-	//"google.golang.org/grpc"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
 )
 
 // TODO: CHANGE THIS
@@ -95,7 +95,7 @@ func ManualTestPlagiarismHandler(w http.ResponseWriter, r *http.Request) {
 // the request if for individual or group assignments.
 func callAntiplagiarism(request pb.ApRequest, org *git.Organization, isGroup bool) {
 	// Currently just on localhost.
-	/*endpoint := "localhost:11111"
+	endpoint := "localhost:11111"
 	var opts []grpc.DialOption
 	// TODO: Add transport security.
 	opts = append(opts, grpc.WithInsecure())
@@ -103,7 +103,7 @@ func callAntiplagiarism(request pb.ApRequest, org *git.Organization, isGroup boo
 	// Create connection
 	conn, err := grpc.Dial(endpoint, opts...)
 	if err != nil {
-		fmt.Printf("Error while connecting to server: %v\n", err)
+		fmt.Printf("callAntiplagiarism: Error while connecting to server: %v\n", err)
 		return
 	}
 	defer conn.Close()
@@ -117,24 +117,17 @@ func callAntiplagiarism(request pb.ApRequest, org *git.Organization, isGroup boo
 
 	// Check response
 	if err != nil {
-		fmt.Printf("gRPC error: %s\n", err)
+		fmt.Printf("callAntiplagiarism: gRPC error: %s\n", err)
 		return
 	} else if response.Success == false {
-		fmt.Printf("Anti-plagiarism error: %s\n", response.Err)
+		fmt.Printf("callAntiplagiarism: Anti-plagiarism error: %s\n", response.Err)
 		return
 	} else {
 		fmt.Printf("Anti-plagiarism application ran successfully.\n")
-	}*/
+	}
 
-	checkResults(org)
 	clearPreviousResults(org, isGroup)
 	saveNewResults(org, isGroup)
-}
-
-// checkResults checks that there are results in the results directory.
-// It takes as input org, a database record for the class.
-func checkResults(org *git.Organization) {
-
 }
 
 // clearPreviousResults clears the previous anti-plagiarim results,
@@ -149,14 +142,14 @@ func clearPreviousResults(org *git.Organization, isGroup bool) {
 			// Get the Group ID
 			groupId, err := strconv.Atoi(groupName[len(git.GroupRepoPrefix):])
 			if err != nil {
-				fmt.Printf("Could not get group number from %s. %s\n", groupName, err)
+				fmt.Printf("clearPreviousResults: Could not get group number from %s. %s\n", groupName, err)
 				continue
 			}
 
 			// Get the database record
 			group, _ := git.NewGroup(org.Name, groupId, false)
 			// For each lab
-			for labIndex := 0; labIndex < org.GroupAssignments; labIndex++ {
+			for labIndex := 1; labIndex <= org.GroupAssignments; labIndex++ {
 				// Clear the specific lab results
 				results := git.AntiPlagiarismResults{MossPct: 0.0,
 					MossUrl:  "",
@@ -176,7 +169,7 @@ func clearPreviousResults(org *git.Organization, isGroup bool) {
 			// Get the database record
 			student, _ := git.NewMemberFromUsername(username, false)
 			// For each lab
-			for labIndex := 0; labIndex < org.IndividualAssignments; labIndex++ {
+			for labIndex := 1; labIndex <= org.IndividualAssignments; labIndex++ {
 				// Clear the specific lab results
 				results := git.AntiPlagiarismResults{MossPct: 0,
 					MossUrl:  "",
@@ -194,48 +187,55 @@ func clearPreviousResults(org *git.Organization, isGroup bool) {
 }
 
 // saveNewResults saves the results in the results directory to the database.
-// It takes as input org, a database record for the class.
+// It takes as input org, a database record for the class, and isGroup,
+// whether or not the request is for individual or group assignments.
 func saveNewResults(org *git.Organization, isGroup bool) {
 	// Make a slice of out tools
 	tools := []string{"dupl", "jplag", "moss"}
 
 	if isGroup {
 		// For each lab
-		for labIndex := 0; labIndex < org.GroupAssignments; labIndex++ {
+		for labIndex := 1; labIndex <= org.GroupAssignments; labIndex++ {
 			lab := org.GroupLabFolders[labIndex]
-		
+
 			// For each tool
 			for _, tool := range tools {
 				resultsDir := filepath.Join(resultsBaseDir, org.Name, lab, tool)
 				resultsFile := filepath.Join(resultsDir, "percentage.txt")
-			
+
 				// Get the tool's results for that lab
 				success := getFileResults(resultsFile, labIndex, tool, org, isGroup)
 				if success {
-					// Delete this file.
+					// TODO: Delete this file.
 				}
 			}
 		}
 	} else {
 		// For each lab
-		for labIndex := 0; labIndex < org.IndividualAssignments; labIndex++ {
+		for labIndex := 1; labIndex <= org.IndividualAssignments; labIndex++ {
 			lab := org.IndividualLabFolders[labIndex]
-		
+
 			// For each tool
 			for _, tool := range tools {
 				resultsDir := filepath.Join(resultsBaseDir, org.Name, lab, tool)
 				resultsFile := filepath.Join(resultsDir, "percentage.txt")
-			
+
 				// Get the tool's results for that lab
 				success := getFileResults(resultsFile, labIndex, tool, org, isGroup)
 				if success {
-					// Delete this file.
+					// TODO: Delete this file.
 				}
 			}
 		}
 	}
 }
 
+// getFileResults will read a results file and store the data in the database.
+// It returns a bool value indicating if the function was successful or not.
+// It takes as input resultsFile, the name of the results file, labIndex,
+// the index of the lab, tool, which antiplagiarism tool made the file,
+// org, a database record for the class, and isGroup,
+// whether or not the request is for individual or group assignments.
 func getFileResults(resultsFile string, labIndex int, tool string, org *git.Organization, isGroup bool) bool {
 	file, err := os.Open(resultsFile)
 	if err != nil {
@@ -245,42 +245,45 @@ func getFileResults(resultsFile string, labIndex int, tool string, org *git.Orga
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		username := ""	
+		username := ""
 		tempString := scanner.Text()
 		values := strings.Split(tempString, "|")
-		
+
 		// Format each value from that line
 		if !isGroup {
 			length := len(values[0])
-			username = values[0][:length - 5]
+			username = values[0][:length-5]
 		} else {
 			username = values[0]
 		}
 		percent64, err := strconv.ParseFloat(values[1], 32)
 		if err != nil {
-			fmt.Printf("Error converting %s to a float while reading file %s.\n", values[1], resultsFile)
+			fmt.Printf("getFileResults: Error converting %s to a float while reading file %s.\n", values[1], resultsFile)
 			continue
 		}
 		percent32 := float32(percent64)
 		url := values[2]
-		
+
 		if isGroup {
 			// Get the Group ID
 			groupId, err := strconv.Atoi(username[len(git.GroupRepoPrefix):])
 			if err != nil {
-				fmt.Printf("Could not get group number from %s. %s\n", username, err)
+				fmt.Printf("getFileResults: Could not get group number from %s. %s\n", username, err)
+				fmt.Printf("JPlag might be returning matching individual labs from previous sessions.\n")
+				fmt.Printf("If that is the case, there is a group with code matching an individuals code\n")
+				fmt.Printf("from another lab.\n")
 				continue
 			}
-		
+
 			// Get the database record
 			group, _ := git.NewGroup(org.Name, groupId, false)
-			
+
 			// Update the results
 			results := group.GetAntiPlagiarismResults(org.Name, labIndex)
 			switch tool {
 			case "dupl":
 				results.DuplPct = percent32
-				results.DuplUrl = url			
+				results.DuplUrl = url
 			case "jplag":
 				results.JplagPct = percent32
 				results.JplagUrl = url
@@ -289,19 +292,19 @@ func getFileResults(resultsFile string, labIndex int, tool string, org *git.Orga
 				results.MossUrl = url
 			}
 			group.AddAntiPlagiarismResults(org.Name, labIndex, results)
-				
+
 			// Save the database record
 			group.Save()
 		} else {
 			// Get the database record
 			student, _ := git.NewMemberFromUsername(username, false)
-			
+
 			// Update the results
 			results := student.GetAntiPlagiarismResults(org.Name, labIndex)
 			switch tool {
 			case "dupl":
 				results.DuplPct = percent32
-				results.DuplUrl = url			
+				results.DuplUrl = url
 			case "jplag":
 				results.JplagPct = percent32
 				results.JplagUrl = url
@@ -310,11 +313,46 @@ func getFileResults(resultsFile string, labIndex int, tool string, org *git.Orga
 				results.MossUrl = url
 			}
 			student.AddAntiPlagiarismResults(org.Name, labIndex, results)
-				
+
 			// Save the database record
 			student.Save()
 		}
 	}
-	
+
 	return true
+}
+
+// TODO: FOR DEBUGGING ONLY
+// showAllResults shows the database records after the results have been saves.
+func showAllResults(org *git.Organization, isGroup bool) {
+	if isGroup {
+		// For each group
+		for groupName, _ := range org.Groups {
+			// Get the Group ID
+			groupId, err := strconv.Atoi(groupName[len(git.GroupRepoPrefix):])
+			if err != nil {
+				fmt.Printf("showAllResults: Could not get group number from %s. %s\n", groupName, err)
+				continue
+			}
+
+			// Get the database record
+			group, _ := git.NewGroup(org.Name, groupId, false)
+			// For each lab
+			for labIndex := 1; labIndex <= org.GroupAssignments; labIndex++ {
+				results := group.GetAntiPlagiarismResults(org.Name, labIndex)
+				fmt.Printf("%v\n", results)
+			}
+		}
+	} else {
+		// For each student
+		for username, _ := range org.Members {
+			// Get the database record
+			student, _ := git.NewMemberFromUsername(username, false)
+			// For each lab
+			for labIndex := 1; labIndex <= org.IndividualAssignments; labIndex++ {
+				results := student.GetAntiPlagiarismResults(org.Name, labIndex)
+				fmt.Printf("%v\n", results)
+			}
+		}
+	}
 }
