@@ -6,74 +6,80 @@ import (
 	"net/http"
 	"strconv"
 
-	git "github.com/hfurubotten/autograder/entities"
+	"github.com/hfurubotten/autograder/config"
+	"github.com/hfurubotten/autograder/entities"
+	"github.com/hfurubotten/autograder/web/pages"
 )
 
-// AdminURL is the URL used to call AdminHandler.
+// AdminURL is used to call AdminHandler.
 var AdminURL = "/admin"
 
-// AdminHandler is a http handler which gives the administator page.
+// AdminHandler is the http handler for serving the admin panel.
 func AdminHandler(w http.ResponseWriter, r *http.Request) {
 	member, err := checkAdminApproval(w, r, true)
 	if err != nil {
 		log.Println(err)
+		http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
 		return
 	}
 	adminView := struct {
+		SysName          string
 		OptionalHeadline bool
-		Member           *git.Member
-		Members          []*git.Member
+		Member           *entities.Member
+		Members          []*entities.Member
 	}{
-		false, member, git.ListAllMembers(),
+		config.SysName, false, member, entities.ListAllMembers(),
 	}
 	execTemplate("admin.html", w, adminView)
 }
 
-// SetAdminView represents the view sendt back the JSON reply in SetAdminHandler.
+// SetAdminView represents the view sent back in the JSON reply from SetAdminHandler.
 type SetAdminView struct {
 	JSONErrorMsg
 	User  string `json:"User"`
 	Admin bool   `json:"Admin"`
 }
 
-// SetAdminURL is the URL used to call SetAdminHandler.
+// SetAdminURL is used to call SetAdminHandler.
 var SetAdminURL = "/admin/user"
 
-// SetAdminHandler is a http handler which can set or unset the admin property of a user.
+// SetAdminHandler is a http handler to toggle the admin privileges of a user.
 func SetAdminHandler(w http.ResponseWriter, r *http.Request) {
 	enc := json.NewEncoder(w)
 
-	// TODO: this returns the Member object; why do GetMember() below?
+	// check if the user toggling the admin button has admin privileges
 	_, err := checkAdminApproval(w, r, false)
 	if err != nil {
-		log.Println("Unauthorized request for admin page.")
+		log.Println("Unauthorized request for admin page:", err)
 		err = enc.Encode(ErrNotAdmin)
 		return
 	}
 
-	//TODO Check logic of the following two errors
-	if r.FormValue("user") == "" || r.FormValue("admin") == "" {
+	user, admin := r.FormValue("user"), r.FormValue("admin")
+	if user == "" || admin == "" {
+		log.Printf("Missing required field: user=%s ; admin=%s", user, admin)
 		err = enc.Encode(ErrMissingField)
 		return
 	}
 
-	m, err := git.GetMember(r.FormValue("user"))
+	// get the selected member's details
+	m, err := entities.GetMember(user)
 	if err != nil {
-		log.Println("Member not found: ", err)
+		log.Println("Member not found:", err)
 		err = enc.Encode(ErrUnknownMember)
 		return
 	}
 
-	m.IsAdmin, err = strconv.ParseBool(r.FormValue("admin"))
+	m.IsAdmin, err = strconv.ParseBool(admin)
 	if err != nil {
-		m.Unlock()
+		log.Println("Invalid admin field:", err)
 		err = enc.Encode(ErrInvalidAdminField)
 		return
 	}
 
 	err = m.Save()
 	if err != nil {
-		m.Unlock()
+		log.Println("Failed to update member to admin status:", err)
 		err = enc.Encode(ErrNotStored)
 		return
 	}
@@ -82,9 +88,7 @@ func SetAdminHandler(w http.ResponseWriter, r *http.Request) {
 		User:  m.Username,
 		Admin: m.IsAdmin,
 	}
-
 	err = enc.Encode(msg)
-	return
 }
 
 // SetTeacherView represents the view sent back the JSON reply in SetTeacherHandler.
@@ -97,41 +101,42 @@ type SetTeacherView struct {
 // SetTeacherURL is the URL used to call SetTeacherHandler.
 var SetTeacherURL = "/admin/teacher"
 
-// SetTeacherHandler is a http handler which can set or unset the teacher property of a user.
+// SetTeacherHandler is a http handler to toggle the teacher privileges of a user.
 func SetTeacherHandler(w http.ResponseWriter, r *http.Request) {
 	enc := json.NewEncoder(w)
 
-	// TODO: this returns the Member object; why do GetMember() below?
+	// check if the user toggling the teacher button has admin privileges
 	_, err := checkAdminApproval(w, r, false)
 	if err != nil {
-		log.Println("Unauthorized request for admin page.")
+		log.Println("Unauthorized request for admin page:", err)
 		err = enc.Encode(ErrNotAdmin)
 		return
 	}
 
-	//TODO Check logic
-	if r.FormValue("user") == "" || r.FormValue("teacher") == "" {
+	user, teacher := r.FormValue("user"), r.FormValue("teacher")
+	if user == "" || teacher == "" {
+		log.Printf("Missing required field: user=%s ; teacher=%s", user, teacher)
 		err = enc.Encode(ErrMissingField)
 		return
 	}
 
-	m, err := git.GetMember(r.FormValue("user"))
+	m, err := entities.GetMember(user)
 	if err != nil {
-		log.Println("Member not found: ", err)
+		log.Println("Member not found:", err)
 		err = enc.Encode(ErrUnknownMember)
 		return
 	}
 
-	m.IsTeacher, err = strconv.ParseBool(r.FormValue("teacher"))
+	m.IsTeacher, err = strconv.ParseBool(teacher)
 	if err != nil {
-		m.Unlock()
+		log.Println("Invalid teacher field:", err)
 		err = enc.Encode(ErrInvalidTeacherField)
 		return
 	}
 
 	err = m.Save()
 	if err != nil {
-		m.Unlock()
+		log.Println("Failed to update member to teacher status:", err)
 		err = enc.Encode(ErrNotStored)
 		return
 	}
@@ -141,5 +146,4 @@ func SetTeacherHandler(w http.ResponseWriter, r *http.Request) {
 		Teacher: m.IsTeacher,
 	}
 	err = enc.Encode(msg)
-	return
 }

@@ -226,13 +226,14 @@ func checkMemberApproval(w http.ResponseWriter, r *http.Request, redirect bool) 
 		if redirect {
 			http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
 		}
-		err = errors.New("The user is not logged in")
+		err = errors.New("user is not logged in")
 		return
 	}
 
 	value, err := sessions.GetSessions(r, sessions.AuthSession, sessions.AccessTokenSessionKey)
 	if err != nil {
-		err = errors.New("Error getting access token from sessions")
+		//TODO: why overwrite the error from GetSessions??
+		err = errors.New("failed to get access token from session")
 		if redirect {
 			http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
 		}
@@ -248,7 +249,7 @@ func checkMemberApproval(w http.ResponseWriter, r *http.Request, redirect bool) 
 		if redirect {
 			http.Redirect(w, r, pages.REGISTER_REDIRECT, http.StatusTemporaryRedirect)
 		}
-		err = errors.New("Member with incomplete profile, redirecting.")
+		err = errors.New("member with incomplete profile, redirecting")
 		return
 	}
 
@@ -268,7 +269,7 @@ func checkTeacherApproval(w http.ResponseWriter, r *http.Request, redirect bool)
 	}
 
 	if !member.IsTeacher && !member.IsAssistant {
-		err = errors.New("The user is not a teacher.")
+		err = errors.New("user is not a teacher: " + member.Username)
 		if redirect {
 			http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
 		}
@@ -276,7 +277,7 @@ func checkTeacherApproval(w http.ResponseWriter, r *http.Request, redirect bool)
 	}
 
 	if member.Scope == "" && member.IsTeacher {
-		err = errors.New("Teacher need to renew scope.")
+		err = errors.New("teacher must renew scope: " + member.Username)
 		if redirect {
 			http.Redirect(w, r, auth.OAuthScopeRedirectURL(), http.StatusTemporaryRedirect)
 		}
@@ -293,20 +294,13 @@ func checkTeacherApproval(w http.ResponseWriter, r *http.Request, redirect bool)
 //
 // Member returned is standard read only. If written to, locking need to be done
 // manually.
-func checkAdminApproval(w http.ResponseWriter, r *http.Request, redirect bool) (member *git.Member, err error) {
-	member, err = checkMemberApproval(w, r, redirect)
+func checkAdminApproval(w http.ResponseWriter, r *http.Request, redirect bool) (*git.Member, error) {
+	member, err := checkMemberApproval(w, r, redirect)
 	if err != nil {
-		return
+		return nil, err
 	}
-	log.Printf("admin check: %v", member.IsAdmin)
-
 	if !member.IsAdmin {
-		err = errors.New("user is not an administrator: " + member.Username)
-		if redirect {
-			http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
-		}
-		return
+		return nil, errors.New("user is not admin: " + member.Username)
 	}
-
-	return
+	return member, nil
 }
