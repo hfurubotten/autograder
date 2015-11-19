@@ -4,40 +4,29 @@ import (
 	"errors"
 	"log"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/hfurubotten/autograder/auth"
-	git "github.com/hfurubotten/autograder/entities"
+	"github.com/hfurubotten/autograder/entities"
 	"github.com/hfurubotten/autograder/web/pages"
 	"github.com/hfurubotten/autograder/web/sessions"
 	"github.com/hfurubotten/autograder/web/staticfiles"
 )
 
-// Using go generate to build in all static files into a go file. Each time the
+// We use go generate to build in all static files into a go file. Each time the
 // static files are changed/removed/added the go generate command need to be
 // executed. And need to be added together with the commit for the changed
-// static files.
-// the go-bindata program can be obtained by running go get -u github.com/jteeuwen/go-bindata/go-bindata
+// static files. The go-bindata program can be obtained by running:
+//
+//   go get -u github.com/jteeuwen/go-bindata/go-bindata
 //
 //go:generate $GOPATH/bin/go-bindata -o=staticfiles/staticfiles.go -pkg=staticfiles css/ fonts/ html/... img/... js/
 
 // the default html base path; used to access assets
 var htmlBase = "html/"
 
-// Server represent a webserver serving the autograder web pages.
-type Server struct {
-	Port int
-}
-
-// NewServer will return a new Webserver object with possibility to listen to given port.
-func NewServer(port int) Server {
-	return Server{port}
-}
-
-// Start will start up a new server listening on ws.Port. This
-// method blocks, and will call os.Exit(1) if server error occures.
-func (ws Server) Start() {
+// SetHandlers sets up http handler functions for the Autograder web server.
+func SetHandlers() {
 	// OAuth handlers
 	http.Handle("/login", http.RedirectHandler(auth.OAuthRedirectURL(), http.StatusTemporaryRedirect))
 	http.HandleFunc("/oauth", auth.OAuthHandler)
@@ -95,12 +84,8 @@ func (ws Server) Start() {
 	http.HandleFunc("/img/", StaticfilesHandler)
 	http.HandleFunc("/fonts/", StaticfilesHandler)
 
-	// catch all not matched wth other patterns
+	// catch all URLs not matched by any other patterns
 	http.HandleFunc(CatchAllURL, CatchAllHandler)
-
-	// start the server
-	log.Println("Starts listening")
-	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(ws.Port), nil))
 }
 
 // CatchAllURL is the URL used to call CatchAllHandler.
@@ -169,12 +154,12 @@ func StaticfilesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// HomeView is the view passed to the html template compailer in HomeHandler.
+// HomeView is the view passed to the html template compiler in HomeHandler.
 type HomeView struct {
 	stdTemplate
-	Teaching  map[string]*git.Organization
-	Assisting map[string]*git.Organization
-	Courses   map[string]*git.Organization
+	Teaching  map[string]*entities.Organization
+	Assisting map[string]*entities.Organization
+	Courses   map[string]*entities.Organization
 }
 
 // HomeURL is the URL used to call HomeHandler.
@@ -193,21 +178,23 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 		stdTemplate: stdTemplate{
 			Member: member,
 		},
-		Teaching:  make(map[string]*git.Organization),
-		Assisting: make(map[string]*git.Organization),
-		Courses:   make(map[string]*git.Organization),
+		Teaching:  make(map[string]*entities.Organization),
+		Assisting: make(map[string]*entities.Organization),
+		Courses:   make(map[string]*entities.Organization),
 	}
 
 	for key := range member.Teaching {
-		view.Teaching[key], _ = git.NewOrganization(key, true)
+		view.Teaching[key], _ = entities.NewOrganization(key, true)
 	}
 	for key := range member.AssistantCourses {
-		view.Assisting[key], _ = git.NewOrganization(key, true)
+		view.Assisting[key], _ = entities.NewOrganization(key, true)
 	}
 	for key := range member.Courses {
-		view.Courses[key], _ = git.NewOrganization(key, true)
+		view.Courses[key], _ = entities.NewOrganization(key, true)
 	}
 
+	//TODO: This redirect could be made obsolete if we can guarantee that nobody
+	// gets to login before their member status is complete.
 	if !member.IsComplete() {
 		http.Redirect(w, r, pages.REGISTER_REDIRECT, http.StatusTemporaryRedirect)
 		return
@@ -221,7 +208,7 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 // redirect is true the function also writes a redirect to the response headers.
 //
 // Member returned is standard read only. If written to, locking need to be done manually.
-func checkMemberApproval(w http.ResponseWriter, r *http.Request, redirect bool) (member *git.Member, err error) {
+func checkMemberApproval(w http.ResponseWriter, r *http.Request, redirect bool) (member *entities.Member, err error) {
 	if !auth.IsApprovedUser(r) {
 		if redirect {
 			http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
@@ -240,12 +227,13 @@ func checkMemberApproval(w http.ResponseWriter, r *http.Request, redirect bool) 
 		return
 	}
 
-	member, err = git.LookupMember(value.(string))
+	member, err = entities.LookupMember(value.(string))
 	if err != nil {
 		return nil, err
 	}
 
 	if !member.IsComplete() {
+		//TODO: Can we always redirect here?
 		if redirect {
 			http.Redirect(w, r, pages.REGISTER_REDIRECT, http.StatusTemporaryRedirect)
 		}
@@ -262,7 +250,7 @@ func checkMemberApproval(w http.ResponseWriter, r *http.Request, redirect bool) 
 // response headers.
 //
 // Member returned is standard read only. If written to, locking need to be done manually.
-func checkTeacherApproval(w http.ResponseWriter, r *http.Request, redirect bool) (member *git.Member, err error) {
+func checkTeacherApproval(w http.ResponseWriter, r *http.Request, redirect bool) (member *entities.Member, err error) {
 	member, err = checkMemberApproval(w, r, redirect)
 	if err != nil {
 		return
@@ -287,14 +275,14 @@ func checkTeacherApproval(w http.ResponseWriter, r *http.Request, redirect bool)
 	return
 }
 
-// checkAdminApproval will check the sessions of the user and see if the user is
+// checkAdminApproval checks the sessions of the user and see if the user is
 // a system admin. If the user is not an admin or a user the function will
 // return error. If the redirect is true the function also writes a redirect to
 // the response headers.
 //
 // Member returned is standard read only. If written to, locking need to be done
 // manually.
-func checkAdminApproval(w http.ResponseWriter, r *http.Request, redirect bool) (*git.Member, error) {
+func checkAdminApproval(w http.ResponseWriter, r *http.Request, redirect bool) (*entities.Member, error) {
 	member, err := checkMemberApproval(w, r, redirect)
 	if err != nil {
 		return nil, err

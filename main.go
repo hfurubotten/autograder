@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 	"log"
+	"net/http"
 	"os"
-	"os/signal"
 	"text/template"
 
 	"github.com/hfurubotten/autograder/config"
@@ -109,13 +109,13 @@ func main() {
 		conf.SetCurrent()
 	}
 
-	// start database
+	log.Println("Starting database")
 	if err := database.Start(config.Get().BasePath); err != nil {
 		log.Fatal(err)
 	}
 	defer database.Close()
 
-	//TODO should the admin user name be saved in the config??
+	//TODO should the admin user name be saved in the config instead of the db??
 
 	// check for new admin user
 	if *admin != "" {
@@ -141,12 +141,6 @@ func main() {
 	// TODO: give notice for those systems not supported
 
 	log.Println("Starting webserver")
-	server := web.NewServer(80)
-	server.Start()
-
-	// prevent main from returning immediately; wait for interrupt
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, os.Kill, os.Interrupt)
-	<-signalChan
-	log.Println("Application shutdown by user.")
+	web.SetHandlers()
+	log.Fatal(http.ListenAndServe(":80", nil))
 }
