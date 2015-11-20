@@ -272,7 +272,7 @@ func getFileResults(resultsFile string, labIndex int, tool string, org *git.Orga
 				fmt.Printf("from another lab.\n")
 				continue
 			}
-		
+
 			// Get the Group ID
 			groupId, err := strconv.Atoi(username[len(git.GroupRepoPrefix):])
 			if err != nil {
@@ -285,21 +285,23 @@ func getFileResults(resultsFile string, labIndex int, tool string, org *git.Orga
 
 			// Update the results
 			results := group.GetAntiPlagiarismResults(org.Name, labIndex)
-			switch tool {
-			case "dupl":
-				results.DuplPct = percent32
-				results.DuplUrl = url
-			case "jplag":
-				results.JplagPct = percent32
-				results.JplagUrl = url
-			case "moss":
-				results.MossPct = percent32
-				results.MossUrl = url
-			}
-			group.AddAntiPlagiarismResults(org.Name, labIndex, results)
+			if results != nil {
+				switch tool {
+				case "dupl":
+					results.DuplPct = percent32
+					results.DuplUrl = url
+				case "jplag":
+					results.JplagPct = percent32
+					results.JplagUrl = url
+				case "moss":
+					results.MossPct = percent32
+					results.MossUrl = url
+				}
+				group.AddAntiPlagiarismResults(org.Name, labIndex, results)
 
-			// Save the database record
-			group.Save()
+				// Save the database record
+				group.Save()
+			}
 		} else {
 			// Make sure that this is a group
 			if strings.HasPrefix(username, "group") {
@@ -308,27 +310,29 @@ func getFileResults(resultsFile string, labIndex int, tool string, org *git.Orga
 				fmt.Printf("from another lab.\n")
 				continue
 			}
-		
+
 			// Get the database record
 			student, _ := git.NewMemberFromUsername(username, false)
 
 			// Update the results
 			results := student.GetAntiPlagiarismResults(org.Name, labIndex)
-			switch tool {
-			case "dupl":
-				results.DuplPct = percent32
-				results.DuplUrl = url
-			case "jplag":
-				results.JplagPct = percent32
-				results.JplagUrl = url
-			case "moss":
-				results.MossPct = percent32
-				results.MossUrl = url
-			}
-			student.AddAntiPlagiarismResults(org.Name, labIndex, results)
+			if results != nil {
+				switch tool {
+				case "dupl":
+					results.DuplPct = percent32
+					results.DuplUrl = url
+				case "jplag":
+					results.JplagPct = percent32
+					results.JplagUrl = url
+				case "moss":
+					results.MossPct = percent32
+					results.MossUrl = url
+				}
+				student.AddAntiPlagiarismResults(org.Name, labIndex, results)
 
-			// Save the database record
-			student.Save()
+				// Save the database record
+				student.Save()
+			}
 		}
 	}
 
