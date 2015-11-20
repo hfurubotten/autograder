@@ -129,6 +129,7 @@ func callAntiplagiarism(request apProto.ApRequest, org *git.Organization, isGrou
 
 	clearPreviousResults(org, isGroup)
 	saveNewResults(org, isGroup)
+	showAllResults(org, isGroup)
 }
 
 // clearPreviousResults clears the previous anti-plagiarim results,
