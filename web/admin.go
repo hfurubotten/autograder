@@ -18,8 +18,7 @@ var AdminURL = "/admin"
 func AdminHandler(w http.ResponseWriter, r *http.Request) {
 	member, err := checkAdminApproval(w, r, true)
 	if err != nil {
-		log.Println(err)
-		http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
+		logErrorAndRedirect(w, r, pages.Home, err)
 		return
 	}
 	adminView := struct {

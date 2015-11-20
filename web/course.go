@@ -97,6 +97,8 @@ var CreateOrgURL = "/course/create"
 //
 // Expected input: org, desc, groups, indv
 // Optional input: private, template
+//TODO This function should be refactored to use a common method to create repos and stuff. There seems to be many parts that can be shared (factored out).
+//TODO Make Unit test for this function; not that it may operate against github.
 func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
 	member, err := checkTeacherApproval(w, r, true)
@@ -145,16 +147,16 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 	org.GroupAssignments = groups
 	indv, err := strconv.Atoi(r.FormValue("indv"))
 	if err != nil {
-		log.Println("Cannot convert number of individual assignments from string to int: ", err)
-		http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
+		// failed to convert from string to int for number of individual assignments
+		logErrorAndRedirect(w, r, pages.Home, err)
 		return
 	}
 	org.IndividualAssignments = indv
 
 	currepos, err := org.ListRepos()
 	if err != nil {
-		log.Println("Problem listing repos in the new course organization: ", err)
-		http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
+		// failed to list repos in the new organization
+		logErrorAndRedirect(w, r, pages.Home, err)
 		return
 	}
 
@@ -163,8 +165,8 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 		templateorg, _ := git.NewOrganization(r.FormValue("template"), true)
 		templaterepos, err = templateorg.ListRepos()
 		if err != nil {
-			log.Println("Problem listing repos in the template organization: ", err)
-			http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
+			// failed to list repos in the template organization
+			logErrorAndRedirect(w, r, pages.Home, err)
 			return
 		}
 	}
@@ -174,8 +176,8 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 		if _, ok = templaterepos[git.CourseInfoName]; ok {
 			err = org.Fork(r.FormValue("template"), git.CourseInfoName)
 			if err != nil {
-				log.Println("Couldn't fork the course info repo: ", err)
-				http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
+				// couldn't fork the course info repo
+				logErrorAndRedirect(w, r, pages.Home, err)
 				return
 			}
 		} else {
@@ -205,8 +207,8 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 			if _, ok = templaterepos[git.StandardRepoName]; ok {
 				err = org.Fork(r.FormValue("template"), git.StandardRepoName)
 				if err != nil {
-					log.Println("Couldn't fork the individual assignment repo: ", err)
-					http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
+					// couldn't fork the individual assignment repo
+					logErrorAndRedirect(w, r, pages.Home, err)
 					return
 				}
 			} else {
@@ -253,8 +255,8 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 			if _, ok = templaterepos[git.TestRepoName]; ok {
 				err = org.Fork(r.FormValue("template"), git.TestRepoName)
 				if err != nil {
-					log.Println("Couldn't fork the test repo: ", err)
-					http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
+					// couldn't fork the test repo
+					logErrorAndRedirect(w, r, pages.Home, err)
 					return
 				}
 			} else {
@@ -310,8 +312,8 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 				if _, ok = templaterepos[git.GroupsRepoName]; ok {
 					err = org.Fork(r.FormValue("template"), git.GroupsRepoName)
 					if err != nil {
-						log.Println("Couldn't fork the group assignment repo: ", err)
-						http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
+						// couldn't fork the group assignment repo
+						logErrorAndRedirect(w, r, pages.Home, err)
 						return
 					}
 				} else {
@@ -669,7 +671,7 @@ func UserCoursePageHandler(w http.ResponseWriter, r *http.Request) {
 
 	org, err := git.NewOrganization(orgname, true)
 	if err != nil {
-		http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
+		logErrorAndRedirect(w, r, pages.Home, err)
 		return
 	}
 
@@ -726,8 +728,7 @@ func UpdateCourseHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
 	member, err := checkTeacherApproval(w, r, true)
 	if err != nil {
-		http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
-		log.Println(err)
+		logErrorAndRedirect(w, r, pages.Front, err)
 		return
 	}
 
@@ -864,8 +865,7 @@ func RemovePendingUserHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
 	member, err := checkTeacherApproval(w, r, true)
 	if err != nil {
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
-		log.Println(err)
+		logErrorAndRedirect(w, r, pages.Front, err)
 		return
 	}
 
@@ -912,8 +912,7 @@ func RemoveUserHandler(w http.ResponseWriter, r *http.Request) {
 	// TODO: this returns the Member object; why do GetMember() below?
 	member, err := checkTeacherApproval(w, r, true)
 	if err != nil {
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
-		log.Println(err)
+		logErrorAndRedirect(w, r, pages.Front, err)
 		return
 	}
 

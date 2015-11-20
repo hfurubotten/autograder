@@ -38,8 +38,8 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 
 	value, err := sessions.GetSessions(r, sessions.AuthSession, sessions.AccessTokenSessionKey)
 	if err != nil {
-		log.Println("Error getting access token from sessions: ", err)
-		http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
+		// error getting access token from session
+		logErrorAndRedirect(w, r, pages.Front, err)
 		return
 	}
 
@@ -96,8 +96,8 @@ func UpdateMemberHandler(w http.ResponseWriter, r *http.Request) {
 
 		value, err := sessions.GetSessions(r, sessions.AuthSession, sessions.AccessTokenSessionKey)
 		if err != nil {
-			log.Println("Error getting access token from sessions: ", err)
-			http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
+			// error getting access token from session
+			logErrorAndRedirect(w, r, pages.Front, err)
 			return
 		}
 
@@ -119,8 +119,8 @@ func UpdateMemberHandler(w http.ResponseWriter, r *http.Request) {
 		member.Name = r.FormValue("name")
 		studentid, err := strconv.Atoi(r.FormValue("studentid"))
 		if err != nil {
-			log.Println("studentid atoi error: ", err)
-			http.Redirect(w, r, pages.Profile, http.StatusTemporaryRedirect)
+			// failed to convert string to int for studentid
+			logErrorAndRedirect(w, r, pages.Profile, err)
 			return
 		}
 
@@ -128,8 +128,8 @@ func UpdateMemberHandler(w http.ResponseWriter, r *http.Request) {
 
 		email, err := mail.ParseAddress(r.FormValue("email"))
 		if err != nil {
-			log.Println("Parsing email error: ", err)
-			http.Redirect(w, r, pages.Profile, http.StatusTemporaryRedirect)
+			// failed to parse email address
+			logErrorAndRedirect(w, r, pages.Profile, err)
 			return
 		}
 		member.Email = email

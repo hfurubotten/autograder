@@ -30,8 +30,7 @@ func TeachersPanelHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
 	member, err := checkTeacherApproval(w, r, true)
 	if err != nil {
-		log.Println(err)
-		http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
+		logErrorAndRedirect(w, r, pages.Home, err)
 		return
 	}
 
@@ -209,14 +208,14 @@ func ShowResultHandler(w http.ResponseWriter, r *http.Request) {
 	if !git.HasMember(username) {
 		groupnum, err := strconv.Atoi(username[len("group"):])
 		if err != nil {
-			http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
+			logErrorAndRedirect(w, r, pages.Home, err)
 			return
 		}
 		if git.HasGroup(groupnum) {
 			isgroup = true
 			group, err := git.NewGroup(org.Name, groupnum, true)
 			if err != nil {
-				http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
+				logErrorAndRedirect(w, r, pages.Home, err)
 				return
 			}
 

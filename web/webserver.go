@@ -233,7 +233,6 @@ func checkMemberApproval(w http.ResponseWriter, r *http.Request, redirect bool) 
 	}
 
 	if !member.IsComplete() {
-		//TODO: Can we always redirect here?
 		if redirect {
 			http.Redirect(w, r, pages.Profile, http.StatusTemporaryRedirect)
 		}
