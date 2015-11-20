@@ -67,7 +67,7 @@ func NewGroupHandler(w http.ResponseWriter, r *http.Request) {
 	course := r.FormValue("course")
 
 	if _, ok := member.Courses[course]; !ok {
-		http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
+		http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
 		log.Println("Unknown course.")
 		return
 	}
@@ -90,14 +90,14 @@ func NewGroupHandler(w http.ResponseWriter, r *http.Request) {
 
 	gid := git.GetNextGroupID()
 	if gid < 0 {
-		http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
+		http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
 		log.Println("Error while getting next group ID.")
 		return
 	}
 
 	group, err := git.NewGroup(course, gid, false)
 	if err != nil {
-		http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
+		http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
 		log.Println("Couldn't make new group object.", err)
 		return
 	}

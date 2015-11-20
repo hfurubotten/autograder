@@ -31,7 +31,7 @@ func TeachersPanelHandler(w http.ResponseWriter, r *http.Request) {
 	member, err := checkTeacherApproval(w, r, true)
 	if err != nil {
 		log.Println(err)
-		http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
+		http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
 		return
 	}
 
@@ -39,13 +39,13 @@ func TeachersPanelHandler(w http.ResponseWriter, r *http.Request) {
 	orgname := ""
 	if path := strings.Split(r.URL.Path, "/"); len(path) == 4 {
 		if !git.HasOrganization(path[3]) {
-			http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
+			http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
 			return
 		}
 
 		orgname = path[3]
 	} else {
-		http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
+		http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
 		return
 	}
 
@@ -57,7 +57,7 @@ func TeachersPanelHandler(w http.ResponseWriter, r *http.Request) {
 
 	if !org.IsTeacher(member) {
 		log.Println("User is not a teacher for this course.")
-		http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
+		http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
 		return
 	}
 
@@ -177,24 +177,24 @@ func ShowResultHandler(w http.ResponseWriter, r *http.Request) {
 	orgname := ""
 	if path := strings.Split(r.URL.Path, "/"); len(path) == 4 {
 		if !git.HasOrganization(path[3]) {
-			http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
+			http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
 			return
 		}
 
 		orgname = path[3]
 	} else {
-		http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
+		http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
 		return
 	}
 
 	username := r.FormValue("user")
 	if username == "" {
-		http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
+		http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
 		return
 	}
 
 	if !git.HasOrganization(orgname) {
-		http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
+		http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
 		return
 	}
 
@@ -209,14 +209,14 @@ func ShowResultHandler(w http.ResponseWriter, r *http.Request) {
 	if !git.HasMember(username) {
 		groupnum, err := strconv.Atoi(username[len("group"):])
 		if err != nil {
-			http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
+			http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
 			return
 		}
 		if git.HasGroup(groupnum) {
 			isgroup = true
 			group, err := git.NewGroup(org.Name, groupnum, true)
 			if err != nil {
-				http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
+				http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
 				return
 			}
 
@@ -228,7 +228,7 @@ func ShowResultHandler(w http.ResponseWriter, r *http.Request) {
 				labnum = group.CurrentLabNum
 			}
 		} else {
-			http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
+			http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
 			return
 		}
 	} else {

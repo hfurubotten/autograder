@@ -48,7 +48,7 @@ func NewCourseHandler(w http.ResponseWriter, r *http.Request) {
 		view.Orgs, err = member.ListOrgs()
 		if err != nil {
 			log.Println(err)
-			http.Redirect(w, r, pages.SIGNOUT, http.StatusTemporaryRedirect)
+			http.Redirect(w, r, pages.Signout, http.StatusTemporaryRedirect)
 			return
 		}
 	}
@@ -81,7 +81,7 @@ func SelectOrgHandler(w http.ResponseWriter, r *http.Request) {
 	view.Orgs, err = member.ListOrgs()
 	if err != nil {
 		log.Println(err)
-		http.Redirect(w, r, pages.SIGNOUT, http.StatusTemporaryRedirect)
+		http.Redirect(w, r, pages.Signout, http.StatusTemporaryRedirect)
 		return
 	}
 
@@ -146,7 +146,7 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 	indv, err := strconv.Atoi(r.FormValue("indv"))
 	if err != nil {
 		log.Println("Cannot convert number of individual assignments from string to int: ", err)
-		http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
+		http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
 		return
 	}
 	org.IndividualAssignments = indv
@@ -154,7 +154,7 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 	currepos, err := org.ListRepos()
 	if err != nil {
 		log.Println("Problem listing repos in the new course organization: ", err)
-		http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
+		http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
 		return
 	}
 
@@ -164,7 +164,7 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 		templaterepos, err = templateorg.ListRepos()
 		if err != nil {
 			log.Println("Problem listing repos in the template organization: ", err)
-			http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
+			http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
 			return
 		}
 	}
@@ -175,7 +175,7 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 			err = org.Fork(r.FormValue("template"), git.CourseInfoName)
 			if err != nil {
 				log.Println("Couldn't fork the course info repo: ", err)
-				http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
+				http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
 				return
 			}
 		} else {
@@ -206,7 +206,7 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 				err = org.Fork(r.FormValue("template"), git.StandardRepoName)
 				if err != nil {
 					log.Println("Couldn't fork the individual assignment repo: ", err)
-					http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
+					http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
 					return
 				}
 			} else {
@@ -254,7 +254,7 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 				err = org.Fork(r.FormValue("template"), git.TestRepoName)
 				if err != nil {
 					log.Println("Couldn't fork the test repo: ", err)
-					http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
+					http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
 					return
 				}
 			} else {
@@ -311,7 +311,7 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 					err = org.Fork(r.FormValue("template"), git.GroupsRepoName)
 					if err != nil {
 						log.Println("Couldn't fork the group assignment repo: ", err)
-						http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
+						http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
 						return
 					}
 				} else {
@@ -381,7 +381,7 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 
 	member.AddTeachingOrganization(org)
 
-	http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
+	http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
 }
 
 // NewCourseMemberURL is the URL used to call NewCourseMemberHandler.
@@ -509,12 +509,12 @@ func ApproveCourseMembershipHandler(w http.ResponseWriter, r *http.Request) {
 	orgname := ""
 	if path := strings.Split(r.URL.Path, "/"); len(path) == 4 {
 		if !git.HasOrganization(path[3]) {
-			http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
+			http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
 			return
 		}
 		orgname = path[3]
 	} else {
-		http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
+		http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
 		return
 	}
 
@@ -657,19 +657,19 @@ func UserCoursePageHandler(w http.ResponseWriter, r *http.Request) {
 	orgname := ""
 	if path := strings.Split(r.URL.Path, "/"); len(path) == 3 {
 		if !git.HasOrganization(path[2]) {
-			http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
+			http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
 			return
 		}
 
 		orgname = path[2]
 	} else {
-		http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
+		http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
 		return
 	}
 
 	org, err := git.NewOrganization(orgname, true)
 	if err != nil {
-		http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
+		http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
 		return
 	}
 
@@ -726,7 +726,7 @@ func UpdateCourseHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
 	member, err := checkTeacherApproval(w, r, true)
 	if err != nil {
-		http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
+		http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
 		log.Println(err)
 		return
 	}

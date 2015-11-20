@@ -32,14 +32,14 @@ var ProfileURL = "/profile"
 // users profile settings. The page can also be used to edit profile data.
 func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 	if !auth.IsApprovedUser(r) {
-		http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
+		http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
 		return
 	}
 
 	value, err := sessions.GetSessions(r, sessions.AuthSession, sessions.AccessTokenSessionKey)
 	if err != nil {
 		log.Println("Error getting access token from sessions: ", err)
-		http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
+		http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
 		return
 	}
 
@@ -85,19 +85,19 @@ var UpdateMemberURL = "/updatemember"
 func UpdateMemberHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		if r.FormValue("name") == "" || r.FormValue("studentid") == "" || r.FormValue("email") == "" {
-			http.Redirect(w, r, pages.REGISTER_REDIRECT, http.StatusTemporaryRedirect)
+			http.Redirect(w, r, pages.Profile, http.StatusTemporaryRedirect)
 			return
 		}
 
 		if !auth.IsApprovedUser(r) {
-			http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
+			http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
 			return
 		}
 
 		value, err := sessions.GetSessions(r, sessions.AuthSession, sessions.AccessTokenSessionKey)
 		if err != nil {
 			log.Println("Error getting access token from sessions: ", err)
-			http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
+			http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
 			return
 		}
 
@@ -120,7 +120,7 @@ func UpdateMemberHandler(w http.ResponseWriter, r *http.Request) {
 		studentid, err := strconv.Atoi(r.FormValue("studentid"))
 		if err != nil {
 			log.Println("studentid atoi error: ", err)
-			http.Redirect(w, r, pages.REGISTER_REDIRECT, http.StatusTemporaryRedirect)
+			http.Redirect(w, r, pages.Profile, http.StatusTemporaryRedirect)
 			return
 		}
 
@@ -129,12 +129,12 @@ func UpdateMemberHandler(w http.ResponseWriter, r *http.Request) {
 		email, err := mail.ParseAddress(r.FormValue("email"))
 		if err != nil {
 			log.Println("Parsing email error: ", err)
-			http.Redirect(w, r, pages.REGISTER_REDIRECT, http.StatusTemporaryRedirect)
+			http.Redirect(w, r, pages.Profile, http.StatusTemporaryRedirect)
 			return
 		}
 		member.Email = email
 
-		http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
+		http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
 	} else {
 		http.Error(w, "This is not the page you are looking for!\n", http.StatusNotFound)
 	}

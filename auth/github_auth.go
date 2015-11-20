@@ -62,7 +62,7 @@ func OAuthHandler(w http.ResponseWriter, r *http.Request) {
 		errstr := getValues.Get("error")
 		if len(errstr) > 0 {
 			log.Println("Failed to obtain temporary OAuth code: " + errstr)
-			http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
+			http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
 			return
 		}
 
@@ -74,7 +74,7 @@ func OAuthHandler(w http.ResponseWriter, r *http.Request) {
 		req, err := http.NewRequest("POST", tokenURL, bytes.NewBuffer([]byte(s)))
 		if err != nil {
 			log.Println("Failed to create POST request: ", err)
-			http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
+			http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
 			return
 		}
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -83,21 +83,21 @@ func OAuthHandler(w http.ResponseWriter, r *http.Request) {
 		resp, err := client.Do(req)
 		if err != nil {
 			log.Println("Failed to issue POST request: ", err)
-			http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
+			http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
 			return
 		}
 
 		data, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			log.Println("Failed to read response body: ", err)
-			http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
+			http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
 			return
 		}
 
 		q, err := url.ParseQuery(string(data))
 		if err != nil {
 			log.Println("Failed to parse query data: ", err)
-			http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
+			http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
 			return
 		}
 
@@ -105,7 +105,7 @@ func OAuthHandler(w http.ResponseWriter, r *http.Request) {
 		errstr = q.Get("error")
 		if len(errstr) > 0 {
 			log.Println("Failed to obtain access token: " + errstr)
-			http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
+			http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
 			return
 		}
 
@@ -119,14 +119,14 @@ func OAuthHandler(w http.ResponseWriter, r *http.Request) {
 				u, err := githubUserProfile(accessToken, scope)
 				if err != nil {
 					log.Printf("Failed to get user from GitHub: %v", err)
-					http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
+					http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
 					return
 				}
 				m = entities.NewMember(u)
 				err = entities.PutMember(accessToken, m)
 				if err != nil {
 					log.Printf("Failed to create member with token: %s\n%v", accessToken, err)
-					http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
+					http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
 					return
 				}
 				log.Printf("Created new member %s", m.Name)
@@ -146,10 +146,10 @@ func OAuthHandler(w http.ResponseWriter, r *http.Request) {
 		// mark auth session as approved
 		sessions.SetSessions(w, r, sessions.AuthSession, sessions.ApprovedSessionKey, true)
 		// save the access token for this session
-		sessions.SetSessionsAndRedirect(w, r, sessions.AuthSession, sessions.AccessTokenSessionKey, accessToken, pages.HOMEPAGE)
+		sessions.SetSessionsAndRedirect(w, r, sessions.AuthSession, sessions.AccessTokenSessionKey, accessToken, pages.Home)
 	} else {
 		// was not a GET request method; redirect with a bad request status.
 		log.Println("Bad request: ", r)
-		http.Redirect(w, r, pages.FRONTPAGE, http.StatusBadRequest)
+		http.Redirect(w, r, pages.Front, http.StatusBadRequest)
 	}
 }

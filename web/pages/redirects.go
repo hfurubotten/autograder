@@ -1,9 +1,10 @@
 package pages
 
 const (
-	OAUTH_REDIRECT    = "/oauth"
-	FRONTPAGE         = "/"
-	REGISTER_REDIRECT = "/profile"
-	HOMEPAGE          = "/home"
-	SIGNOUT           = "/logout"
+	Front   = "/"
+	Home    = "/home"
+	Profile = "/profile"
+	OAuth   = "/oauth"
+	Signin  = "/login"
+	Signout = "/logout"
 )

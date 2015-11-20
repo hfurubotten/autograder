@@ -28,9 +28,9 @@ var htmlBase = "html/"
 // SetHandlers sets up http handler functions for the Autograder web server.
 func SetHandlers() {
 	// OAuth handlers
-	http.Handle("/login", http.RedirectHandler(auth.OAuthRedirectURL(), http.StatusTemporaryRedirect))
-	http.HandleFunc("/oauth", auth.OAuthHandler)
-	http.HandleFunc(pages.SIGNOUT, auth.RemoveApprovalHandler)
+	http.Handle(pages.Signin, http.RedirectHandler(auth.OAuthRedirectURL(), http.StatusTemporaryRedirect))
+	http.HandleFunc(pages.OAuth, auth.OAuthHandler)
+	http.HandleFunc(pages.Signout, auth.RemoveApprovalHandler)
 
 	// Page handlers
 	http.HandleFunc(HomeURL, HomeHandler)
@@ -97,7 +97,7 @@ func CatchAllHandler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
 		if auth.IsApprovedUser(r) {
-			http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
+			http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
 			return
 		}
 
@@ -196,7 +196,7 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	//TODO: This redirect could be made obsolete if we can guarantee that nobody
 	// gets to login before their member status is complete.
 	if !member.IsComplete() {
-		http.Redirect(w, r, pages.REGISTER_REDIRECT, http.StatusTemporaryRedirect)
+		http.Redirect(w, r, pages.Profile, http.StatusTemporaryRedirect)
 		return
 	}
 
@@ -211,7 +211,7 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 func checkMemberApproval(w http.ResponseWriter, r *http.Request, redirect bool) (member *entities.Member, err error) {
 	if !auth.IsApprovedUser(r) {
 		if redirect {
-			http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
+			http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
 		}
 		err = errors.New("user is not logged in")
 		return
@@ -222,7 +222,7 @@ func checkMemberApproval(w http.ResponseWriter, r *http.Request, redirect bool) 
 		//TODO: why overwrite the error from GetSessions??
 		err = errors.New("failed to get access token from session")
 		if redirect {
-			http.Redirect(w, r, pages.FRONTPAGE, http.StatusTemporaryRedirect)
+			http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
 		}
 		return
 	}
@@ -235,7 +235,7 @@ func checkMemberApproval(w http.ResponseWriter, r *http.Request, redirect bool) 
 	if !member.IsComplete() {
 		//TODO: Can we always redirect here?
 		if redirect {
-			http.Redirect(w, r, pages.REGISTER_REDIRECT, http.StatusTemporaryRedirect)
+			http.Redirect(w, r, pages.Profile, http.StatusTemporaryRedirect)
 		}
 		err = errors.New("member with incomplete profile, redirecting")
 		return
@@ -259,7 +259,7 @@ func checkTeacherApproval(w http.ResponseWriter, r *http.Request, redirect bool)
 	if !member.IsTeacher && !member.IsAssistant {
 		err = errors.New("user is not a teacher: " + member.Username)
 		if redirect {
-			http.Redirect(w, r, pages.HOMEPAGE, http.StatusTemporaryRedirect)
+			http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
 		}
 		return
 	}
