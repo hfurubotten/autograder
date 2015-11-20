@@ -239,17 +239,22 @@ func saveNewResults(org *git.Organization, isGroup bool) {
 // org, a database record for the class, and isGroup,
 // whether or not the request is for individual or group assignments.
 func getFileResults(resultsFile string, labIndex int, tool string, org *git.Organization, isGroup bool) bool {
+
 	buf, err := ioutil.ReadFile(resultsFile)
 	if err != nil {
-		fmt.Printf("Error reading file: %s. %s\n", resultsFile, err)
+		fmt.Printf("Error reading file. %s\n", err)
 		return false
 	}
 
 	var fileResults apCommon.ResultEntries
 
-	err = json.Unmarshal(buf, fileResults)
+	err = json.Unmarshal(buf, &fileResults)
 	if err != nil {
 		fmt.Printf("Error unmarshalling results from JSON format. File: %s. %s\n", resultsFile, err)
+		return false
+	}
+
+	if fileResults == nil {
 		return false
 	}
 
@@ -264,13 +269,10 @@ func getFileResults(resultsFile string, labIndex int, tool string, org *git.Orga
 				continue
 			}
 
-			length := len(fileResult.Repo)
-			groupName := fileResult.Repo[:length-5]
-
 			// Get the Group ID
-			groupID, err := strconv.Atoi(groupName[len(git.GroupRepoPrefix):])
+			groupID, err := strconv.Atoi(fileResult.Repo[len(git.GroupRepoPrefix):])
 			if err != nil {
-				fmt.Printf("getFileResults: Could not get group number from %s. %s\n", groupName, err)
+				fmt.Printf("getFileResults: Could not get group number from %s. %s\n", fileResult.Repo, err)
 				continue
 			}
 
@@ -305,9 +307,11 @@ func getFileResults(resultsFile string, labIndex int, tool string, org *git.Orga
 				continue
 			}
 
-			// Get the database record
-			student, _ := git.NewMemberFromUsername(fileResult.Repo, false)
+			length := len(fileResult.Repo)
+			username := fileResult.Repo[:length-5]
 
+			// Get the database record
+			student, _ := git.NewMemberFromUsername(username, false)
 			// Update the results
 			results := student.GetAntiPlagiarismResults(org.Name, labIndex)
 			if results != nil {
