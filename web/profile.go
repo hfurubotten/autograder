@@ -25,9 +25,6 @@ type ProfileView struct {
 	MissingEmail     bool
 }
 
-// ProfileURL is the URL used to call ProfileHandler.
-var ProfileURL = "/profile"
-
 // ProfileHandler is a http handler which writes back a page about the
 // users profile settings. The page can also be used to edit profile data.
 func ProfileHandler(w http.ResponseWriter, r *http.Request) {

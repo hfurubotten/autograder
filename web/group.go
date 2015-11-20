@@ -97,8 +97,8 @@ func NewGroupHandler(w http.ResponseWriter, r *http.Request) {
 
 	group, err := git.NewGroup(course, gid, false)
 	if err != nil {
-		http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
-		log.Println("Couldn't make new group object.", err)
+		// couldn't make new group object
+		logErrorAndRedirect(w, r, pages.Front, err)
 		return
 	}
 
@@ -341,8 +341,7 @@ func RemovePendingGroupHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
 	member, err := checkTeacherApproval(w, r, true)
 	if err != nil {
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
-		log.Println(err)
+		logErrorAndRedirect(w, r, pages.Front, err)
 		return
 	}
 

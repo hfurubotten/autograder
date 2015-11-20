@@ -47,8 +47,7 @@ func NewCourseHandler(w http.ResponseWriter, r *http.Request) {
 
 		view.Orgs, err = member.ListOrgs()
 		if err != nil {
-			log.Println(err)
-			http.Redirect(w, r, pages.Signout, http.StatusTemporaryRedirect)
+			logErrorAndRedirect(w, r, pages.Signout, err)
 			return
 		}
 	}
@@ -80,8 +79,7 @@ func SelectOrgHandler(w http.ResponseWriter, r *http.Request) {
 	view.Member = member
 	view.Orgs, err = member.ListOrgs()
 	if err != nil {
-		log.Println(err)
-		http.Redirect(w, r, pages.Signout, http.StatusTemporaryRedirect)
+		logErrorAndRedirect(w, r, pages.Signout, err)
 		return
 	}
 

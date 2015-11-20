@@ -8,6 +8,7 @@ import (
 	"time"
 
 	git "github.com/hfurubotten/autograder/entities"
+	"github.com/hfurubotten/autograder/web/pages"
 )
 
 // ScoreboardView is the stuct used to pass data to the html template compiler.
@@ -31,13 +32,13 @@ func ScoreboardHandler(w http.ResponseWriter, r *http.Request) {
 	orgname := ""
 	if path := strings.Split(r.URL.Path, "/"); len(path) == 3 {
 		if !git.HasOrganization(path[2]) {
-			http.Redirect(w, r, HomeURL, http.StatusTemporaryRedirect)
+			http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
 			return
 		}
 
 		orgname = path[2]
 	} else {
-		http.Redirect(w, r, HomeURL, http.StatusTemporaryRedirect)
+		http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
 		return
 	}
 
@@ -48,7 +49,7 @@ func ScoreboardHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !org.IsMember(member) {
-		http.Redirect(w, r, HomeURL, http.StatusTemporaryRedirect)
+		http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
 		return
 	}
 

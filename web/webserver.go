@@ -33,8 +33,8 @@ func SetHandlers() {
 	http.HandleFunc(pages.Signout, auth.RemoveApprovalHandler)
 
 	// Page handlers
-	http.HandleFunc(HomeURL, HomeHandler)
-	http.HandleFunc(ProfileURL, ProfileHandler)
+	http.HandleFunc(pages.Home, HomeHandler)
+	http.HandleFunc(pages.Profile, ProfileHandler)
 	http.HandleFunc(NewCourseInfoURL, NewCourseHandler)
 	http.HandleFunc(NewCourseURL, NewCourseHandler)
 	http.HandleFunc(SelectOrgURL, SelectOrgHandler)
@@ -161,9 +161,6 @@ type HomeView struct {
 	Assisting map[string]*entities.Organization
 	Courses   map[string]*entities.Organization
 }
-
-// HomeURL is the URL used to call HomeHandler.
-var HomeURL = "/home"
 
 // HomeHandler is a http handler for the home page for logged in users.
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
