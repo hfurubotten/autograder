@@ -129,6 +129,7 @@ func callAntiplagiarism(request apProto.ApRequest, org *git.Organization, isGrou
 
 	clearPreviousResults(org, isGroup)
 	saveNewResults(org, isGroup)
+	showAllResults(org, isGroup)
 }
 
 // clearPreviousResults clears the previous anti-plagiarim results,
@@ -219,7 +220,7 @@ func saveNewResults(org *git.Organization, isGroup bool) {
 			// For each tool
 			for _, tool := range tools {
 				resultsDir := filepath.Join(resultsBaseDir, org.Name, lab, tool)
-				resultsFile := filepath.Join(resultsDir, "percentage.txt")
+				resultsFile := filepath.Join(resultsDir, "percentage.json")
 
 				// Get the tool's results for that lab
 				success := getFileResults(resultsFile, labIndex, tool, org, isGroup)
