@@ -40,9 +40,9 @@ func NewCourseHandler(w http.ResponseWriter, r *http.Request) {
 
 	var page string
 	switch r.URL.Path {
-	case "/course/new":
+	case NewCourseInfoURL:
 		page = "newcourse-info.html"
-	case "/course/new/org":
+	case NewCourseURL:
 		page = "newcourse-orgselect.html"
 
 		view.Orgs, err = member.ListOrgs()
@@ -72,7 +72,7 @@ func SelectOrgHandler(w http.ResponseWriter, r *http.Request) {
 	if path := strings.Split(r.URL.Path, "/"); len(path) == 5 {
 		view.Org = path[4]
 	} else {
-		http.Redirect(w, r, "/course/new", http.StatusTemporaryRedirect)
+		http.Redirect(w, r, NewCourseInfoURL, http.StatusTemporaryRedirect)
 		return
 	}
 
@@ -432,19 +432,19 @@ func RegisterCourseMemberHandler(w http.ResponseWriter, r *http.Request) {
 	orgname := ""
 	if path := strings.Split(r.URL.Path, "/"); len(path) == 4 {
 		if !git.HasOrganization(path[3]) {
-			http.Redirect(w, r, "/course/register", http.StatusTemporaryRedirect)
+			http.Redirect(w, r, NewCourseMemberURL, http.StatusTemporaryRedirect)
 			return
 		}
 
 		orgname = path[3]
 	} else {
-		http.Redirect(w, r, "/course/register", http.StatusTemporaryRedirect)
+		http.Redirect(w, r, NewCourseMemberURL, http.StatusTemporaryRedirect)
 		return
 	}
 
 	org, err := git.NewOrganization(orgname, false)
 	if err != nil {
-		http.Redirect(w, r, "/course/register", http.StatusTemporaryRedirect)
+		http.Redirect(w, r, NewCourseMemberURL, http.StatusTemporaryRedirect)
 		return
 	}
 
