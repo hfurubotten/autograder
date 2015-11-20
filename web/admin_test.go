@@ -67,7 +67,8 @@ func TestAdminSetterIncompleteMember(t *testing.T) {
 	// mark auth session as approved
 	sessions.SetSessions(w, r, sessions.AuthSession, sessions.ApprovedSessionKey, true)
 	// save the access token for this session
-	sessions.SetSessionsAndRedirect(w, r, sessions.AuthSession, sessions.AccessTokenSessionKey, accessToken, pages.Home)
+	sessions.SetSessions(w, r, sessions.AuthSession, sessions.AccessTokenSessionKey, accessToken)
+	http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
 
 	SetAdminHandler(w, r)
 	buf := new(bytes.Buffer)
@@ -115,7 +116,8 @@ func TestAdminSetterIsAdmin(t *testing.T) {
 	// mark auth session as approved
 	sessions.SetSessions(w, r, sessions.AuthSession, sessions.ApprovedSessionKey, true)
 	// save the access token for this session
-	sessions.SetSessionsAndRedirect(w, r, sessions.AuthSession, sessions.AccessTokenSessionKey, accessToken, pages.Home)
+	sessions.SetSessions(w, r, sessions.AuthSession, sessions.AccessTokenSessionKey, accessToken)
+	http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
 
 	SetAdminHandler(w, r)
 	buf := new(bytes.Buffer)
@@ -167,7 +169,8 @@ func TestAdminSetterMissingField1(t *testing.T) {
 	// mark auth session as approved
 	sessions.SetSessions(w, r, sessions.AuthSession, sessions.ApprovedSessionKey, true)
 	// save the access token for this session
-	sessions.SetSessionsAndRedirect(w, r, sessions.AuthSession, sessions.AccessTokenSessionKey, accessToken, pages.Home)
+	sessions.SetSessions(w, r, sessions.AuthSession, sessions.AccessTokenSessionKey, accessToken)
+	http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
 
 	SetAdminHandler(w, r)
 	buf := new(bytes.Buffer)
@@ -215,7 +218,8 @@ func TestAdminSetterMissingField2(t *testing.T) {
 	// mark auth session as approved
 	sessions.SetSessions(w, r, sessions.AuthSession, sessions.ApprovedSessionKey, true)
 	// save the access token for this session
-	sessions.SetSessionsAndRedirect(w, r, sessions.AuthSession, sessions.AccessTokenSessionKey, accessToken, pages.Home)
+	sessions.SetSessions(w, r, sessions.AuthSession, sessions.AccessTokenSessionKey, accessToken)
+	http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
 
 	SetAdminHandler(w, r)
 	buf := new(bytes.Buffer)

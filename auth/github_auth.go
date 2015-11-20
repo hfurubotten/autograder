@@ -146,7 +146,8 @@ func OAuthHandler(w http.ResponseWriter, r *http.Request) {
 		// mark auth session as approved
 		sessions.SetSessions(w, r, sessions.AuthSession, sessions.ApprovedSessionKey, true)
 		// save the access token for this session
-		sessions.SetSessionsAndRedirect(w, r, sessions.AuthSession, sessions.AccessTokenSessionKey, accessToken, pages.Home)
+		sessions.SetSessions(w, r, sessions.AuthSession, sessions.AccessTokenSessionKey, accessToken)
+		http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
 	} else {
 		// was not a GET request method; redirect with a bad request status.
 		log.Println("Bad request: ", r)

@@ -15,18 +15,6 @@ func init() {
 	}
 }
 
-// SetSessionsAndRedirect will set a session and redirects.
-func SetSessionsAndRedirect(w http.ResponseWriter, r *http.Request, sessionsname string, key, value interface{}, redirecturl string) (err error) {
-	session, _ := store.Get(r, sessionsname)
-
-	session.Values[key] = value
-	err = session.Save(r, w)
-
-	handler := http.RedirectHandler(redirecturl, http.StatusTemporaryRedirect)
-	handler.ServeHTTP(w, r)
-	return
-}
-
 // SetSessions sets a session.
 func SetSessions(w http.ResponseWriter, r *http.Request, sessionsname string, key, value interface{}) (err error) {
 	session, _ := store.Get(r, sessionsname)
