@@ -202,7 +202,7 @@ func saveNewResults(org *git.Organization, isGroup bool) {
 			// For each tool
 			for _, tool := range tools {
 				resultsDir := filepath.Join(resultsBaseDir, org.Name, lab, tool)
-				resultsFile := filepath.Join(resultsDir, "percentage.json")
+				resultsFile := filepath.Join(resultsDir, apCommon.ResultsFileName)
 
 				// Get the tool's results for that lab
 				success := getFileResults(resultsFile, labIndex, tool, org, isGroup)
@@ -219,7 +219,7 @@ func saveNewResults(org *git.Organization, isGroup bool) {
 			// For each tool
 			for _, tool := range tools {
 				resultsDir := filepath.Join(resultsBaseDir, org.Name, lab, tool)
-				resultsFile := filepath.Join(resultsDir, "percentage.txt")
+				resultsFile := filepath.Join(resultsDir, apCommon.ResultsFileName)
 
 				// Get the tool's results for that lab
 				success := getFileResults(resultsFile, labIndex, tool, org, isGroup)
