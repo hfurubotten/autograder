@@ -265,13 +265,18 @@ func getFileResults(resultsFile string, labIndex int, tool string, org *git.Orga
 		url := values[2]
 
 		if isGroup {
+			// Make sure that this is a group
+			if !strings.HasPrefix(username, "group") {
+				fmt.Printf("JPlag might be returning matching individual labs from previous sessions.\n")
+				fmt.Printf("If that is the case, there is a group with code matching an individuals code\n")
+				fmt.Printf("from another lab.\n")
+				continue
+			}
+		
 			// Get the Group ID
 			groupId, err := strconv.Atoi(username[len(git.GroupRepoPrefix):])
 			if err != nil {
 				fmt.Printf("getFileResults: Could not get group number from %s. %s\n", username, err)
-				fmt.Printf("JPlag might be returning matching individual labs from previous sessions.\n")
-				fmt.Printf("If that is the case, there is a group with code matching an individuals code\n")
-				fmt.Printf("from another lab.\n")
 				continue
 			}
 
@@ -296,6 +301,14 @@ func getFileResults(resultsFile string, labIndex int, tool string, org *git.Orga
 			// Save the database record
 			group.Save()
 		} else {
+			// Make sure that this is a group
+			if strings.HasPrefix(username, "group") {
+				fmt.Printf("JPlag might be returning matching group labs from previous sessions.\n")
+				fmt.Printf("If that is the case, there is a group with code matching an individuals code\n")
+				fmt.Printf("from another lab.\n")
+				continue
+			}
+		
 			// Get the database record
 			student, _ := git.NewMemberFromUsername(username, false)
 
