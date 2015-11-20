@@ -105,10 +105,10 @@ func (co *CourseOptions) RecalculateSlipDays() error {
 
 // AntiPlagiarismResults holds the results from the anti-plagiarism application.
 type AntiPlagiarismResults struct {
-	MossPct float32
-	MossUrl string
-	DuplPct float32
-	DuplUrl string
-	JplagPct float32
-	JplagUrl string
+	MossPct  float64
+	MossURL  string
+	DuplPct  float64
+	DuplURL  string
+	JplagPct float64
+	JplagURL string
 }

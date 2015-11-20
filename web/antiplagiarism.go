@@ -1,15 +1,16 @@
 package web
 
 import (
-	"bufio"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 
-	pb "github.com/autograde/antiplagiarism/proto"
+	apCommon "github.com/autograde/antiplagiarism/common"
+	apProto "github.com/autograde/antiplagiarism/proto"
 	git "github.com/hfurubotten/autograder/entities"
 
 	"golang.org/x/net/context"
@@ -55,7 +56,7 @@ func ManualTestPlagiarismHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// The order of the repos does not matter.
-		for groupName, _ := range org.Groups {
+		for groupName := range org.Groups {
 			repos = append(repos, groupName)
 		}
 	} else {
@@ -72,13 +73,13 @@ func ManualTestPlagiarismHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// The order of the repos does not matter.
-		for indvName, _ := range org.Members {
+		for indvName := range org.Members {
 			repos = append(repos, indvName+"-labs")
 		}
 	}
 
 	// Create request
-	request := pb.ApRequest{GithubOrg: org.Name,
+	request := apProto.ApRequest{GithubOrg: org.Name,
 		GithubToken:  org.AdminToken,
 		StudentRepos: repos,
 		LabNames:     labs,
@@ -93,7 +94,7 @@ func ManualTestPlagiarismHandler(w http.ResponseWriter, r *http.Request) {
 // It takes as input request, an ApRequest (anti-plagiarism request),
 // org, a database record for the class, and isGroup, whether or not
 // the request if for individual or group assignments.
-func callAntiplagiarism(request pb.ApRequest, org *git.Organization, isGroup bool) {
+func callAntiplagiarism(request apProto.ApRequest, org *git.Organization, isGroup bool) {
 	// Currently just on localhost.
 	endpoint := "localhost:11111"
 	var opts []grpc.DialOption
@@ -110,7 +111,7 @@ func callAntiplagiarism(request pb.ApRequest, org *git.Organization, isGroup boo
 	fmt.Printf("Connected to server on %v\n", endpoint)
 
 	// Create client
-	client := pb.NewApClient(conn)
+	client := apProto.NewApClient(conn)
 
 	// Send request and get response
 	response, err := client.CheckPlagiarism(context.Background(), &request)
@@ -138,25 +139,25 @@ func clearPreviousResults(org *git.Organization, isGroup bool) {
 	if isGroup {
 		// Clear old group results
 		// For each group
-		for groupName, _ := range org.Groups {
+		for groupName := range org.Groups {
 			// Get the Group ID
-			groupId, err := strconv.Atoi(groupName[len(git.GroupRepoPrefix):])
+			groupID, err := strconv.Atoi(groupName[len(git.GroupRepoPrefix):])
 			if err != nil {
 				fmt.Printf("clearPreviousResults: Could not get group number from %s. %s\n", groupName, err)
 				continue
 			}
 
 			// Get the database record
-			group, _ := git.NewGroup(org.Name, groupId, false)
+			group, _ := git.NewGroup(org.Name, groupID, false)
 			// For each lab
 			for labIndex := 1; labIndex <= org.GroupAssignments; labIndex++ {
 				// Clear the specific lab results
 				results := git.AntiPlagiarismResults{MossPct: 0.0,
-					MossUrl:  "",
+					MossURL:  "",
 					DuplPct:  0.0,
-					DuplUrl:  "",
+					DuplURL:  "",
 					JplagPct: 0.0,
-					JplagUrl: ""}
+					JplagURL: ""}
 				group.AddAntiPlagiarismResults(org.Name, labIndex, &results)
 			}
 			// Save the database record
@@ -165,18 +166,18 @@ func clearPreviousResults(org *git.Organization, isGroup bool) {
 	} else {
 		// Clear old individual results
 		// For each student
-		for username, _ := range org.Members {
+		for username := range org.Members {
 			// Get the database record
 			student, _ := git.NewMemberFromUsername(username, false)
 			// For each lab
 			for labIndex := 1; labIndex <= org.IndividualAssignments; labIndex++ {
 				// Clear the specific lab results
 				results := git.AntiPlagiarismResults{MossPct: 0,
-					MossUrl:  "",
+					MossURL:  "",
 					DuplPct:  0,
-					DuplUrl:  "",
+					DuplURL:  "",
 					JplagPct: 0,
-					JplagUrl: ""}
+					JplagURL: ""}
 				student.AddAntiPlagiarismResults(org.Name, labIndex, &results)
 			}
 			// Save the database record
@@ -237,65 +238,57 @@ func saveNewResults(org *git.Organization, isGroup bool) {
 // org, a database record for the class, and isGroup,
 // whether or not the request is for individual or group assignments.
 func getFileResults(resultsFile string, labIndex int, tool string, org *git.Organization, isGroup bool) bool {
-	file, err := os.Open(resultsFile)
+	buf, err := ioutil.ReadFile(resultsFile)
 	if err != nil {
+		fmt.Printf("Error reading file: %s. %s\n", resultsFile, err)
 		return false
 	}
-	defer file.Close()
 
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		username := ""
-		tempString := scanner.Text()
-		values := strings.Split(tempString, "|")
+	var fileResults apCommon.ResultEntries
 
-		// Format each value from that line
-		if !isGroup {
-			length := len(values[0])
-			username = values[0][:length-5]
-		} else {
-			username = values[0]
-		}
-		percent64, err := strconv.ParseFloat(values[1], 32)
-		if err != nil {
-			fmt.Printf("getFileResults: Error converting %s to a float while reading file %s.\n", values[1], resultsFile)
-			continue
-		}
-		percent32 := float32(percent64)
-		url := values[2]
+	err = json.Unmarshal(buf, fileResults)
+	if err != nil {
+		fmt.Printf("Error unmarshalling results from JSON format. File: %s. %s\n", resultsFile, err)
+		return false
+	}
+
+	for _, fileResult := range fileResults {
 
 		if isGroup {
 			// Make sure that this is a group
-			if !strings.HasPrefix(username, "group") {
+			if !strings.HasPrefix(fileResult.Repo, "group") {
 				fmt.Printf("JPlag might be returning matching individual labs from previous sessions.\n")
 				fmt.Printf("If that is the case, there is a group with code matching an individuals code\n")
 				fmt.Printf("from another lab.\n")
 				continue
 			}
 
+			length := len(fileResult.Repo)
+			groupName := fileResult.Repo[:length-5]
+
 			// Get the Group ID
-			groupId, err := strconv.Atoi(username[len(git.GroupRepoPrefix):])
+			groupID, err := strconv.Atoi(groupName[len(git.GroupRepoPrefix):])
 			if err != nil {
-				fmt.Printf("getFileResults: Could not get group number from %s. %s\n", username, err)
+				fmt.Printf("getFileResults: Could not get group number from %s. %s\n", groupName, err)
 				continue
 			}
 
 			// Get the database record
-			group, _ := git.NewGroup(org.Name, groupId, false)
+			group, _ := git.NewGroup(org.Name, groupID, false)
 
 			// Update the results
 			results := group.GetAntiPlagiarismResults(org.Name, labIndex)
 			if results != nil {
 				switch tool {
 				case "dupl":
-					results.DuplPct = percent32
-					results.DuplUrl = url
+					results.DuplPct = fileResult.Percent
+					results.DuplURL = fileResult.URL
 				case "jplag":
-					results.JplagPct = percent32
-					results.JplagUrl = url
+					results.JplagPct = fileResult.Percent
+					results.JplagURL = fileResult.URL
 				case "moss":
-					results.MossPct = percent32
-					results.MossUrl = url
+					results.MossPct = fileResult.Percent
+					results.MossURL = fileResult.URL
 				}
 				group.AddAntiPlagiarismResults(org.Name, labIndex, results)
 
@@ -304,7 +297,7 @@ func getFileResults(resultsFile string, labIndex int, tool string, org *git.Orga
 			}
 		} else {
 			// Make sure that this is a group
-			if strings.HasPrefix(username, "group") {
+			if strings.HasPrefix(fileResult.Repo, "group") {
 				fmt.Printf("JPlag might be returning matching group labs from previous sessions.\n")
 				fmt.Printf("If that is the case, there is a group with code matching an individuals code\n")
 				fmt.Printf("from another lab.\n")
@@ -312,21 +305,21 @@ func getFileResults(resultsFile string, labIndex int, tool string, org *git.Orga
 			}
 
 			// Get the database record
-			student, _ := git.NewMemberFromUsername(username, false)
+			student, _ := git.NewMemberFromUsername(fileResult.Repo, false)
 
 			// Update the results
 			results := student.GetAntiPlagiarismResults(org.Name, labIndex)
 			if results != nil {
 				switch tool {
 				case "dupl":
-					results.DuplPct = percent32
-					results.DuplUrl = url
+					results.DuplPct = fileResult.Percent
+					results.DuplURL = fileResult.URL
 				case "jplag":
-					results.JplagPct = percent32
-					results.JplagUrl = url
+					results.JplagPct = fileResult.Percent
+					results.JplagURL = fileResult.URL
 				case "moss":
-					results.MossPct = percent32
-					results.MossUrl = url
+					results.MossPct = fileResult.Percent
+					results.MossURL = fileResult.URL
 				}
 				student.AddAntiPlagiarismResults(org.Name, labIndex, results)
 
@@ -344,16 +337,16 @@ func getFileResults(resultsFile string, labIndex int, tool string, org *git.Orga
 func showAllResults(org *git.Organization, isGroup bool) {
 	if isGroup {
 		// For each group
-		for groupName, _ := range org.Groups {
+		for groupName := range org.Groups {
 			// Get the Group ID
-			groupId, err := strconv.Atoi(groupName[len(git.GroupRepoPrefix):])
+			groupID, err := strconv.Atoi(groupName[len(git.GroupRepoPrefix):])
 			if err != nil {
 				fmt.Printf("showAllResults: Could not get group number from %s. %s\n", groupName, err)
 				continue
 			}
 
 			// Get the database record
-			group, _ := git.NewGroup(org.Name, groupId, false)
+			group, _ := git.NewGroup(org.Name, groupID, false)
 			// For each lab
 			for labIndex := 1; labIndex <= org.GroupAssignments; labIndex++ {
 				results := group.GetAntiPlagiarismResults(org.Name, labIndex)
@@ -362,7 +355,7 @@ func showAllResults(org *git.Organization, isGroup bool) {
 		}
 	} else {
 		// For each student
-		for username, _ := range org.Members {
+		for username := range org.Members {
 			// Get the database record
 			student, _ := git.NewMemberFromUsername(username, false)
 			// For each lab
