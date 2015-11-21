@@ -459,8 +459,8 @@ func (o *Organization) IsTeacher(member *Member) bool {
 		_, mok = member.Teaching[o.Name]
 		_, aok := member.AssistantCourses[o.Name]
 		if orgok && (!mok && !aok) {
-			member.Teaching[o.Name] = nil
-			member.Save() // This line is not tread safe!
+			member.Teaching[o.Name] = true //TODO Should touch member internals from here
+			member.Save()                  // This line is not tread safe!
 		}
 
 		if mok && aok {
@@ -475,8 +475,8 @@ func (o *Organization) IsTeacher(member *Member) bool {
 
 		_, mok = member.AssistantCourses[o.Name]
 		if orgok && !mok {
-			member.AssistantCourses[o.Name] = nil
-			member.Save() // This line is not tread safe!
+			member.AssistantCourses[o.Name] = true //TODO Should touch member internals from here
+			member.Save()                          // This line is not tread safe!
 		} else if ok {
 			member.Save() // This line is not tread safe!
 		}

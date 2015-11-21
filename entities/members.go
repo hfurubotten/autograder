@@ -27,9 +27,9 @@ type Member struct {
 	IsAssistant bool
 	IsAdmin     bool
 
-	Teaching         map[string]interface{}
+	Teaching         map[string]bool
 	Courses          map[string]Course
-	AssistantCourses map[string]interface{}
+	AssistantCourses map[string]bool
 }
 
 // NewMember creates a new member based on the provided user profile.
@@ -37,9 +37,9 @@ func NewMember(u *UserProfile) (m *Member) {
 	return &Member{
 		UserProfile:      u,
 		UserScore:        NewUserScore(),
-		Teaching:         make(map[string]interface{}),
+		Teaching:         make(map[string]bool),
 		Courses:          make(map[string]Course),
-		AssistantCourses: make(map[string]interface{}),
+		AssistantCourses: make(map[string]bool),
 	}
 }
 
@@ -307,25 +307,25 @@ func (m *Member) RemoveOrganization(org *Organization) (err error) {
 }
 
 // AddTeachingOrganization will add a new github organization to courses the user are teaching.
-func (m *Member) AddTeachingOrganization(org *Organization) (err error) {
+func (m *Member) AddTeachingOrganization(org *Organization) {
 	if m.Teaching == nil {
-		m.Teaching = make(map[string]interface{})
+		m.Teaching = make(map[string]bool)
 	}
 
 	m.IsTeacher = true
-	m.Teaching[org.Name] = nil
+	m.Teaching[org.Name] = true
 
 	return
 }
 
 // AddAssistingOrganization will add a new github organization to courses the user are teaching assistant of.
-func (m *Member) AddAssistingOrganization(org *Organization) (err error) {
+func (m *Member) AddAssistingOrganization(org *Organization) {
 	if m.AssistantCourses == nil {
-		m.AssistantCourses = make(map[string]interface{})
+		m.AssistantCourses = make(map[string]bool)
 	}
 
 	m.IsAssistant = true
-	m.AssistantCourses[org.Name] = nil
+	m.AssistantCourses[org.Name] = true
 
 	return
 }
@@ -333,7 +333,7 @@ func (m *Member) AddAssistingOrganization(org *Organization) (err error) {
 // RemoveAssistingOrganization will add a new github organization to courses the user are teaching assistant of.
 func (m *Member) RemoveAssistingOrganization(org *Organization) (err error) {
 	if m.AssistantCourses == nil {
-		m.AssistantCourses = make(map[string]interface{})
+		m.AssistantCourses = make(map[string]bool)
 	}
 
 	delete(m.AssistantCourses, org.Name)

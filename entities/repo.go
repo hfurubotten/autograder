@@ -17,7 +17,7 @@ const (
 	usrOwner
 )
 
-// Repo represent a git repository. This is currently not used.
+// Repo represent a git repository. TODO This is currently not used.
 type Repo struct {
 	Name        string
 	Fullname    string
