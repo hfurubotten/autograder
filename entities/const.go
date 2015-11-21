@@ -6,7 +6,6 @@ const (
 	GroupsRepoName     = "glabs"
 	CourseInfoName     = "course-info"
 	TestRepoName       = "labs-test"
-	GrouptestRepoName  = "groups-test" // Deprecated. Use only the TEST_REPO_NAME.
 	CodeReviewRepoName = "code-reviews"
 	GroupRepoPrefix    = "group"
 )

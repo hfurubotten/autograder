@@ -21,13 +21,18 @@ func AdminHandler(w http.ResponseWriter, r *http.Request) {
 		logErrorAndRedirect(w, r, pages.Home, err)
 		return
 	}
+	members, err := entities.ListAllMembers()
+	if err != nil {
+		logErrorAndRedirect(w, r, pages.Home, err)
+		return
+	}
 	adminView := struct {
 		SysName          string
 		OptionalHeadline bool
 		Member           *entities.Member
 		Members          []*entities.Member
 	}{
-		config.SysName, false, member, entities.ListAllMembers(),
+		config.SysName, false, member, members,
 	}
 	execTemplate("admin.html", w, adminView)
 }

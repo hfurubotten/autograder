@@ -32,9 +32,6 @@ var testNewMemberInput = []struct {
 	},
 }
 
-//TODO Fix other uses of NewMember to adhere to new API style.
-// See auth/github_auth.go and web/profile.go and web/webserver.go
-
 func TestNewMember(t *testing.T) {
 	for _, in := range testNewMemberInput {
 		u := NewUserProfile(in.token, in.username, in.scope)
@@ -417,12 +414,15 @@ func TestListAllMembers(t *testing.T) {
 	for _, username := range testListAllMembersInput {
 		user, err := GetMember(username)
 		if err != nil {
-			t.Errorf("Error getting user: %v", err)
+			t.Error(err)
 		}
 		user.Save()
 	}
 
-	list := ListAllMembers()
+	list, err := ListAllMembers()
+	if err != nil {
+		t.Error(err)
+	}
 	for _, user := range list {
 		found := false
 		for _, username := range testListAllMembersInput {

@@ -3,7 +3,6 @@ package entities
 import (
 	"errors"
 	"fmt"
-	"log"
 	"sync"
 	"time"
 
@@ -352,7 +351,7 @@ func (m *Member) String() string {
 }
 
 // ListAllMembers returns the list of all members stored in the system.
-func ListAllMembers() (members []*Member) {
+func ListAllMembers() (members []*Member, err error) {
 	fn := func(k, v []byte) error {
 		m, err := GetMember(string(k))
 		if err == nil {
@@ -361,11 +360,8 @@ func ListAllMembers() (members []*Member) {
 		// continue also if member couldn't be obtained
 		return nil
 	}
-	err := database.ForEach(MemberBucketName, fn)
-	if err != nil {
-		log.Println(err)
-	}
-	return members
+	err = database.ForEach(MemberBucketName, fn)
+	return members, err
 }
 
 // HasMember checks if the user is stored in the system.
