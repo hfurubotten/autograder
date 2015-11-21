@@ -52,9 +52,10 @@ func githubUserProfile(token, scope string) (*entities.UserProfile, error) {
 	}
 	if gu.Email != nil {
 		m, err := mail.ParseAddress(*gu.Email)
-		if err == nil {
-			u.Email = m
+		if err != nil {
+			return nil, err
 		}
+		u.Email = m
 	}
 	return u, nil
 }
