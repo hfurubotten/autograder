@@ -61,6 +61,9 @@ func Put(bucket string, key string, value interface{}) (err error) {
 		}
 		data, err := Marshal(value)
 		// data, err := json.Marshal(value)
+		if err != nil {
+			return err
+		}
 		return b.Put([]byte(key), data)
 	})
 }

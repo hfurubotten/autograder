@@ -59,14 +59,14 @@ func ManualCITriggerHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	groupid := -1
+	// groupid := -1
 	labnum := -1
 	if strings.Contains(user, "group") {
-		groupid, err = strconv.Atoi(user[len("group"):])
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		// groupid, err = strconv.Atoi(user[len("group"):])
+		// if err != nil {
+		// 	http.Error(w, err.Error(), http.StatusInternalServerError)
+		// 	return
+		// }
 
 		for i, name := range org.GroupLabFolders {
 			if name == lab {
@@ -97,9 +97,10 @@ func ManualCITriggerHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	opt := ci.DaemonOptions{
-		Org:   org.Name,
-		User:  user,
-		Group: groupid,
+		Org:       org.Name,
+		User:      user,
+		GroupName: user,
+		// Group: groupid,
 
 		UserRepo:   repo,
 		TestRepo:   git.TestRepoName,
@@ -163,13 +164,7 @@ func CIResultHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		groupid, err := strconv.Atoi(username[len(git.GroupRepoPrefix):])
-		if err != nil {
-			http.Error(w, "Could not convert the group ID.", http.StatusNotFound)
-			return
-		}
-
-		group, err := git.NewGroup(orgname, groupid, true)
+		group, err := git.GetGroup(username) // username==groupname TODO consider changing this
 		if err != nil {
 			log.Println(err)
 			http.Error(w, err.Error(), http.StatusNotFound)
@@ -280,14 +275,7 @@ func CIResultSummaryHandler(w http.ResponseWriter, r *http.Request) {
 	//credit := make(map[string]score.Score)
 	//if group ...
 	if strings.HasPrefix(username, git.GroupRepoPrefix) {
-		groupid, err := strconv.Atoi(username[len(git.GroupRepoPrefix):])
-		if err != nil {
-			log.Println(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		group, err := git.NewGroup(orgname, groupid, true)
+		group, err := git.GetGroup(username) // username==groupname TODO consider changing this
 		if err != nil {
 			log.Println(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -426,7 +414,8 @@ func CIResultListHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if groupid > 0 {
-		group, err := git.NewGroup(org.Name, groupid, true)
+		groupName := git.GroupRepoPrefix + strconv.Itoa(groupid)
+		group, err := git.GetGroup(groupName)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -1,9 +1,6 @@
 package entities
 
-import (
-	"strconv"
-	"testing"
-)
+import "testing"
 
 var testNewOrganizationAndSaveInput = []string{
 	"course1",
@@ -66,16 +63,16 @@ func TestNewOrganizationAndSave(t *testing.T) {
 }
 
 var testAddGroupInput = []struct {
-	Course  string
-	GroupID int
+	Course    string
+	GroupName string
 }{
-	{"course1", 1},
-	{"course1", 2},
-	{"course1", 3},
-	{"course1", 4},
-	{"course2", 5},
-	{"course3", 6},
-	{"course3", 7},
+	{"course1", "1"},
+	{"course1", "2"},
+	{"course1", "3"},
+	{"course1", "4"},
+	{"course2", "5"},
+	{"course3", "6"},
+	{"course3", "7"},
 }
 
 func TestAddGroup(t *testing.T) {
@@ -84,13 +81,9 @@ func TestAddGroup(t *testing.T) {
 		if err != nil {
 			t.Error("Could not create a new course:", err)
 		}
-		g, err := NewGroup(in.Course, in.GroupID, true)
-		if err != nil {
-			t.Error("Could not create a new group:", err)
-		}
+		g := NewGroupX(in.Course, in.GroupName)
 
-		org.PendingGroup[in.GroupID] = nil
-
+		org.PendingGroup[in.GroupName] = nil
 		org.AddGroup(g)
 		org.Save()
 
@@ -99,11 +92,11 @@ func TestAddGroup(t *testing.T) {
 			t.Error("Could not create a new course:", err)
 		}
 
-		if _, ok := org2.PendingGroup[in.GroupID]; ok {
-			t.Errorf("Cound find group with ID %d in the PendingGroup map", in.GroupID)
+		if _, ok := org2.PendingGroup[in.GroupName]; ok {
+			t.Errorf("Unexpectedly found group '%s' in the PendingGroup map", in.GroupName)
 		}
-		if _, ok := org2.Groups["group"+strconv.Itoa(in.GroupID)]; !ok {
-			t.Errorf("Cound not find group with ID %d in the Group map", in.GroupID)
+		if _, ok := org2.Groups[in.GroupName]; !ok {
+			t.Errorf("Couldn't find group '%s' in the Group map", in.GroupName)
 		}
 	}
 }

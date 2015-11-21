@@ -14,9 +14,9 @@ import (
 
 // DaemonOptions represent the options needed to start the testing daemon.
 type DaemonOptions struct {
-	Org   string
-	User  string
-	Group int
+	Org       string
+	User      string
+	GroupName string
 
 	UserRepo   string
 	TestRepo   string
@@ -76,9 +76,9 @@ func StartTesterDaemon(opt DaemonOptions) {
 	}()
 
 	// Build for group assignment. Stores build ID in group.
-	if opt.Group > 0 {
+	if len(opt.GroupName) > 0 {
 		//TODO move to groups.go
-		group, err := git.NewGroup(opt.Org, opt.Group, false)
+		group, err := git.GetGroup(opt.GroupName)
 		if err != nil {
 			log.Println(err)
 			return

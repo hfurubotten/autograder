@@ -14,13 +14,12 @@ const hidden = "Sanitized"
 
 // BuildResult represent a result from a test build.
 type BuildResult struct {
-	ID     int
-	Course string
-	User   string
-	Group  int
+	ID        int
+	Course    string
+	User      string
+	GroupName string
 
-	log []string
-	//TODO unexport / lower case these:
+	log             []string
 	NumPasses       int
 	NumFails        int
 	numBuildFailure int
@@ -59,6 +58,7 @@ func NewBuildResult(opt DaemonOptions) (*BuildResult, error) {
 		ID:         int(nextid),
 		Course:     opt.Org,
 		User:       opt.User,
+		GroupName:  opt.GroupName,
 		Status:     "Active lab assignment",
 		Labnum:     opt.LabNumber,
 		Timestamp:  startTime,

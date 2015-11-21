@@ -6,16 +6,19 @@ import (
 )
 
 var testNewGroup = []struct {
-	inCourse string
-	inGID    int
-	want     *Group
+	course string
+	name   string
+	gid    int
+	want   *Group
 }{
 	{
 		"course1",
+		"hein's group",
 		1,
 		&Group{
 			ID:            1,
 			Course:        "course1",
+			Name:          "hein's group",
 			CurrentLabNum: 1,
 			Active:        false,
 			Members:       make(map[string]interface{}),
@@ -24,10 +27,12 @@ var testNewGroup = []struct {
 	},
 	{
 		"course1",
+		"nuugers",
 		2,
 		&Group{
 			ID:            2,
 			Course:        "course1",
+			Name:          "nuugers",
 			CurrentLabNum: 1,
 			Active:        false,
 			Members:       make(map[string]interface{}),
@@ -36,10 +41,12 @@ var testNewGroup = []struct {
 	},
 	{
 		"course1",
+		"suckers",
 		3,
 		&Group{
 			ID:            3,
 			Course:        "course1",
+			Name:          "suckers",
 			CurrentLabNum: 1,
 			Active:        false,
 			Members:       make(map[string]interface{}),
@@ -48,10 +55,12 @@ var testNewGroup = []struct {
 	},
 	{
 		"course2",
+		"groupers",
 		4,
 		&Group{
 			ID:            4,
 			Course:        "course2",
+			Name:          "groupers",
 			CurrentLabNum: 1,
 			Active:        false,
 			Members:       make(map[string]interface{}),
@@ -60,10 +69,12 @@ var testNewGroup = []struct {
 	},
 	{
 		"course2",
+		"pekers",
 		5,
 		&Group{
 			ID:            5,
 			Course:        "course2",
+			Name:          "pekers",
 			CurrentLabNum: 1,
 			Active:        false,
 			Members:       make(map[string]interface{}),
@@ -72,10 +83,12 @@ var testNewGroup = []struct {
 	},
 	{
 		"course2",
+		"the giants",
 		6,
 		&Group{
 			ID:            6,
 			Course:        "course2",
+			Name:          "the giants",
 			CurrentLabNum: 1,
 			Active:        false,
 			Members:       make(map[string]interface{}),
@@ -84,30 +97,23 @@ var testNewGroup = []struct {
 	},
 }
 
-func TestNewGroup(t *testing.T) {
-	for _, tcase := range testNewGroup {
-		// test a not known group
-		g1, err := NewGroup(tcase.inCourse, tcase.inGID, false)
+func TestNewGroupX(t *testing.T) {
+	for _, in := range testNewGroup {
+		g := NewGroupX(in.course, in.name)
+		compareGroups(g, in.want, t)
+		err := g.Save()
 		if err != nil {
-			t.Errorf("Error creating group: %v", err)
+			t.Error(err)
 			continue
 		}
-
-		compareGroups(g1, tcase.want, t)
-
-		err = g1.Save()
+	}
+	// check if newly created groups can be retrived from database
+	for _, in := range testNewGroup {
+		g, err := GetGroup(in.name)
 		if err != nil {
-			t.Errorf("Error saving group: %v", err)
-			continue
+			t.Error(err)
 		}
-
-		// test when known
-		g2, err := NewGroup(tcase.inCourse, tcase.inGID, true)
-		if err != nil {
-			t.Errorf("Error creating group: %v", err)
-		}
-
-		compareGroups(g1, g2, t)
+		compareGroups(g, in.want, t)
 	}
 }
 
@@ -119,6 +125,7 @@ var testActivate = []struct {
 		&Group{
 			ID:            7,
 			Course:        "course1",
+			Name:          "7",
 			CurrentLabNum: 1,
 			Active:        false,
 			Members:       make(map[string]interface{}),
@@ -127,6 +134,7 @@ var testActivate = []struct {
 		&Group{
 			ID:            7,
 			Course:        "course1",
+			Name:          "7",
 			CurrentLabNum: 1,
 			Active:        true,
 			Members:       make(map[string]interface{}),
@@ -137,6 +145,7 @@ var testActivate = []struct {
 		&Group{
 			ID:            8,
 			Course:        "course1",
+			Name:          "8",
 			CurrentLabNum: 1,
 			Active:        false,
 			Members: map[string]interface{}{
@@ -148,6 +157,7 @@ var testActivate = []struct {
 		&Group{
 			ID:            8,
 			Course:        "course1",
+			Name:          "8",
 			CurrentLabNum: 1,
 			Active:        true,
 			Members: map[string]interface{}{
@@ -161,6 +171,7 @@ var testActivate = []struct {
 		&Group{
 			ID:            9,
 			Course:        "course1",
+			Name:          "9",
 			CurrentLabNum: 1,
 			Active:        false,
 			Members: map[string]interface{}{
@@ -174,6 +185,7 @@ var testActivate = []struct {
 		&Group{
 			ID:            9,
 			Course:        "course1",
+			Name:          "9",
 			CurrentLabNum: 1,
 			Active:        true,
 			Members: map[string]interface{}{
@@ -232,6 +244,7 @@ var testAddMember = []struct {
 		&Group{
 			ID:            10,
 			Course:        "course1",
+			Name:          "10",
 			CurrentLabNum: 1,
 			Active:        false,
 			Members:       make(map[string]interface{}),
@@ -241,6 +254,7 @@ var testAddMember = []struct {
 		&Group{
 			ID:            10,
 			Course:        "course1",
+			Name:          "10",
 			CurrentLabNum: 1,
 			Active:        false,
 			Members: map[string]interface{}{
@@ -253,6 +267,7 @@ var testAddMember = []struct {
 		&Group{
 			ID:            12,
 			Course:        "course1",
+			Name:          "12",
 			CurrentLabNum: 1,
 			Active:        false,
 			Members:       make(map[string]interface{}),
@@ -262,6 +277,7 @@ var testAddMember = []struct {
 		&Group{
 			ID:            12,
 			Course:        "course1",
+			Name:          "12",
 			CurrentLabNum: 1,
 			Active:        false,
 			Members: map[string]interface{}{
@@ -275,6 +291,7 @@ var testAddMember = []struct {
 		&Group{
 			ID:            13,
 			Course:        "course1",
+			Name:          "13",
 			CurrentLabNum: 1,
 			Active:        false,
 			Members: map[string]interface{}{
@@ -287,6 +304,7 @@ var testAddMember = []struct {
 		&Group{
 			ID:            13,
 			Course:        "course1",
+			Name:          "13",
 			CurrentLabNum: 1,
 			Active:        false,
 			Members: map[string]interface{}{
@@ -316,6 +334,7 @@ var testSaveHasAndDelete = []struct {
 		&Group{
 			ID:            21,
 			Course:        "course1",
+			Name:          "21",
 			CurrentLabNum: 1,
 			Active:        false,
 			Members:       make(map[string]interface{}),
@@ -326,6 +345,7 @@ var testSaveHasAndDelete = []struct {
 		&Group{
 			ID:            22,
 			Course:        "course1",
+			Name:          "22",
 			CurrentLabNum: 1,
 			Active:        true,
 			Members: map[string]interface{}{
@@ -339,6 +359,7 @@ var testSaveHasAndDelete = []struct {
 		&Group{
 			ID:            23,
 			Course:        "course1",
+			Name:          "23",
 			CurrentLabNum: 1,
 			Active:        true,
 			Members: map[string]interface{}{
@@ -402,11 +423,11 @@ func TestGetNextGroupID(t *testing.T) {
 }
 
 var testAddGroupBuildResultInput = []struct {
-	groupid int
-	builds  [][]int
+	groupName string
+	builds    [][]int
 }{
 	{
-		groupid: 24,
+		groupName: "Wierd al Yankovic",
 		builds: [][]int{
 			{
 				1,
@@ -433,7 +454,7 @@ var testAddGroupBuildResultInput = []struct {
 		},
 	},
 	{
-		groupid: 25,
+		groupName: "Adele",
 		builds: [][]int{
 			{
 				101,
@@ -481,11 +502,7 @@ var testAddGroupBuildResultInput = []struct {
 
 func TestAddAndGetGroupBuildResult(t *testing.T) {
 	for _, in := range testAddGroupBuildResultInput {
-		group, err := NewGroup("", in.groupid, true)
-		if err != nil {
-			t.Error(err)
-			continue
-		}
+		group := NewGroupX("", in.groupName)
 
 		for labnum, buildids := range in.builds {
 			if group.GetLastBuildID(labnum) > 0 {
@@ -513,11 +530,11 @@ func TestAddAndGetGroupBuildResult(t *testing.T) {
 }
 
 var testAddAndGetGroupNotesInput = []struct {
-	groupid int
-	notes   [][]string
+	groupName string
+	notes     [][]string
 }{
 	{
-		groupid: 26,
+		groupName: "big 26",
 		notes: [][]string{
 			{
 				"note 1",
@@ -544,7 +561,7 @@ var testAddAndGetGroupNotesInput = []struct {
 		},
 	},
 	{
-		groupid: 27,
+		groupName: "small just now",
 		notes: [][]string{
 			{
 				"asvasfdasd asd",
@@ -574,11 +591,7 @@ var testAddAndGetGroupNotesInput = []struct {
 
 func TestAddAndGetGroupNotes(t *testing.T) {
 	for _, in := range testAddAndGetGroupNotesInput {
-		group, err := NewGroup("", in.groupid, true)
-		if err != nil {
-			t.Error(err)
-			continue
-		}
+		group := NewGroupX("jungle course", in.groupName)
 
 		for labnum, notes := range in.notes {
 			if group.GetNotes(labnum) != "" {
@@ -600,6 +613,7 @@ func TestAddAndGetGroupNotes(t *testing.T) {
 
 var testGroupSetApprovedBuildInput = []struct {
 	Course  string
+	Name    string
 	Group   int
 	Labnum  int
 	BuildID int
@@ -607,6 +621,7 @@ var testGroupSetApprovedBuildInput = []struct {
 }{
 	{
 		Course:  "approvecourse4",
+		Name:    "1051",
 		Group:   1051,
 		Labnum:  1,
 		BuildID: 2153,
@@ -614,6 +629,7 @@ var testGroupSetApprovedBuildInput = []struct {
 	},
 	{
 		Course:  "approvecourse5",
+		Name:    "5553",
 		Group:   5553,
 		Labnum:  2,
 		BuildID: 2483,
@@ -621,6 +637,7 @@ var testGroupSetApprovedBuildInput = []struct {
 	},
 	{
 		Course:  "approvecourse6",
+		Name:    "4579",
 		Group:   4579,
 		Labnum:  4,
 		BuildID: 21553,
@@ -628,6 +645,7 @@ var testGroupSetApprovedBuildInput = []struct {
 	},
 	{
 		Course:  "approvecourse7",
+		Name:    "579",
 		Group:   579,
 		Labnum:  6,
 		BuildID: 2153,
@@ -637,11 +655,8 @@ var testGroupSetApprovedBuildInput = []struct {
 
 func TestGroupSetApprovedBuild(t *testing.T) {
 	for _, in := range testGroupSetApprovedBuildInput {
-		group, err := NewGroup(in.Course, in.Group, true)
-		if err != nil {
-			t.Error(err)
-			continue
-		}
+		group := NewGroupX(in.Course, in.Name)
+
 		group.SetApprovedBuild(in.Labnum, in.BuildID, in.Date)
 		if group.Assignments[in.Labnum].ApproveDate != in.Date {
 			t.Errorf("Approved date not set correctly. want %s, got %s for user %d",
@@ -668,9 +683,12 @@ func compareGroups(in, want *Group, t *testing.T) {
 	if in.CurrentLabNum != want.CurrentLabNum {
 		t.Errorf("CurrentLabNum field; got %d, want %d", in.CurrentLabNum, want.CurrentLabNum)
 	}
-	if in.ID != want.ID {
-		t.Errorf("ID field; got %d, want %d", in.ID, want.ID)
+	if in.Name != want.Name {
+		t.Errorf("Name field; got %d, want %d", in.Name, want.Name)
 	}
+	// if in.ID != want.ID {
+	// 	t.Errorf("ID field; got %d, want %d", in.ID, want.ID)
+	// }
 	if in.TeamID != want.TeamID {
 		t.Errorf("TeamID field; got %d, want %d", in.TeamID, want.TeamID)
 	}

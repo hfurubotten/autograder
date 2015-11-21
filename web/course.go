@@ -502,7 +502,6 @@ func ApproveCourseMembershipHandler(w http.ResponseWriter, r *http.Request) {
 	view.Error = true // default is an error; if its not we anyway set it to false before encoding
 
 	// Checks if the user is signed in and a teacher.
-	// TODO: this returns the Member object; why do GetMember() below?
 	/*member*/ _, err := checkTeacherApproval(w, r, false)
 	if err != nil {
 		log.Println(err)
@@ -694,7 +693,8 @@ func UserCoursePageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if member.Courses[orgname].IsGroupMember {
-		group, err := git.NewGroup(orgname, member.Courses[orgname].GroupNum, true)
+		groupName := member.Courses[orgname].GroupName
+		group, err := git.GetGroup(groupName)
 		if err != nil {
 			log.Println(err)
 			return
@@ -705,6 +705,7 @@ func UserCoursePageHandler(w http.ResponseWriter, r *http.Request) {
 			opt := member.Courses[orgname]
 			opt.IsGroupMember = false
 			opt.GroupNum = 0
+			opt.GroupName = groupName
 			member.Courses[orgname] = opt
 			err = member.Save()
 			if err != nil {

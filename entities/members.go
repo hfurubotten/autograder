@@ -288,20 +288,16 @@ func (m *Member) RemoveOrganization(org *Organization) (err error) {
 
 	if _, ok := m.Courses[org.Name]; ok {
 		c := m.Courses[org.Name]
-
 		if c.IsGroupMember {
-			g, err := NewGroup(c.CourseName, c.GroupNum, false)
+			g, err := GetGroup(c.GroupName)
 			if err != nil {
 				return err
 			}
-
 			g.RemoveMember(m.Username)
 			g.Save()
 		}
-
 		delete(m.Courses, org.Name)
 	}
-
 	return
 }
 

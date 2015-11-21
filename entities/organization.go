@@ -31,8 +31,6 @@ var InMemoryOrgs = make(map[string]*Organization)
 var InMemoryOrgsLock sync.Mutex
 
 func init() {
-	gob.Register(Organization{})
-
 	database.RegisterBucket(OrganizationBucketName)
 }
 
@@ -43,7 +41,7 @@ type Organization struct {
 	GroupAssignments      int
 	IndividualAssignments int
 
-	// Lab assignment info. TODO: collect this into one struct!
+	// Lab assignment info. TODO: collect this into one struct! Move to Assignment class?
 	IndividualLabFolders map[int]string
 	GroupLabFolders      map[int]string
 	IndividualDeadlines  map[int]time.Time
@@ -54,7 +52,7 @@ type Organization struct {
 	Private       bool
 
 	//GroupCount         int
-	PendingGroup       map[int]interface{}
+	PendingGroup       map[string]interface{}
 	PendingRandomGroup map[string]interface{}
 	// TODO: change the groups field to ActiveGroups map[int]interface{}
 	// will need change in logic several places in the web package!
@@ -98,7 +96,7 @@ func NewOrganization(name string, readonly bool) (org *Organization, err error) 
 		OrganizationX:        *o,
 		IndividualLabFolders: make(map[int]string),
 		GroupLabFolders:      make(map[int]string),
-		PendingGroup:         make(map[int]interface{}),
+		PendingGroup:         make(map[string]interface{}),
 		PendingRandomGroup:   make(map[string]interface{}),
 		Groups:               make(map[string]interface{}),
 		PendingUser:          make(map[string]interface{}),
@@ -540,10 +538,10 @@ func (o *Organization) AddGroup(g *Group) {
 		o.Groups = make(map[string]interface{})
 	}
 
-	if _, ok := o.PendingGroup[g.ID]; ok {
-		delete(o.PendingGroup, g.ID)
+	if _, ok := o.PendingGroup[g.Name]; ok {
+		delete(o.PendingGroup, g.Name)
 	}
-	o.Groups["group"+strconv.Itoa(g.ID)] = nil
+	o.Groups[g.Name] = nil
 }
 
 // GetMembership will return the status of a membership to the

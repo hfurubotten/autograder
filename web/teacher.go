@@ -16,7 +16,7 @@ type TeachersPanelView struct {
 	Org *git.Organization
 
 	PendingUser  map[string]interface{}
-	PendingGroup map[int]*git.Group
+	PendingGroup map[string]*git.Group
 
 	CurrentLabType int
 }
@@ -99,20 +99,18 @@ func TeachersPanelHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// get pending groups
-	pendinggroups := make(map[int]*git.Group)
-	for groupID := range org.PendingGroup {
-		group, err := git.NewGroup(org.Name, groupID, true)
+	pendinggroups := make(map[string]*git.Group)
+	for groupName := range org.PendingGroup {
+		group, err := git.GetGroup(groupName)
 		if err != nil {
 			log.Println(err)
 		}
 
 		if group.Course != org.Name {
-			org.Lock()
-			delete(org.PendingGroup, groupID)
+			delete(org.PendingGroup, groupName)
 			err := org.Save()
 			if err != nil {
 				log.Println(err)
-				org.Unlock()
 			}
 			continue
 		}
@@ -122,18 +120,23 @@ func TeachersPanelHandler(w http.ResponseWriter, r *http.Request) {
 			group.Members[key] = groupmember
 		}
 
-		pendinggroups[groupID] = group
+		pendinggroups[groupName] = group
 	}
 
 	// get groups
-	for groupname := range org.Groups {
-		groupID, _ := strconv.Atoi(groupname[5:])
-		group, _ := git.NewGroup(org.Name, groupID, true)
-		for key := range group.Members {
-			groupmember, _ := git.GetMember(key)
-			group.Members[key] = groupmember
+	for groupName := range org.Groups {
+		group, err := git.GetGroup(groupName)
+		if err != nil {
+			log.Println(err)
 		}
-		org.Groups[groupname] = group
+		for key := range group.Members {
+			groupmember, err := git.GetMember(key)
+			if err != nil {
+				log.Println(err)
+			}
+			group.Members[key] = groupmember //TODO what does this do?
+		}
+		org.Groups[groupName] = group
 	}
 
 	_, _, labtype := org.FindCurrentLab()
@@ -213,7 +216,7 @@ func ShowResultHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		if git.HasGroup(groupnum) {
 			isgroup = true
-			group, err := git.NewGroup(org.Name, groupnum, true)
+			group, err := git.GetGroup(username) // username==groupname TODO consider changing this
 			if err != nil {
 				logErrorAndRedirect(w, r, pages.Home, err)
 				return

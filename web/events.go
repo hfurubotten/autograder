@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"strconv"
 	"strings"
 
 	ci "github.com/hfurubotten/autograder/ci"
@@ -246,20 +245,17 @@ func StartTestBuildProcess(load github.PushPayload) (err error) {
 	var destfolder string
 	var labnum int
 	var username string
-	var gnum = -1
+	var groupName = ""
 
 	// TODO: Clean up this logic:
 	// Make func: isGroupRepository()
 	// Can this function instead check the number of student members of the repo
 	// to determine if it's a group repo? Then we can avoid complicated logic.
-	isgroup := !strings.Contains(repoName, "-"+git.StandardRepoName)
-	if isgroup {
-		gnum, err = strconv.Atoi(repoName[len("group"):])
-		if err != nil {
-			return err
-		}
-
-		group, err := git.NewGroup(org.Name, gnum, true)
+	// isgroup := !strings.Contains(repoName, "-"+git.StandardRepoName)
+	// if isgroup {
+	if strings.HasPrefix(repoName, git.GroupRepoPrefix) {
+		groupName = strings.Split(repoName, "-")[0]
+		group, err := git.GetGroup(groupName)
 		if err != nil {
 			return err
 		}
@@ -284,7 +280,7 @@ func StartTestBuildProcess(load github.PushPayload) (err error) {
 	opt := ci.DaemonOptions{
 		Org:        org.Name,
 		User:       username,
-		Group:      gnum,
+		GroupName:  groupName,
 		UserRepo:   repoName,
 		TestRepo:   git.TestRepoName,
 		BaseFolder: org.CI.Basepath,

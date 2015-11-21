@@ -86,21 +86,16 @@ func NewGroupHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	//org.GroupCount = org.GroupCount + 1
-
-	gid := git.GetNextGroupID()
-	if gid < 0 {
+	//TODO Hide this functionality inside the NewGroup() function
+	groupid := git.GetNextGroupID()
+	if groupid < 0 {
 		http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
 		log.Println("Error while getting next group ID.")
 		return
 	}
 
-	group, err := git.NewGroup(course, gid, false)
-	if err != nil {
-		// couldn't make new group object
-		logErrorAndRedirect(w, r, pages.Front, err)
-		return
-	}
+	groupName := git.GroupRepoPrefix + strconv.Itoa(groupid)
+	group := git.NewGroupX(course, groupName)
 
 	defer func() {
 		err := group.Save()
@@ -150,7 +145,7 @@ func NewGroupHandler(w http.ResponseWriter, r *http.Request) {
 		delete(org.PendingRandomGroup, username)
 	}
 
-	org.PendingGroup[group.ID] = nil
+	org.PendingGroup[group.Name] = nil
 
 	if member.IsTeacher {
 		http.Redirect(w, r, "/course/teacher/"+org.Name+"#groups", http.StatusTemporaryRedirect)
@@ -194,7 +189,8 @@ func ApproveGroupHandler(w http.ResponseWriter, r *http.Request) {
 
 	orgname := r.FormValue("course")
 
-	group, err := git.NewGroup(orgname, groupID, false)
+	groupName := git.GroupRepoPrefix + strconv.Itoa(groupID)
+	group, err := git.GetGroup(groupName)
 	if err != nil {
 		view.ErrorMsg = err.Error()
 		err = enc.Encode(view)
@@ -387,21 +383,18 @@ func RemovePendingGroupHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, ok := org.PendingGroup[groupid]; ok {
-		delete(org.PendingGroup, groupid)
+	groupName := git.GroupRepoPrefix + strconv.Itoa(groupid)
+	if _, ok := org.PendingGroup[groupName]; ok {
+		delete(org.PendingGroup, groupName)
 	}
-
-	groupname := git.GroupRepoPrefix + strconv.Itoa(groupid)
-	if _, ok := org.Groups[groupname]; ok {
-		delete(org.Groups, groupname)
+	if _, ok := org.Groups[groupName]; ok {
+		delete(org.Groups, groupName)
 	}
-
-	group, err := git.NewGroup(org.Name, groupid, false)
+	group, err := git.GetGroup(groupName)
 	if err != nil {
 		http.Error(w, "Could not get the group: "+err.Error(), http.StatusNotFound)
 		return
 	}
-
 	group.Delete()
 }
 
@@ -465,7 +458,8 @@ func AddGroupMemberHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	group, err := git.NewGroup(orgname, groupid, false)
+	groupName := git.GroupRepoPrefix + strconv.Itoa(groupid)
+	group, err := git.GetGroup(groupName)
 	if err != nil {
 		view.ErrorMsg = err.Error()
 		err = enc.Encode(view)

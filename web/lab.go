@@ -73,13 +73,7 @@ func ApproveLabHandler(w http.ResponseWriter, r *http.Request) {
 	var latestbuild int
 	var res *ci.BuildResult
 	if isgroup {
-		gnum, err := strconv.Atoi(username[len("group"):])
-		if err != nil {
-			log.Println(err)
-			http.Error(w, err.Error(), http.StatusNotFound)
-			return
-		}
-		group, err := git.NewGroup(course, gnum, false)
+		group, err := git.GetGroup(username) // username==groupname TODO consider changing this
 		if err != nil {
 			log.Println(err)
 			http.Error(w, err.Error(), http.StatusNotFound)
@@ -229,7 +223,8 @@ func NotesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if groupid > 0 {
-		group, err := git.NewGroup(org.Name, groupid, false)
+		groupName := git.GroupRepoPrefix + strconv.Itoa(groupid)
+		group, err := git.GetGroup(groupName)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)

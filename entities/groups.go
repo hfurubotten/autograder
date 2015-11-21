@@ -27,23 +27,36 @@ var InMemoryGroupsLock sync.Mutex
 var GroupLengthKey = "length"
 
 func init() {
-	gob.Register(Group{})
-
 	database.RegisterBucket(GroupsBucketName)
 }
 
 // Group represents a group of students in a course.
 type Group struct {
-	ID      int
+	// synchronization variables (must be package private to avoid storing to DB)
+	mu *sync.RWMutex
+
+	ID      int //TODO to be removed later??
 	TeamID  int
 	Active  bool
+	Name    string
 	Course  string
-	Members map[string]interface{}
+	Members map[string]interface{} //TODO make bool
 
 	CurrentLabNum int
 	Assignments   map[int]*Assignment
 
-	lock sync.Mutex
+	lock sync.Mutex //TODO remove me later
+}
+
+// NewGroupX creates a new group with the provided name for the given course.
+func NewGroupX(course, name string) (g *Group) {
+	return &Group{
+		Course:        course,
+		Name:          name,
+		Members:       make(map[string]interface{}),
+		CurrentLabNum: 1,
+		Assignments:   make(map[int]*Assignment),
+	}
 }
 
 // NewGroup will try to fetch a group for storage, if non is found it creates a new one.
@@ -79,6 +92,22 @@ func NewGroup(org string, groupid int, readonly bool) (g *Group, err error) {
 	InMemoryGroups[g.ID] = g
 
 	return g, nil
+}
+
+// GetGroup returns the group associated with the given groupName.
+func GetGroup(groupName string) (g *Group, err error) {
+	err = database.Get(GroupsBucketName, groupName, &g)
+	if err != nil {
+		return nil, err
+	}
+	g.mu = &sync.RWMutex{}
+	// groupName found in database
+	return g, nil
+}
+
+// Save will store the group information in the database.
+func (g *Group) Save() error {
+	return database.Put(GroupsBucketName, g.Name, g)
 }
 
 func (g *Group) loadStoredData(lock bool) error {
@@ -133,13 +162,13 @@ func (g *Group) Activate() {
 
 		opt := user.Courses[g.Course]
 		if !opt.IsGroupMember {
-			user.Lock()
 			opt.IsGroupMember = true
 			opt.GroupNum = g.ID
+			opt.GroupName = g.Name
 			user.Courses[g.Course] = opt
 			err := user.Save()
 			if err != nil {
-				user.Unlock()
+				//return error
 			}
 		}
 	}
@@ -242,7 +271,7 @@ func (g *Group) Unlock() {
 }
 
 // Save will store the group to memory and disk.
-func (g *Group) Save() error {
+func (g *Group) xSave() error {
 	return database.GetPureDB().Update(func(tx *bolt.Tx) (err error) {
 		// open the bucket
 		b := tx.Bucket([]byte(GroupsBucketName))
@@ -308,8 +337,14 @@ func HasGroup(groupid int) bool {
 }
 
 // GetNextGroupID will get the next group id available.
-// Returns -1 on error.
+// Returns -1 on error. Should return error not -1.
+// TODO Make this function private; see codereview.go
 func GetNextGroupID() int {
+	id, _ := database.NextID(GroupsBucketName)
+	return int(id)
+}
+
+func oldGetNextGroupID() int {
 	nextid := -1
 	if err := database.GetPureDB().Update(func(tx *bolt.Tx) error {
 		// open the bucket
