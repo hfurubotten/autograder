@@ -11,9 +11,6 @@ import (
 var CodeReviewBucketName = "codereviews"
 
 func init() {
-	//TODO Is this necessary?
-	// gob.Register(CodeReview{})
-
 	database.RegisterBucket(CodeReviewBucketName)
 }
 

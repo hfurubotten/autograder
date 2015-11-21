@@ -124,7 +124,6 @@ var CIResultURL = "/course/ciresutls"
 // a build. This handler writes back the results as JSON data.
 func CIResultHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
-	// TODO: this returns the Member object; why do GetMember() below?
 	member, err := checkMemberApproval(w, r, false)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
@@ -250,7 +249,6 @@ var CIResultSummaryURL = "/course/cisummary"
 // as JSON data.
 func CIResultSummaryHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
-	// TODO: this returns the Member object; why do GetMember() below?
 	teacher, err := checkTeacherApproval(w, r, false)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
@@ -382,7 +380,6 @@ type CIResultListview struct {
 // - Offset int      // default 0
 func CIResultListHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
-	// TODO: this returns the Member object; why do GetMember() below?
 	teacher, err := checkTeacherApproval(w, r, false)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
