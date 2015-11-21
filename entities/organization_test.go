@@ -119,7 +119,10 @@ func TestHasOrganization(t *testing.T) {
 }
 
 func TestListRegisteredOrganizations(t *testing.T) {
-	list := ListRegisteredOrganizations()
+	list, err := ListRegisteredOrganizations()
+	if err != nil {
+		t.Error(err)
+	}
 	for _, orgid := range registeredOrganizationList {
 		found := false
 		for _, org := range list {

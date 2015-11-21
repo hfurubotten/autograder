@@ -762,24 +762,21 @@ func (o *Organization) CreateFile(repo, path, content, commitmsg string) (commit
 	return *commit.SHA, nil
 }
 
-// ListRegisteredOrganizations returns the list of Autograder organizations.
-func ListRegisteredOrganizations() (orgs []*Organization) {
+// ListRegisteredOrganizations returns the list of all organizations stored
+// in the system.
+func ListRegisteredOrganizations() (orgs []*Organization, err error) {
 	// iteration function called for each entry in the organization bucket
 	fn := func(k, v []byte) error {
 		org, err := NewOrganization(string(k), true)
 		if err != nil {
-			// this will terminate the iteration, even if other orgs could be created
+			// terminate iteration even though other orgs could be created
 			return err
 		}
 		orgs = append(orgs, org)
 		return nil
 	}
-
-	err := database.ForEach(OrganizationBucketName, fn)
-	if err != nil {
-		log.Println(err)
-	}
-	return
+	err = database.ForEach(OrganizationBucketName, fn)
+	return orgs, err
 }
 
 // HasOrganization checks if the organization is already registered in autograder.

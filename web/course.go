@@ -69,6 +69,7 @@ func SelectOrgHandler(w http.ResponseWriter, r *http.Request) {
 
 	view := CourseView{}
 
+	//TODO replace these strings.Split() with the new lastPathElem() func.
 	if path := strings.Split(r.URL.Path, "/"); len(path) == 5 {
 		view.Org = path[4]
 	} else {
@@ -403,12 +404,17 @@ func NewCourseMemberHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
+	orgs, err := git.ListRegisteredOrganizations()
+	if err != nil {
+		log.Println(err)
+		return
+	}
 
 	view := NewMemberView{
 		stdTemplate: stdTemplate{
 			Member: member,
 		},
-		Orgs: git.ListRegisteredOrganizations(),
+		Orgs: orgs,
 	}
 	execTemplate("course-registermember.html", w, view)
 }
