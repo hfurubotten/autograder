@@ -56,101 +56,102 @@ func OAuthRedirectURL() string {
 
 // OAuthHandler is the OAuth handler for the GitHub.
 func OAuthHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "GET" {
-		getValues := r.URL.Query()
-		code := getValues.Get("code")
-		errstr := getValues.Get("error")
-		if len(errstr) > 0 {
-			log.Println("Failed to obtain temporary OAuth code: " + errstr)
-			http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
-			return
-		}
-
-		postValues := url.Values{}
-		postValues.Set("client_id", config.Get().OAuthClientID)
-		postValues.Set("client_secret", config.Get().OAuthClientSecret)
-		postValues.Set("code", code)
-		s := postValues.Encode()
-		req, err := http.NewRequest("POST", tokenURL, bytes.NewBuffer([]byte(s)))
-		if err != nil {
-			log.Println("Failed to create POST request: ", err)
-			http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
-			return
-		}
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-		client := &http.Client{}
-		resp, err := client.Do(req)
-		if err != nil {
-			log.Println("Failed to issue POST request: ", err)
-			http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
-			return
-		}
-
-		data, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			log.Println("Failed to read response body: ", err)
-			http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
-			return
-		}
-
-		q, err := url.ParseQuery(string(data))
-		if err != nil {
-			log.Println("Failed to parse query data: ", err)
-			http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
-			return
-		}
-
-		accessToken := q.Get(sessions.AccessTokenSessionKey)
-		errstr = q.Get("error")
-		if len(errstr) > 0 {
-			log.Println("Failed to obtain access token: " + errstr)
-			http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
-			return
-		}
-
-		scope := q.Get("scope")
-		if scope != "" {
-			// TODO Consider if updating scope needs to be in a transaction using the Update() function.
-			// check if access token is associated with existing member
-			m, err := entities.LookupMember(accessToken)
-			if err != nil {
-				// access token is not in the database; must be a new member
-				u, err := githubUserProfile(accessToken, scope)
-				if err != nil {
-					log.Printf("Failed to get user from GitHub: %v", err)
-					http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
-					return
-				}
-				m = entities.NewMember(u)
-				err = entities.PutMember(accessToken, m)
-				if err != nil {
-					log.Printf("Failed to create member with token: %s\n%v", accessToken, err)
-					http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
-					return
-				}
-				log.Printf("Created new member %s", m.Name)
-			}
-			log.Printf("Current scope (%s) for %s", m.Scope, m.Name)
-			if m.Scope != scope {
-				m.Scope = scope
-				err = m.Save()
-				if err != nil {
-					log.Printf("Failed to update scope (%s) for %s:\n%v", scope, m.Name, err)
-				} else {
-					log.Printf("Successfully updated scope (%s) for %s", scope, m.Name)
-				}
-			}
-		}
-
-		// mark auth session as approved
-		sessions.SetSessions(w, r, sessions.AuthSession, sessions.ApprovedSessionKey, true)
-		// save the access token for this session
-		sessions.SetSessions(w, r, sessions.AuthSession, sessions.AccessTokenSessionKey, accessToken)
-		http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
-	} else {
+	if r.Method != "GET" {
 		// was not a GET request method; redirect with a bad request status.
 		log.Println("Bad request: ", r)
 		http.Redirect(w, r, pages.Front, http.StatusBadRequest)
+		return
 	}
+	getValues := r.URL.Query()
+	code := getValues.Get("code")
+	errstr := getValues.Get("error")
+	if len(errstr) > 0 {
+		log.Println("Failed to obtain temporary OAuth code: " + errstr)
+		http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
+		return
+	}
+
+	pv := url.Values{
+		"client_id":     {config.Get().OAuthClientID},
+		"client_secret": {config.Get().OAuthClientSecret},
+		"code":          {code},
+	}
+	postValues := bytes.NewBuffer([]byte(pv.Encode()))
+	req, err := http.NewRequest("POST", tokenURL, postValues)
+	if err != nil {
+		log.Println("Failed to create POST request: ", err)
+		http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
+		return
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("Failed to issue POST request: ", err)
+		http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
+		return
+	}
+
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Println("Failed to read response body: ", err)
+		http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
+		return
+	}
+
+	q, err := url.ParseQuery(string(data))
+	if err != nil {
+		log.Println("Failed to parse query data: ", err)
+		http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
+		return
+	}
+
+	accessToken := q.Get(sessions.AccessTokenSessionKey)
+	errstr = q.Get("error")
+	if len(errstr) > 0 {
+		log.Println("Failed to obtain access token: " + errstr)
+		http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
+		return
+	}
+
+	scope := q.Get("scope")
+	if scope != "" {
+		// TODO Consider if updating scope needs to be in a transaction using the Update() function.
+		// check if access token is associated with existing member
+		m, err := entities.LookupMember(accessToken)
+		if err != nil {
+			// access token is not in the database; must be a new member
+			u, err := githubUserProfile(accessToken, scope)
+			if err != nil {
+				log.Printf("Failed to get user from GitHub: %v", err)
+				http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
+				return
+			}
+			m = entities.NewMember(u)
+			err = entities.PutMember(accessToken, m)
+			if err != nil {
+				log.Printf("Failed to create member with token: %s\n%v", accessToken, err)
+				http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
+				return
+			}
+			log.Printf("Created new member %s", m.Name)
+		}
+		log.Printf("Current scope (%s) for %s", m.Scope, m.Name)
+		if m.Scope != scope {
+			m.Scope = scope
+			err = m.Save()
+			if err != nil {
+				log.Printf("Failed to update scope (%s) for %s:\n%v", scope, m.Name, err)
+			} else {
+				log.Printf("Successfully updated scope (%s) for %s", scope, m.Name)
+			}
+		}
+	}
+
+	// mark auth session as approved
+	sessions.SetSessions(w, r, sessions.AuthSession, sessions.ApprovedSessionKey, true)
+	// save the access token for this session
+	sessions.SetSessions(w, r, sessions.AuthSession, sessions.AccessTokenSessionKey, accessToken)
+	http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
 }
