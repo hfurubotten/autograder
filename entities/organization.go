@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"math"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -629,6 +630,31 @@ func (o *Organization) CreateRepo(opt RepositoryOptions) (err error) {
 	return
 }
 
+// AddGitIgnore adds a standard .gitignore file to the given repo.
+func (o *Organization) AddGitIgnore(repo string) (string, error) {
+	return o.CreateFile(repo, ".gitignore", IgnoreFileContent, "Added .gitignore")
+}
+
+// AddLabFolders creates default lab folders for the given repo.
+func (o *Organization) AddLabFolders(repo string, start, end int) error {
+	for i := 1; i <= o.IndividualAssignments; i++ {
+		s := strconv.Itoa(i)
+		//TODO add this to org.IndividualLabFolders[i-1]; should keep only one slice
+		// for lab folders; don't distinguish between group and indivdiual folders.
+		// wait until we reorganized the storage for the folder names.
+		labName := DefaultFolderName + s
+		path := filepath.Join(labName, "README.md")
+		commitMsg := "Added readme file for lab assignment " + s
+		content := "# Lab assignment " + s
+		_, err := o.CreateFile(repo, path, content, commitMsg)
+		if err != nil {
+			// bail out early if we fail
+			return err
+		}
+	}
+	return nil
+}
+
 // CreateTeam will create a new team in the organization on github.
 func (o *Organization) CreateTeam(opt TeamOptions) (teamID int, err error) {
 	err = o.connectAdminToGithub()
@@ -730,6 +756,10 @@ func (o *Organization) ListRepos() (repos map[string]bool, err error) {
 	}
 
 	repolist, _, err := o.githubadmin.Repositories.ListByOrg(o.Name, nil)
+	if err != nil {
+		return nil, err
+	}
+	repos = make(map[string]bool)
 	for _, r := range repolist {
 		repos[*r.Name] = true
 	}

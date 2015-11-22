@@ -10,6 +10,17 @@ type RepositoryOptions struct {
 	Hook     string
 }
 
+// NewRepo creates a RepositoryOptions struct with details to create a repo.
+func NewRepo(name string, private bool) RepositoryOptions {
+	return RepositoryOptions{
+		Name:     name,
+		Private:  private,
+		AutoInit: true,
+		Issues:   true,
+		//Hook:     "push", // TODO: uncomment when CI rebuilds all on new test.
+	}
+}
+
 type ownerType int
 
 const (

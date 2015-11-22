@@ -8,6 +8,7 @@ const (
 	TestRepoName       = "labs-test"
 	CodeReviewRepoName = "code-reviews"
 	GroupRepoPrefix    = "group"
+	DefaultFolderName  = "lab"
 )
 
 const (
