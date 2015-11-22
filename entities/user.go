@@ -3,14 +3,14 @@ package entities
 import (
 	"net/mail"
 	"sync"
-
-	"github.com/google/go-github/github"
 )
 
 // UserProfile contains information about a user. Often this information will
 // be gleaned from external sources such as GitHub.
 type UserProfile struct {
 	mainlock sync.Mutex
+
+	*GitHubConn
 
 	Name          string
 	Username      string
@@ -20,27 +20,38 @@ type UserProfile struct {
 	PublicProfile bool
 	AvatarURL     string
 	ProfileURL    string
-
-	// remote access
-	githubclient *github.Client
-	accessToken  string // will not be stored in DB (since package private access)
-	Scope        string
 }
 
 // CreateUserProfile returns a new UserProfile populated with data from github.
 func CreateUserProfile(userName string) *UserProfile {
 	return &UserProfile{
 		Username: userName,
+		GitHubConn: &GitHubConn{
+			accessToken: "",
+		},
 	}
 }
 
 // NewUserProfile returns a new UserProfile.
 func NewUserProfile(token, user, scope string) *UserProfile {
 	return &UserProfile{
-		Username:    user,
-		Scope:       scope,
-		accessToken: token,
+		Username: user,
+		GitHubConn: &GitHubConn{
+			Scope:       scope,
+			accessToken: token,
+		},
 	}
+}
+
+// Dial connects to GitHub.
+func (u *UserProfile) Dial() (err error) {
+	if u.client == nil {
+		u.client, err = connect(u.accessToken)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (u *UserProfile) hasAccessToken() bool {

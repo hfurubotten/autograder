@@ -87,13 +87,11 @@ func NewGroupHandler(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	//TODO Hide this functionality inside the NewGroup() function
-	groupid := git.GetNextGroupID()
-	if groupid < 0 {
-		http.Redirect(w, r, pages.Front, http.StatusTemporaryRedirect)
-		log.Println("Error while getting next group ID.")
+	groupid, err := git.GetNextGroupID()
+	if err != nil {
+		logErrorAndRedirect(w, r, pages.Front, err)
 		return
 	}
-
 	groupName := git.GroupRepoPrefix + strconv.Itoa(groupid)
 	group := git.NewGroupX(course, groupName)
 
@@ -141,10 +139,8 @@ func NewGroupHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			group.AddMember(username)
 		}
-
 		delete(org.PendingRandomGroup, username)
 	}
-
 	org.PendingGroup[group.Name] = nil
 
 	if member.IsTeacher {

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/gob"
 	"errors"
-	"io/ioutil"
 	"log"
 	"strconv"
 	"sync"
@@ -16,15 +15,6 @@ import (
 
 // OrganizationBucketName is the bucket/table name for organizations in the DB.
 var GroupsBucketName = "groups"
-
-// InMemoryOrgs is a mapper where pointers to all the Organization are kept in memory.
-var InMemoryGroups = make(map[int]*Group)
-
-// InMemoryOrgsLock is the locking for the org mapper.
-var InMemoryGroupsLock sync.Mutex
-
-// GroupLengthKey is the key for finding current count of new group IDs.
-var GroupLengthKey = "length"
 
 func init() {
 	database.RegisterBucket(GroupsBucketName)
@@ -57,41 +47,6 @@ func NewGroupX(course, name string) (g *Group) {
 		CurrentLabNum: 1,
 		Assignments:   make(map[int]*Assignment),
 	}
-}
-
-// NewGroup will try to fetch a group for storage, if non is found it creates a new one.
-func NewGroup(org string, groupid int, readonly bool) (g *Group, err error) {
-	InMemoryGroupsLock.Lock()
-	defer InMemoryGroupsLock.Unlock()
-
-	g = &Group{
-		ID:            groupid,
-		Active:        false,
-		Course:        org,
-		Members:       make(map[string]interface{}),
-		Assignments:   make(map[int]*Assignment),
-		CurrentLabNum: 1,
-	}
-
-	if _, ok := InMemoryGroups[groupid]; ok {
-		g = InMemoryGroups[groupid]
-		if !readonly {
-			g.Lock()
-		}
-
-		return g, nil
-	}
-
-	err = g.loadStoredData(!readonly)
-	if err != nil {
-		if err.Error() == "No data in database" {
-			return nil, err
-		}
-	}
-	// Add the org to in memory mapper.
-	InMemoryGroups[g.ID] = g
-
-	return g, nil
 }
 
 // GetGroup returns the group associated with the given groupName.
@@ -270,39 +225,6 @@ func (g *Group) Unlock() {
 	g.lock.Unlock()
 }
 
-// Save will store the group to memory and disk.
-func (g *Group) xSave() error {
-	return database.GetPureDB().Update(func(tx *bolt.Tx) (err error) {
-		// open the bucket
-		b := tx.Bucket([]byte(GroupsBucketName))
-
-		// Checks if the bucket was opened, and creates a new one if not existing. Returns error on any other situation.
-		if b == nil {
-			return errors.New("Missing bucket")
-		}
-
-		buf := &bytes.Buffer{}
-		encoder := gob.NewEncoder(buf)
-
-		if err = encoder.Encode(g); err != nil {
-			return
-		}
-
-		data, err := ioutil.ReadAll(buf)
-		if err != nil {
-			return err
-		}
-
-		err = b.Put([]byte(strconv.Itoa(g.ID)), data)
-		if err != nil {
-			return err
-		}
-
-		g.Unlock()
-		return nil
-	})
-}
-
 // Delete will remove the group object.
 func (g *Group) Delete() error {
 	for username := range g.Members {
@@ -324,8 +246,6 @@ func (g *Group) Delete() error {
 		}
 	}
 
-	delete(InMemoryGroups, g.ID)
-
 	return database.GetPureDB().Update(func(tx *bolt.Tx) error {
 		return tx.Bucket([]byte(GroupsBucketName)).Delete([]byte(strconv.Itoa(g.ID)))
 	})
@@ -337,49 +257,8 @@ func HasGroup(groupid int) bool {
 }
 
 // GetNextGroupID will get the next group id available.
-// Returns -1 on error. Should return error not -1.
 // TODO Make this function private; see codereview.go
-func GetNextGroupID() int {
-	id, _ := database.NextID(GroupsBucketName)
-	return int(id)
-}
-
-func oldGetNextGroupID() int {
-	nextid := -1
-	if err := database.GetPureDB().Update(func(tx *bolt.Tx) error {
-		// open the bucket
-		b := tx.Bucket([]byte(GroupsBucketName))
-
-		// Checks if the bucket was opened, and creates a new one if not existing. Returns error on any other situation.
-		if b == nil {
-			return errors.New("Missing bucket")
-		}
-
-		var err error
-		data := b.Get([]byte(GroupLengthKey))
-		if data == nil {
-			nextid = 0
-		} else {
-			nextid, err = strconv.Atoi(string(data))
-			if err != nil {
-				return err
-			}
-		}
-
-		nextid++
-
-		data = []byte(strconv.Itoa(nextid))
-
-		err = b.Put([]byte(GroupLengthKey), data)
-		if err != nil {
-			return err
-		}
-
-		return nil
-
-	}); err != nil {
-		return -1
-	}
-
-	return nextid
+func GetNextGroupID() (int, error) {
+	id, err := database.NextID(GroupsBucketName)
+	return int(id), err
 }

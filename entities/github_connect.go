@@ -14,6 +14,14 @@ var (
 	ErrNotConnected = errors.New("member object not connected to github")
 )
 
+// GitHubConn contains connection details for GitHub.
+type GitHubConn struct {
+	// remote access (private fields will not be stored in the database)
+	client      *github.Client
+	accessToken string
+	Scope       string
+}
+
 func connect(token string) (*github.Client, error) {
 	if token == "" {
 		return nil, ErrNoAccessToken
@@ -36,15 +44,11 @@ func getGithubUser(client *github.Client) (user *github.User, err error) {
 
 // ListOrgs returns a list github organizations that the user is member of.
 func (m *Member) ListOrgs() (ls []string, err error) {
-	if m.githubclient == nil {
-		return nil, ErrNotConnected
+	err = m.Dial()
+	if err != nil {
+		return nil, err
 	}
-	// err = m.connectToGithub()
-	// if err != nil {
-	// 	return
-	// }
-
-	orgs, _, err := m.githubclient.Organizations.List("", nil)
+	orgs, _, err := m.client.Organizations.List("", nil)
 	ls = make([]string, len(orgs))
 	for i, org := range orgs {
 		ls[i] = *org.Login
