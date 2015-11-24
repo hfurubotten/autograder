@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	git "github.com/hfurubotten/autograder/entities"
@@ -28,7 +27,7 @@ type CourseView struct {
 // NewCourseHandler is a http hander giving a information page for
 // teachers when they want to create a new course in autograder.
 func NewCourseHandler(w http.ResponseWriter, r *http.Request) {
-	// Checks if the user is signed in and a teacher.
+	// check if user is signed in and is a teacher
 	member, err := checkTeacherApproval(w, r, true)
 	if err != nil {
 		log.Println(err)
@@ -44,7 +43,6 @@ func NewCourseHandler(w http.ResponseWriter, r *http.Request) {
 		page = "newcourse-info.html"
 	case NewCourseURL:
 		page = "newcourse-orgselect.html"
-
 		view.Orgs, err = member.ListOrgs()
 		if err != nil {
 			logErrorAndRedirect(w, r, pages.Signout, err)
@@ -57,32 +55,33 @@ func NewCourseHandler(w http.ResponseWriter, r *http.Request) {
 // SelectOrgURL is the URL used to call SelectOrgHandler.
 var SelectOrgURL = "/course/new/org/"
 
-// SelectOrgHandler is a http hander giving a page for selecting
-// the organization to use for the new course.
+// SelectOrgHandler is the http handler for the page used to select the
+// organization to be used for the new course.
 func SelectOrgHandler(w http.ResponseWriter, r *http.Request) {
-	// Checks if the user is signed in and a teacher.
+	// check if user is signed in and is a teacher
 	member, err := checkTeacherApproval(w, r, true)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	view := CourseView{}
-
-	//TODO replace these strings.Split() with the new lastPathElem() func.
-	if path := strings.Split(r.URL.Path, "/"); len(path) == 5 {
-		view.Org = path[4]
-	} else {
-		http.Redirect(w, r, NewCourseInfoURL, http.StatusTemporaryRedirect)
+	org := lastPathElem(r)
+	if org == "" {
+		logAndRedirect(w, r, NewCourseInfoURL, "No course organization provided")
 		return
 	}
 
-	view.Member = member
-	view.Orgs, err = member.ListOrgs()
+	orgs, err := member.ListOrgs()
 	if err != nil {
+		// TODO why redirect to signout here?
 		logErrorAndRedirect(w, r, pages.Signout, err)
 		return
 	}
+	view := CourseView{
+		Org:  org,
+		Orgs: orgs,
+	}
+	view.Member = member
 
 	execTemplate("newcourse-register.html", w, view)
 }
@@ -148,6 +147,7 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 		indv = 0
 	}
 	if indv == 0 && groups == 0 {
+		// TODO Add this check on the javascript side
 		// http.Error(w, "There must be at least one assignment", http.StatusPartialContent)
 		logAndRedirect(w, r, pages.Home, "There must be at least one assignment")
 		return
@@ -268,7 +268,7 @@ func CreateOrgHandler(w http.ResponseWriter, r *http.Request) {
 
 	// wait on github completion of repos
 
-	// Creates the student team
+	// create the students team
 	// TODO: put this in a seperate go rutine and check if the team exsists already.
 	var repos []string
 	repos = append(repos, git.StandardRepoName, git.CourseInfoName)
@@ -305,7 +305,7 @@ type NewMemberView struct {
 // NewCourseMemberHandler is a http handler which gives a page where
 // students can sign up for a course in autograder.
 func NewCourseMemberHandler(w http.ResponseWriter, r *http.Request) {
-	// Checks if the user is signed in.
+	// check if user is signed in
 	member, err := checkMemberApproval(w, r, true)
 	if err != nil {
 		log.Println(err)
@@ -334,24 +334,16 @@ var RegisterCourseMemberURL = "/course/register/"
 // gives back a informal page about how to accept the invitation to the
 // organization on github.
 func RegisterCourseMemberHandler(w http.ResponseWriter, r *http.Request) {
-	// Checks if the user is signed in and a teacher.
+	// check if user is signed in
 	member, err := checkMemberApproval(w, r, true)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	// Gets the org and check if valid
-	orgname := ""
-	if path := strings.Split(r.URL.Path, "/"); len(path) == 4 {
-		if !git.HasOrganization(path[3]) {
-			http.Redirect(w, r, NewCourseMemberURL, http.StatusTemporaryRedirect)
-			return
-		}
-
-		orgname = path[3]
-	} else {
-		http.Redirect(w, r, NewCourseMemberURL, http.StatusTemporaryRedirect)
+	orgname := lastPathElem(r)
+	if orgname == "" || !git.HasOrganization(orgname) {
+		logAndRedirect(w, r, NewCourseMemberURL, "Provided course organization is unkown")
 		return
 	}
 
@@ -408,7 +400,7 @@ func ApproveCourseMembershipHandler(w http.ResponseWriter, r *http.Request) {
 	view := ApproveMembershipView{}
 	view.Error = true // default is an error; if its not we anyway set it to false before encoding
 
-	// Checks if the user is signed in and a teacher.
+	// check if user is signed in and is a teacher
 	/*member*/ _, err := checkTeacherApproval(w, r, false)
 	if err != nil {
 		log.Println(err)
@@ -417,16 +409,9 @@ func ApproveCourseMembershipHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Gets the org and check if valid
-	orgname := ""
-	if path := strings.Split(r.URL.Path, "/"); len(path) == 4 {
-		if !git.HasOrganization(path[3]) {
-			http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
-			return
-		}
-		orgname = path[3]
-	} else {
-		http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
+	orgname := lastPathElem(r)
+	if orgname == "" || !git.HasOrganization(orgname) {
+		logAndRedirect(w, r, pages.Home, "Provided course organization is unkown")
 		return
 	}
 
@@ -558,24 +543,16 @@ type MainCourseView struct {
 // and results for a user. A user can also submit code reviews from
 // this page.
 func UserCoursePageHandler(w http.ResponseWriter, r *http.Request) {
-	// Checks if the user is signed in.
+	// check if user is signed in
 	member, err := checkMemberApproval(w, r, true)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	// Gets the org and check if valid
-	orgname := ""
-	if path := strings.Split(r.URL.Path, "/"); len(path) == 3 {
-		if !git.HasOrganization(path[2]) {
-			http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
-			return
-		}
-
-		orgname = path[2]
-	} else {
-		http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
+	orgname := lastPathElem(r)
+	if orgname == "" || !git.HasOrganization(orgname) {
+		logAndRedirect(w, r, pages.Home, "Provided course organization is unkown")
 		return
 	}
 
@@ -637,7 +614,7 @@ var UpdateCourseURL = "/course/update"
 
 // UpdateCourseHandler is a http handler used to update course information.
 func UpdateCourseHandler(w http.ResponseWriter, r *http.Request) {
-	// Checks if the user is signed in and a teacher.
+	// check if user is signed in and is a teacher
 	member, err := checkTeacherApproval(w, r, true)
 	if err != nil {
 		logErrorAndRedirect(w, r, pages.Front, err)
@@ -774,7 +751,7 @@ var RemovePendingUserURL = "/course/removepending"
 
 // RemovePendingUserHandler is http handler used to remove users from the list of pending students on a course.
 func RemovePendingUserHandler(w http.ResponseWriter, r *http.Request) {
-	// Checks if the user is signed in and a teacher.
+	// check if user is signed in and is a teacher
 	member, err := checkTeacherApproval(w, r, true)
 	if err != nil {
 		logErrorAndRedirect(w, r, pages.Front, err)
@@ -820,8 +797,7 @@ var RemoveUserURL = "/course/removemember"
 
 // RemoveUserHandler is http handler used to remove users from the list of students on a course.
 func RemoveUserHandler(w http.ResponseWriter, r *http.Request) {
-	// Checks if the user is signed in and a teacher.
-	// TODO: this returns the Member object; why do GetMember() below?
+	// check if user is signed in and is a teacher
 	member, err := checkTeacherApproval(w, r, true)
 	if err != nil {
 		logErrorAndRedirect(w, r, pages.Front, err)

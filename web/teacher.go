@@ -4,7 +4,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"strings"
 
 	git "github.com/hfurubotten/autograder/entities"
 	"github.com/hfurubotten/autograder/web/pages"
@@ -34,17 +33,9 @@ func TeachersPanelHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Gets the org and check if valid
-	orgname := ""
-	if path := strings.Split(r.URL.Path, "/"); len(path) == 4 {
-		if !git.HasOrganization(path[3]) {
-			http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
-			return
-		}
-
-		orgname = path[3]
-	} else {
-		http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
+	orgname := lastPathElem(r)
+	if orgname == "" || !git.HasOrganization(orgname) {
+		logAndRedirect(w, r, pages.Home, "Provided course organization is unkown")
 		return
 	}
 
@@ -175,17 +166,9 @@ func ShowResultHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Gets the org and check if valid
-	orgname := ""
-	if path := strings.Split(r.URL.Path, "/"); len(path) == 4 {
-		if !git.HasOrganization(path[3]) {
-			http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
-			return
-		}
-
-		orgname = path[3]
-	} else {
-		http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
+	orgname := lastPathElem(r)
+	if orgname == "" || !git.HasOrganization(orgname) {
+		logAndRedirect(w, r, pages.Home, "Provided course organization is unkown")
 		return
 	}
 

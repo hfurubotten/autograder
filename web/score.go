@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	git "github.com/hfurubotten/autograder/entities"
@@ -28,17 +27,9 @@ func ScoreboardHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Gets the org and check if valid
-	orgname := ""
-	if path := strings.Split(r.URL.Path, "/"); len(path) == 3 {
-		if !git.HasOrganization(path[2]) {
-			http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
-			return
-		}
-
-		orgname = path[2]
-	} else {
-		http.Redirect(w, r, pages.Home, http.StatusTemporaryRedirect)
+	orgname := lastPathElem(r)
+	if orgname == "" || !git.HasOrganization(orgname) {
+		logAndRedirect(w, r, pages.Home, "Provided course organization is unkown")
 		return
 	}
 
