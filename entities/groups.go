@@ -38,8 +38,8 @@ type Group struct {
 	lock sync.Mutex //TODO remove me later
 }
 
-// NewGroupX creates a new group with the provided name for the given course.
-func NewGroupX(course, name string) (g *Group) {
+// NewGroup creates a new group with the provided name for the given course.
+func NewGroup(course, name string) (g *Group) {
 	return &Group{
 		Course:        course,
 		Name:          name,
@@ -47,6 +47,17 @@ func NewGroupX(course, name string) (g *Group) {
 		CurrentLabNum: 1,
 		Assignments:   make(map[int]*Assignment),
 	}
+}
+
+// NewGroupWithID creates a new group for the given course
+// with a unique group ID.
+func NewGroupWithID(course string) (*Group, error) {
+	gid, err := GetNextGroupID()
+	if err != nil {
+		return nil, err
+	}
+	groupName := GroupRepoPrefix + strconv.Itoa(gid)
+	return NewGroup(course, groupName), nil
 }
 
 // GetGroup returns the group associated with the given groupName.

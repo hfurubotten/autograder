@@ -81,7 +81,7 @@ func TestAddGroup(t *testing.T) {
 		if err != nil {
 			t.Error("Could not create a new course:", err)
 		}
-		g := NewGroupX(in.Course, in.GroupName)
+		g := NewGroup(in.Course, in.GroupName)
 
 		org.PendingGroup[in.GroupName] = nil
 		org.AddGroup(g)

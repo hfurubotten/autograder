@@ -142,7 +142,7 @@ func TestRecalculateSlipDays(t *testing.T) {
 		}
 
 		if in.GroupID > 0 {
-			group := NewGroupX(in.Course, in.GroupName)
+			group := NewGroup(in.Course, in.GroupName)
 
 			opt.IsGroupMember = true
 			opt.GroupNum = in.GroupID

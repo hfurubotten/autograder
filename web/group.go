@@ -86,14 +86,11 @@ func NewGroupHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	//TODO Hide this functionality inside the NewGroup() function
-	groupid, err := git.GetNextGroupID()
+	group, err := git.NewGroupWithID(course)
 	if err != nil {
 		logErrorAndRedirect(w, r, pages.Front, err)
 		return
 	}
-	groupName := git.GroupRepoPrefix + strconv.Itoa(groupid)
-	group := git.NewGroupX(course, groupName)
 
 	defer func() {
 		err := group.Save()

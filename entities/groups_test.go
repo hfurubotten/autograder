@@ -99,7 +99,7 @@ var testNewGroup = []struct {
 
 func TestNewGroupX(t *testing.T) {
 	for _, in := range testNewGroup {
-		g := NewGroupX(in.course, in.name)
+		g := NewGroup(in.course, in.name)
 		compareGroups(g, in.want, t)
 		err := g.Save()
 		if err != nil {
@@ -505,7 +505,7 @@ var testAddGroupBuildResultInput = []struct {
 
 func TestAddAndGetGroupBuildResult(t *testing.T) {
 	for _, in := range testAddGroupBuildResultInput {
-		group := NewGroupX("", in.groupName)
+		group := NewGroup("", in.groupName)
 
 		for labnum, buildids := range in.builds {
 			if group.GetLastBuildID(labnum) > 0 {
@@ -594,7 +594,7 @@ var testAddAndGetGroupNotesInput = []struct {
 
 func TestAddAndGetGroupNotes(t *testing.T) {
 	for _, in := range testAddAndGetGroupNotesInput {
-		group := NewGroupX("jungle course", in.groupName)
+		group := NewGroup("jungle course", in.groupName)
 
 		for labnum, notes := range in.notes {
 			if group.GetNotes(labnum) != "" {
@@ -658,7 +658,7 @@ var testGroupSetApprovedBuildInput = []struct {
 
 func TestGroupSetApprovedBuild(t *testing.T) {
 	for _, in := range testGroupSetApprovedBuildInput {
-		group := NewGroupX(in.Course, in.Name)
+		group := NewGroup(in.Course, in.Name)
 
 		group.SetApprovedBuild(in.Labnum, in.BuildID, in.Date)
 		if group.Assignments[in.Labnum].ApproveDate != in.Date {
