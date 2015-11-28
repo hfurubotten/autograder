@@ -32,6 +32,7 @@ var InMemoryOrgs = make(map[string]*Organization)
 var InMemoryOrgsLock sync.Mutex
 
 func init() {
+	gob.Register(Organization{})
 	database.RegisterBucket(OrganizationBucketName)
 }
 
@@ -458,7 +459,7 @@ func (o *Organization) IsTeacher(member *Member) bool {
 		_, mok = member.Teaching[o.Name]
 		_, aok := member.AssistantCourses[o.Name]
 		if orgok && (!mok && !aok) {
-			member.Teaching[o.Name] = true //TODO Should touch member internals from here
+			member.Teaching[o.Name] = true //TODO Should not touch member internals from here
 			member.Save()                  // This line is not tread safe!
 		}
 
@@ -474,7 +475,7 @@ func (o *Organization) IsTeacher(member *Member) bool {
 
 		_, mok = member.AssistantCourses[o.Name]
 		if orgok && !mok {
-			member.AssistantCourses[o.Name] = true //TODO Should touch member internals from here
+			member.AssistantCourses[o.Name] = true //TODO Should not touch member internals from here
 			member.Save()                          // This line is not tread safe!
 		} else if ok {
 			member.Save() // This line is not tread safe!

@@ -2,7 +2,6 @@ package entities
 
 import (
 	"encoding/gob"
-	//	"errors"
 	"sync"
 	"time"
 
@@ -62,9 +61,9 @@ func (o *OrganizationX) ImportGithubDataX(gorg *github.Organization) {
 	}
 
 	// Missing from go-github
-	//if gorg.Description != nil {
-	//	o.Description = gorg.Description
-	//}
+	// if gorg.Description != nil {
+	// 	o.Description = gorg.Description
+	// }
 
 	if gorg.Location != nil {
 		o.Location = *gorg.Location
@@ -73,12 +72,6 @@ func (o *OrganizationX) ImportGithubDataX(gorg *github.Organization) {
 	if gorg.Company != nil {
 		o.Company = *gorg.Company
 	}
-}
-
-// LoadStoredData fetches the organization data stored on disk or in cached memory.
-// ATM a NO-OP
-func (o *OrganizationX) LoadStoredDataX() (err error) {
-	return nil
 }
 
 // Lock will lock the organization name from being written to by
@@ -92,14 +85,4 @@ func (o *OrganizationX) Lock() {
 // Unlock will unlock the writers block on the orgnization.
 func (o *OrganizationX) Unlock() {
 	o.lock.Unlock()
-}
-
-// Save will store the Organization object to disk and be cached in
-// memory. The save function will also unlock the organization for
-// writing. If the org is not locked before saving, a runtime error
-// will be called.
-// ATM a NO-OP
-func (o *OrganizationX) SaveX() error {
-	o.Unlock()
-	return nil
 }
