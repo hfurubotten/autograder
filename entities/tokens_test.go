@@ -32,7 +32,7 @@ var testHasTokenInStoreInput = []struct {
 
 func TestHasSetGetAndRemoveTokenInStore(t *testing.T) {
 	for _, in := range testHasTokenInStoreInput {
-		if hasToken(in.Token) {
+		if HasToken(in.Token) {
 			t.Errorf("Found the token \"%v\" in store before save.", in.Token)
 		}
 
@@ -42,7 +42,7 @@ func TestHasSetGetAndRemoveTokenInStore(t *testing.T) {
 			continue
 		}
 
-		if !hasToken(in.Token) {
+		if !HasToken(in.Token) {
 			t.Errorf("Could not find the token \"%v\" in store before saving it to username \"%v\".", in.Token, in.Username)
 		}
 
@@ -55,7 +55,7 @@ func TestHasSetGetAndRemoveTokenInStore(t *testing.T) {
 		}
 
 		removeToken(in.Token)
-		if hasToken(in.Token) {
+		if HasToken(in.Token) {
 			t.Errorf("Could find the token \"%v\" in store after removing it.", in.Token)
 		}
 	}
