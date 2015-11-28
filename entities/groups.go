@@ -1,9 +1,7 @@
 package entities
 
 import (
-	"bytes"
 	"encoding/gob"
-	"errors"
 	"log"
 	"strconv"
 	"sync"
@@ -17,6 +15,7 @@ import (
 var GroupsBucketName = "groups"
 
 func init() {
+	gob.Register(Group{})
 	database.RegisterBucket(GroupsBucketName)
 }
 
@@ -30,7 +29,7 @@ type Group struct {
 	Active  bool
 	Name    string
 	Course  string
-	Members map[string]interface{} //TODO make bool
+	Members map[string]interface{}
 
 	CurrentLabNum int
 	Assignments   map[int]*Assignment
@@ -52,7 +51,7 @@ func NewGroup(course, name string) (g *Group) {
 // NewGroupWithID creates a new group for the given course
 // with a unique group ID.
 func NewGroupWithID(course string) (*Group, error) {
-	gid, err := GetNextGroupID()
+	gid, err := nextGroupID()
 	if err != nil {
 		return nil, err
 	}
@@ -74,45 +73,6 @@ func GetGroup(groupName string) (g *Group, err error) {
 // Save will store the group information in the database.
 func (g *Group) Save() error {
 	return database.Put(GroupsBucketName, g.Name, g)
-}
-
-func (g *Group) loadStoredData(lock bool) error {
-	err := database.GetPureDB().View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(GroupsBucketName))
-		if b == nil {
-			return errors.New("Bucket not found. Are you sure the bucket was registered correctly?")
-		}
-
-		data := b.Get([]byte(strconv.Itoa(g.ID)))
-		if data == nil {
-			return errors.New("No data in database.")
-		}
-
-		buf := &bytes.Buffer{}
-		decoder := gob.NewDecoder(buf)
-
-		n, _ := buf.Write(data)
-
-		if n != len(data) {
-			return errors.New("Couldn't write all data to buffer while getting data from database. " + strconv.Itoa(n) + " != " + strconv.Itoa(len(data)))
-		}
-
-		err := decoder.Decode(g)
-		if err != nil {
-			return err
-		}
-
-		return nil
-	})
-
-	//TODO: What is this?? Why have an option to lock or not?? Bad practice.
-
-	// locks the object directly in order to ensure consistent info from DB.
-	if lock {
-		g.Lock()
-	}
-
-	return err
 }
 
 // Activate will activate/approve a group.
@@ -150,7 +110,6 @@ func (g *Group) RemoveMember(user string) {
 	if len(g.Members) <= 1 {
 		g.Delete()
 	}
-
 	delete(g.Members, user)
 }
 
@@ -267,9 +226,8 @@ func HasGroup(groupid int) bool {
 	return database.Has(GroupsBucketName, strconv.Itoa(groupid))
 }
 
-// GetNextGroupID will get the next group id available.
-// TODO Make this function private; see codereview.go
-func GetNextGroupID() (int, error) {
+// nextGroupID will get the next group id available.
+func nextGroupID() (int, error) {
 	id, err := database.NextID(GroupsBucketName)
 	return int(id), err
 }

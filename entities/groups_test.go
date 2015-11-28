@@ -411,11 +411,11 @@ func TestSaveHasAndDelete(t *testing.T) {
 	}
 }
 
-var testGetNextGroupIDIterations = 100
+var testNextGroupIDIterations = 100
 
-func TestGetNextGroupID(t *testing.T) {
-	for i := 1; i <= testGetNextGroupIDIterations; i++ {
-		nextID, err := GetNextGroupID()
+func TestNextGroupID(t *testing.T) {
+	for i := 1; i <= testNextGroupIDIterations; i++ {
+		nextID, err := nextGroupID()
 		if err != nil {
 			t.Error(err)
 		}
