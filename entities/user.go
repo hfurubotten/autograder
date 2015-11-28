@@ -1,9 +1,14 @@
 package entities
 
 import (
+	"encoding/gob"
 	"net/mail"
 	"sync"
 )
+
+func init() {
+	gob.Register(UserProfile{})
+}
 
 // UserProfile contains information about a user. Often this information will
 // be gleaned from external sources such as GitHub.
@@ -52,10 +57,6 @@ func (u *UserProfile) Dial() (err error) {
 		}
 	}
 	return nil
-}
-
-func (u *UserProfile) hasAccessToken() bool {
-	return u.accessToken != "" && len(u.accessToken) > 0
 }
 
 // GetUsername will return the users unique username.

@@ -1,6 +1,7 @@
 package entities
 
 import (
+	"encoding/gob"
 	"fmt"
 	"strconv"
 
@@ -11,6 +12,7 @@ import (
 var CodeReviewBucketName = "codereviews"
 
 func init() {
+	gob.Register(CodeReview{})
 	database.RegisterBucket(CodeReviewBucketName)
 }
 

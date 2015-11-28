@@ -14,10 +14,10 @@ func init() {
 	database.RegisterBucket(TokenBucketName)
 }
 
-// hasToken returns true if the given token is in the database.
+// HasToken returns true if the given token is in the database.
 // Tokens are hashed before they are stored in the database to protect the on
 // disk version of the tokens.
-func hasToken(token string) bool {
+func HasToken(token string) bool {
 	hash := sha256.Sum256([]byte(token))
 	return database.Has(TokenBucketName, fmt.Sprintf("%x", hash))
 }

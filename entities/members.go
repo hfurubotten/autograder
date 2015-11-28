@@ -1,6 +1,7 @@
 package entities
 
 import (
+	"encoding/gob"
 	"errors"
 	"fmt"
 	"sync"
@@ -13,6 +14,7 @@ import (
 var MemberBucketName = "members"
 
 func init() {
+	gob.Register(Member{})
 	database.RegisterBucket(MemberBucketName)
 }
 
@@ -65,7 +67,7 @@ func LookupMember(token string) (m *Member, err error) {
 // PutMember saves the provided member in the database and
 // associates the token with the member.
 func PutMember(token string, m *Member) (err error) {
-	if hasToken(token) {
+	if HasToken(token) {
 		return errors.New("OAuth token already in database")
 	}
 	// record token -> Username mapping to allow reverse lookup
@@ -137,7 +139,7 @@ func (m *Member) RemoveMember() (err error) {
 	if err != nil {
 		return err
 	}
-	if hasToken(m.accessToken) {
+	if HasToken(m.accessToken) {
 		return removeToken(m.accessToken)
 	}
 	// if we get here, the member didn't have a token.

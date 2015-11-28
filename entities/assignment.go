@@ -1,10 +1,15 @@
 package entities
 
 import (
+	"encoding/gob"
 	"time"
 
 	"github.com/autograde/kit/score"
 )
+
+func init() {
+	gob.Register(Assignment{})
+}
 
 // Assignment holds data related to results of a lab assignment.
 type Assignment struct {
