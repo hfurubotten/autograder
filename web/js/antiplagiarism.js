@@ -19,7 +19,7 @@ function performTestPlagiarismClick(labs) {
 // loads anti-plagiarism results from server and updates html.
 var loadApResults = function(user, lab){
 	// updates text fields
-	$("#mossResults").text("Status: ").append(data.Status);
-	$("#jplagResults").text("Number of passed tests: ").append(data.NumPasses);
-	$("#duplResults").text("Number of failed tests: ").append(data.NumFails);
+	$("#mossResults").text("").append("1%");
+	$("#jplagResults").text("").append("2%");
+	$("#duplResults").text("").append("3%");
 }
