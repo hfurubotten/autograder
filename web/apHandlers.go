@@ -91,7 +91,7 @@ func ManualTestPlagiarismHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("%v\n", request)
 }
 
-// ApLabResultsHandler is a http handeler for getting results for one lab of a user  
+// ApLabResultsHandler is a http handeler for getting results for one lab of a user
 // from the latest anti-plagiarism test. This handler writes back the results as JSON data.
 func ApLabResultsHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
@@ -122,6 +122,7 @@ func ApLabResultsHandler(w http.ResponseWriter, r *http.Request) {
 
 	if strings.HasPrefix(username, git.GroupRepoPrefix) {
 		labIndex := -1
+		// Find the correct lab index
 		for i, name := range org.GroupLabFolders {
 			if name == labname {
 				labIndex = i
@@ -134,12 +135,14 @@ func ApLabResultsHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		// Get the group ID from the group name
 		groupid, err := strconv.Atoi(username[len(git.GroupRepoPrefix):])
 		if err != nil {
 			http.Error(w, "Could not convert the group ID.", 404)
 			return
 		}
 
+		// Get the group from the database
 		group, err := git.NewGroup(orgname, groupid, true)
 		if err != nil {
 			log.Println(err)
@@ -151,6 +154,7 @@ func ApLabResultsHandler(w http.ResponseWriter, r *http.Request) {
 		results = group.GetAntiPlagiarismResults(org.Name, labIndex)
 	} else {
 		labIndex := -1
+		// Find the correct lab index
 		for i, name := range org.IndividualLabFolders {
 			if name == labname {
 				labIndex = i
@@ -163,6 +167,7 @@ func ApLabResultsHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		// Get the user from the database
 		user, err := git.NewMemberFromUsername(username, true)
 		if err != nil {
 			log.Println(err)
@@ -182,7 +187,7 @@ func ApLabResultsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// ApUserResultsHandler is a http handeler for getting all results for a user 
+// ApUserResultsHandler is a http handeler for getting all results for a user
 // from the latest anti-plagiarism test. This handler writes back the results as JSON data.
 func ApUserResultsHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
@@ -196,7 +201,7 @@ func ApUserResultsHandler(w http.ResponseWriter, r *http.Request) {
 	// TODO: add more security
 	orgname := r.FormValue("Course")
 	username := r.FormValue("Username")
-	
+
 	org, err := git.NewOrganization(orgname, true)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
@@ -207,44 +212,51 @@ func ApUserResultsHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Not a member for this course.", 404)
 		return
 	}
-	
-	var results map[string]*git.AntiPlagiarismResults
+
+	results := make(map[string]git.AntiPlagiarismResults)
 
 	if strings.HasPrefix(username, git.GroupRepoPrefix) {
+		// Get the group ID from the group name
 		groupid, err := strconv.Atoi(username[len(git.GroupRepoPrefix):])
 		if err != nil {
 			http.Error(w, "Could not convert the group ID.", 404)
 			return
 		}
 
+		// Get the group from the database
 		group, err := git.NewGroup(orgname, groupid, true)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, err.Error(), 404)
 			return
 		}
-		
+
 		// For each lab
 		for i, name := range org.GroupLabFolders {
-			results[name] = group.GetAntiPlagiarismResults(org.Name, i)
+			// Get the results for the lab
+			temp := group.GetAntiPlagiarismResults(org.Name, i)
+			results[name] = *temp
 		}
 	} else {
-
+		// Get user from the database
 		user, err := git.NewMemberFromUsername(username, true)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, err.Error(), 404)
 			return
 		}
-		
+
+		// For each lab
 		for i, name := range org.IndividualLabFolders {
 			// Get the results for the lab
-			results[name] = user.GetAntiPlagiarismResults(org.Name, i)
+			temp := user.GetAntiPlagiarismResults(org.Name, i)
+			results[name] = *temp
 		}
 	}
 
 	enc := json.NewEncoder(w)
 
+	// Encode the results in JSON
 	err = enc.Encode(results)
 	if err != nil {
 		http.Error(w, err.Error(), 404)

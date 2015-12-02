@@ -54,7 +54,15 @@ var loadUserApResults = function(index, element){
         count++;
       }      	
 
-      $("tr#" + data.User + " > td." + labname).text(count);
+      if (count == 1) {
+        $("tr#" + username + " > td." + labname).css('background-color', '#f7bbbb');
+      }
+      else if (count == 2) {
+        $("tr#" + username + " > td." + labname).css('background-color', '#f08080');
+      }
+      else if (count == 3) {
+        $("tr#" + username + " > td." + labname).css('background-color', '#e73232');
+      }
     });
   }).fail(function(){
 
