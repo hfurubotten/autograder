@@ -15,3 +15,11 @@ function performTestPlagiarismClick(labs) {
   event.preventDefault();
   return false
 }
+
+// loads anti-plagiarism results from server and updates html.
+var loadApResults = function(user, lab){
+	// updates text fields
+	$("#mossResults").text("Status: ").append(data.Status);
+	$("#jplagResults").text("Number of passed tests: ").append(data.NumPasses);
+	$("#duplResults").text("Number of failed tests: ").append(data.NumFails);
+}
