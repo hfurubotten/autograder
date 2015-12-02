@@ -15,8 +15,11 @@ import (
 // ManualTestPlagiarismURL is the URL used to call ManualTestPlagiarismHandler.
 var ManualTestPlagiarismURL = "/event/manualtestplagiarism"
 
-// ApResultsURL is the URL used to call ApResultsHandler
-var ApResultsURL = "/course/apresults"
+// ApLabResultsURL is the URL used to call ApLabResultsHandler
+var ApLabResultsURL = "/course/aplabresults"
+
+// ApUserResultsURL is the URL used to call ApUserResultsHandler
+var ApUserResultsURL = "/course/apuserresults"
 
 // ManualTestPlagiarismHandler is a http handler for manually triggering
 // anti-plagiarism tests.
@@ -88,9 +91,9 @@ func ManualTestPlagiarismHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("%v\n", request)
 }
 
-// ApResultsHandler is a http handeler for getting results from the latest anti-plagiarism test. 
-// This handler writes back the results as JSON data.
-func ApResultsHandler(w http.ResponseWriter, r *http.Request) {
+// ApLabResultsHandler is a http handeler for getting results for one lab of a user  
+// from the latest anti-plagiarism test. This handler writes back the results as JSON data.
+func ApLabResultsHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
 	member, err := checkMemberApproval(w, r, false)
 	if err != nil {
@@ -169,6 +172,75 @@ func ApResultsHandler(w http.ResponseWriter, r *http.Request) {
 
 		// Get the results for the lab
 		results = user.GetAntiPlagiarismResults(org.Name, labIndex)
+	}
+
+	enc := json.NewEncoder(w)
+
+	err = enc.Encode(results)
+	if err != nil {
+		http.Error(w, err.Error(), 404)
+	}
+}
+
+// ApUserResultsHandler is a http handeler for getting all results for a user 
+// from the latest anti-plagiarism test. This handler writes back the results as JSON data.
+func ApUserResultsHandler(w http.ResponseWriter, r *http.Request) {
+	// Checks if the user is signed in and a teacher.
+	member, err := checkMemberApproval(w, r, false)
+	if err != nil {
+		http.Error(w, err.Error(), 404)
+		log.Println(err)
+		return
+	}
+
+	// TODO: add more security
+	orgname := r.FormValue("Course")
+	username := r.FormValue("Username")
+	
+	org, err := git.NewOrganization(orgname, true)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	if !org.IsMember(member) {
+		http.Error(w, "Not a member for this course.", 404)
+		return
+	}
+	
+	var results map[string]*git.AntiPlagiarismResults
+
+	if strings.HasPrefix(username, git.GroupRepoPrefix) {
+		groupid, err := strconv.Atoi(username[len(git.GroupRepoPrefix):])
+		if err != nil {
+			http.Error(w, "Could not convert the group ID.", 404)
+			return
+		}
+
+		group, err := git.NewGroup(orgname, groupid, true)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), 404)
+			return
+		}
+		
+		// For each lab
+		for i, name := range org.GroupLabFolders {
+			results[name] = group.GetAntiPlagiarismResults(org.Name, i)
+		}
+	} else {
+
+		user, err := git.NewMemberFromUsername(username, true)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), 404)
+			return
+		}
+		
+		for i, name := range org.IndividualLabFolders {
+			// Get the results for the lab
+			results[name] = user.GetAntiPlagiarismResults(org.Name, i)
+		}
 	}
 
 	enc := json.NewEncoder(w)

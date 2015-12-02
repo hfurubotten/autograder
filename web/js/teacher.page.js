@@ -32,6 +32,8 @@ $(function(){
 
   $("table#studentresults > tbody > tr").each(updatesummary);
   $("table#groupresults > tbody > tr").each(updatesummary);
+  $("table#studentresults > tbody > tr").each(loadUserApResults);
+  $("table#groupresults > tbody > tr").each(loadUserApResults);
 });
 
 // updatesummary is a finction that will load a summary for a course and update the student or group list.
