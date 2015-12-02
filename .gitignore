@@ -31,3 +31,5 @@ diskvtobolt
 
 *.db
 *.config
+
+*~
