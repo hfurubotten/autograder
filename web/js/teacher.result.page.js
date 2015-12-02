@@ -6,6 +6,7 @@ $("#rebuild").click(function(event){
   $.post("/event/manualbuild", {"course": course, "user": user, "lab": lab}, function(){
     $("div.alert").removeClass("alert-warning").addClass("alert-success").text("Successfull rebuild. Build log updated.");
     loadLabResult(user, lab);
+    loadApResults(user, lab);
   }).fail(function(){
     $("div.alert").removeClass("alert-warning").addClass("alert-danger").text("Rebuild failure");
   });
@@ -17,6 +18,7 @@ $("#approve").click(function(){
   if(confirm("Are you sure you want to approve this lab?")){
     $.post("/course/approvelab", {"Course": course, "User": username, "Approve": true, "Labnum": curlabnum}, function(){
       loadLabResult(username, curlab);
+      loadApResults(username, curlab);
     });
   }
   event.preventDefault();
@@ -30,6 +32,7 @@ $(".labtab").click(function(){
   curlabnum = $(this).attr("labnum");
 
   loadLabResult(username, curlab);
+  loadApResults(username, curlab);
   loadNotes()
 });
 
@@ -64,6 +67,7 @@ $("form#notes").submit(function(event){
     {"Course": course, "Username": username, "Group": groupid, "Labnum": curlabnum, "Notes": notes},
     function(){
       loadLabResult(username, curlab);
+      loadApResults(username, curlab);
   });
 
   event.preventDefault();
