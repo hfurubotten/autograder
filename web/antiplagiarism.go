@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"path/filepath"
 	"strconv"
@@ -23,17 +24,22 @@ var resultsBaseDir = "/home/ericfree/results"
 // ManualTestPlagiarismURL is the URL used to call ManualTestPlagiarismHandler.
 var ManualTestPlagiarismURL = "/event/manualtestplagiarism"
 
+// ApResultsURL is the URL used to call ApResultsHandler
+var ApResultsURL = "/course/apresults"
+
 // ManualTestPlagiarismHandler is a http handler for manually triggering test builds.
 func ManualTestPlagiarismHandler(w http.ResponseWriter, r *http.Request) {
 
 	if !git.HasOrganization(r.FormValue("course")) {
 		http.Error(w, "Unknown organization", 404)
+		log.Println("Unknown organization")
 		return
 	}
 
 	org, err := git.NewOrganization(r.FormValue("course"), true)
 	if err != nil {
 		http.Error(w, "Organization Error", 404)
+		log.Println(err)
 		return
 	}
 
@@ -88,6 +94,97 @@ func ManualTestPlagiarismHandler(w http.ResponseWriter, r *http.Request) {
 	go callAntiplagiarism(request, org, isGroup)
 
 	fmt.Printf("%v\n", request)
+}
+
+// ApResultsHandler is a http handeler for getting results from the latest anti-plagiarism test. 
+// This handler writes back the results as JSON data.
+func ApResultsHandler(w http.ResponseWriter, r *http.Request) {
+	// Checks if the user is signed in and a teacher.
+	member, err := checkMemberApproval(w, r, false)
+	if err != nil {
+		http.Error(w, err.Error(), 404)
+		log.Println(err)
+		return
+	}
+
+	// TODO: add more security
+	orgname := r.FormValue("Course")
+	username := r.FormValue("Username")
+	labname := r.FormValue("Labname")
+
+	org, err := git.NewOrganization(orgname, true)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	if !org.IsMember(member) {
+		http.Error(w, "Not a member for this course.", 404)
+		return
+	}
+
+	var results *git.AntiPlagiarismResults
+
+	if strings.HasPrefix(username, git.GroupRepoPrefix) {
+		labIndex := -1
+		for i, name := range org.GroupLabFolders {
+			if name == labname {
+				labIndex = i
+				break
+			}
+		}
+
+		if labIndex < 0 {
+			http.Error(w, "No lab with that name found.", 404)
+			return
+		}
+
+		groupid, err := strconv.Atoi(username[len(git.GroupRepoPrefix):])
+		if err != nil {
+			http.Error(w, "Could not convert the group ID.", 404)
+			return
+		}
+
+		group, err := git.NewGroup(orgname, groupid, true)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), 404)
+			return
+		}
+
+		// Get the results for the lab
+		results = group.GetAntiPlagiarismResults(org.Name, labIndex)
+	} else {
+		labIndex := -1
+		for i, name := range org.IndividualLabFolders {
+			if name == labname {
+				labIndex = i
+				break
+			}
+		}
+
+		if labIndex < 0 {
+			http.Error(w, "No lab with that name found.", 404)
+			return
+		}
+
+		user, err := git.NewMemberFromUsername(username, true)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), 404)
+			return
+		}
+
+		// Get the results for the lab
+		results = user.GetAntiPlagiarismResults(org.Name, labIndex)
+	}
+
+	enc := json.NewEncoder(w)
+
+	err = enc.Encode(results)
+	if err != nil {
+		http.Error(w, err.Error(), 404)
+	}
 }
 
 // callAntiplagiarism sends a request to the anti-plagiarism software.

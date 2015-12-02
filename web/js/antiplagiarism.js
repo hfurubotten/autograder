@@ -18,8 +18,13 @@ function performTestPlagiarismClick(labs) {
 
 // loads anti-plagiarism results from server and updates html.
 var loadApResults = function(user, lab){
-	// updates text fields
-	$("#mossResults").text("").append("1%");
-	$("#jplagResults").text("").append("2%");
-	$("#duplResults").text("").append("3%");
+  $.getJSON("/course/apresults", {"Labname": lab, "Course": course, "Username": user}, function(data){
+    $("#mossResults").text("").append(data.MossPct);
+    $("#jplagResults").text("").append(data.JplagPct);
+    $("#duplResults").text("").append(data.DuplPct);
+  }).fail(function(){
+    $("#mossResults").text("").append("-1% : Error");
+    $("#jplagResults").text("").append("-1% : Error");
+    $("#duplResults").text("").append("-1% : Error");
+  });
 }
