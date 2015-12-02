@@ -19,9 +19,14 @@ function performTestPlagiarismClick(labs) {
 // loads anti-plagiarism results from server and updates html.
 var loadApResults = function(user, lab){
   $.getJSON("/course/apresults", {"Labname": lab, "Course": course, "Username": user}, function(data){
-    $("#mossResults").text("").append(data.MossPct);
-    $("#jplagResults").text("").append(data.JplagPct);
-    $("#duplResults").text("").append(data.DuplPct);
+    $("#mossResults").text(data.MossPct).append("%");
+    $("#jplagResults").text(data.JplagPct).append("%");
+    if (data.DuplPct == 0.0) {
+    		$("#duplResults").text("False");
+    }
+    else {
+    		$("#duplResults").text("True");
+    }
   }).fail(function(){
     $("#mossResults").text("").append("-1% : Error");
     $("#jplagResults").text("").append("-1% : Error");
