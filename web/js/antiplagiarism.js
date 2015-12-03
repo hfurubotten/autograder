@@ -1,13 +1,13 @@
 $("#testplagiarism").click(function(event){
-  return performTestPlagiarismClick("individual");
+  return performApTestClick("individual");
 });
 
 $("#grouptestplagiarism").click(function(event){
-  return performTestPlagiarismClick("group");
+  return performApTestClick("group");
 });
 
-function performTestPlagiarismClick(labs) {
-  $.post("/event/manualtestplagiarism", {"course": course, "labs": labs}, function(){
+function performApTestClick(labs) {
+  $.post("/event/apmanualtest", {"course": course, "labs": labs}, function(){
     alert("The anti-plagiarism command was sent. It will take several minutes at the minimum to process. Please be patient.");
   }).fail(function(){
     alert("The anti-plagiarism command failed.");
@@ -60,12 +60,16 @@ var loadLabApResults = function(user, lab){
     }
   }).fail(function(){
     $("#mossResults").text("").append("-1% : Error");
+    $("#mossBtn").hide();
     $("#jplagResults").text("").append("-1% : Error");
+    $("#jplagBtn").hide();
     $("#duplResults").text("").append("-1% : Error");
+    $("#duplBtn").hide();
   });
 }
 
-// loads anti-plagiarism results for a user's lab from server and updates html.
+// loads anti-plagiarism results for a user's lab from server and updates
+// the cell color in the user's table row
 var loadUserApResults = function(index, element){
   var username = $(element).attr("id");
   $.getJSON("/course/apuserresults", {"Course": course, "Username": username}, function(data){
@@ -73,8 +77,9 @@ var loadUserApResults = function(index, element){
       if(labname == "") {
         return
       }
-      var count = 0;
       
+      // Count the tools which found plagiarism
+      var count = 0;
       if (s.MossPct > 0.0) {
         count++;
       }
@@ -83,8 +88,9 @@ var loadUserApResults = function(index, element){
       }
       if (s.DuplPct > 0.0) {
         count++;
-      }      	
+      }
 
+      // Change cell color depending on the number of tools which found plagiarism.
       if (count == 1) {
         $("tr#" + username + " > td." + labname).css('background-color', '#f7bbbb');
       }
@@ -102,6 +108,11 @@ var loadUserApResults = function(index, element){
 
 // Show the specific anti-plagiarism details in another window.
 function showApDetails(url) {
-	alert(url);
 	//window.open("http://www.google.com/");
+	$.post("/event/apshowdetails", {"url": url}, function(){
+		alert(url);
+  }).fail(function(){
+    alert("The anti-plagiarism command failed.");
+  });
+  return false
 }

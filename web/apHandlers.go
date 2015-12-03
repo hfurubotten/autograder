@@ -12,8 +12,8 @@ import (
 	git "github.com/hfurubotten/autograder/entities"
 )
 
-// ManualTestPlagiarismURL is the URL used to call ManualTestPlagiarismHandler.
-var ManualTestPlagiarismURL = "/event/manualtestplagiarism"
+// ApManualTestURL is the URL used to call ApManualTestHandler.
+var ApManualTestURL = "/event/apmanualtest"
 
 // ApLabResultsURL is the URL used to call ApLabResultsHandler
 var ApLabResultsURL = "/course/aplabresults"
@@ -21,9 +21,12 @@ var ApLabResultsURL = "/course/aplabresults"
 // ApUserResultsURL is the URL used to call ApUserResultsHandler
 var ApUserResultsURL = "/course/apuserresults"
 
-// ManualTestPlagiarismHandler is a http handler for manually triggering
+// ApShowDetailsURL is the URL used to call ApShowDetailsHandler
+var ApShowDetailsURL = "/event/apshowdetails"
+
+// ApManualTestHandler is a http handler for manually triggering
 // anti-plagiarism tests.
-func ManualTestPlagiarismHandler(w http.ResponseWriter, r *http.Request) {
+func ApManualTestHandler(w http.ResponseWriter, r *http.Request) {
 
 	if !git.HasOrganization(r.FormValue("course")) {
 		http.Error(w, "Unknown organization", 404)
@@ -261,4 +264,22 @@ func ApUserResultsHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), 404)
 	}
+}
+
+// ApShowDetailsHandler
+func ApShowDetailsHandler(w http.ResponseWriter, r *http.Request) {
+	// Checks if the user is signed in and a teacher.
+	member, err := checkTeacherApproval(w, r, true)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	
+	fmt.Printf("%s\n", r.FormValue("url"))
+
+	template := StdTemplate{}
+	template.Member = member
+
+	page := r.FormValue("url")
+	execTemplate(page, w, template)
 }
