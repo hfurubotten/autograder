@@ -27,8 +27,8 @@ var loadLabApResults = function(user, lab){
     else {
     	$("#mossResults").text(data.MossPct).append("%");
     	$("#mossBtn").show();
-    	var onClickCmd = "showApDetails("
-    	onClickCmd = cmd.concat(data.MossURL, ")");
+    	var tmp = "showApDetails("
+    	var onClickCmd = tmp.concat(data.MossURL, ")");
     	$("#mossBtn").attr("onclick", onClickCmd);
     }
     // JPlag results and link
@@ -39,8 +39,8 @@ var loadLabApResults = function(user, lab){
     else {
     	$("#jplagResults").text(data.JplagPct).append("%");
     	$("#jplagBtn").show();
-    	var onClickCmd = "showApDetails("
-    	onClickCmd = cmd.concat(data.JplagURL, ")");
+    	var tmp = "showApDetails("
+    	var onClickCmd = tmp.concat(data.JplagURL, ")");
     	$("#jplagBtn").attr("onclick", onClickCmd);
 		}
 		// dupl results and link
@@ -51,8 +51,8 @@ var loadLabApResults = function(user, lab){
     else {
     	$("#duplResults").text("True");
     	$("#duplBtn").show();
-    	var onClickCmd = "showApDetails("
-    	onClickCmd = cmd.concat(data.DuplURL, ")");
+    	var tmp = "showApDetails("
+    	var onClickCmd = tmp.concat(data.DuplURL, ")");
     	$("#duplBtn").attr("onclick", onClickCmd);
     }
   }).fail(function(){
