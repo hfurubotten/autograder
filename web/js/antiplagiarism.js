@@ -22,23 +22,29 @@ var loadLabApResults = function(user, lab){
   	// Moss results and link
   	if (data.MossPct == 0.0) {
     	$("#mossResults").text("0%");
+    	$("#mossBtn").hide();
   	}
     else {
     	$("#mossResults").text(data.MossPct).append("%");
+    	$("#mossBtn").show();
     }
     // JPlag results and link
     if (data.JplagPct == 0.0) {
     	$("#jplagResults").text("0%");
+    	$("#jplagBtn").hide();
     }
     else {
     	$("#jplagResults").text(data.JplagPct).append("%");
+    	$("#jplagBtn").show();
 		}
 		// dupl results and link
     if (data.DuplPct == 0.0) {
     	$("#duplResults").text("False");
+    	$("#duplBtn").hide();
     }
     else {
     	$("#duplResults").text("True");
+    	$("#duplBtn").show();
     }
   }).fail(function(){
     $("#mossResults").text("").append("-1% : Error");
