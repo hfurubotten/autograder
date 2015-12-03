@@ -27,8 +27,8 @@ var loadLabApResults = function(user, lab){
     else {
     	$("#mossResults").text(data.MossPct).append("%");
     	$("#mossBtn").show();
-    	var tmp = "showApDetails("
-    	var onClickCmd = tmp.concat(data.MossURL, ")");
+    	var tmp = "showApDetails('"
+    	var onClickCmd = tmp.concat(data.MossURL, "')");
     	alert(onClickCmd);
     	$("#mossBtn").attr("onclick", onClickCmd);
     }
@@ -40,8 +40,8 @@ var loadLabApResults = function(user, lab){
     else {
     	$("#jplagResults").text(data.JplagPct).append("%");
     	$("#jplagBtn").show();
-    	var tmp = "showApDetails("
-    	var onClickCmd = tmp.concat(data.JplagURL, ")");
+    	var tmp = "showApDetails('"
+    	var onClickCmd = tmp.concat(data.JplagURL, "')");
     	alert(onClickCmd);
     	$("#jplagBtn").attr("onclick", onClickCmd);
 		}
@@ -53,8 +53,8 @@ var loadLabApResults = function(user, lab){
     else {
     	$("#duplResults").text("True");
     	$("#duplBtn").show();
-    	var tmp = "showApDetails("
-    	var onClickCmd = tmp.concat(data.DuplURL, ")");
+    	var tmp = "showApDetails('"
+    	var onClickCmd = tmp.concat(data.DuplURL, "')");
     	alert(onClickCmd);
     	$("#duplBtn").attr("onclick", onClickCmd);
     }
