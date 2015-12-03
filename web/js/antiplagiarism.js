@@ -8,7 +8,7 @@ $("#grouptestplagiarism").click(function(event){
 
 function performTestPlagiarismClick(labs) {
   $.post("/event/manualtestplagiarism", {"course": course, "labs": labs}, function(){
-    alert("The anti-plagiarism command was sent. It will take several minutes at the minimum to process. Please be patient. The results will appear in x.");
+    alert("The anti-plagiarism command was sent. It will take several minutes at the minimum to process. Please be patient.");
   }).fail(function(){
     alert("The anti-plagiarism command failed.");
   });
@@ -27,6 +27,9 @@ var loadLabApResults = function(user, lab){
     else {
     	$("#mossResults").text(data.MossPct).append("%");
     	$("#mossBtn").show();
+    	var onClickCmd = "showApDetails("
+    	onClickCmd = cmd.concat(data.MossURL, ")");
+    	$("#mossBtn").attr("onclick", onClickCmd);
     }
     // JPlag results and link
     if (data.JplagPct == 0.0) {
@@ -36,6 +39,9 @@ var loadLabApResults = function(user, lab){
     else {
     	$("#jplagResults").text(data.JplagPct).append("%");
     	$("#jplagBtn").show();
+    	var onClickCmd = "showApDetails("
+    	onClickCmd = cmd.concat(data.JplagURL, ")");
+    	$("#jplagBtn").attr("onclick", onClickCmd);
 		}
 		// dupl results and link
     if (data.DuplPct == 0.0) {
@@ -45,6 +51,9 @@ var loadLabApResults = function(user, lab){
     else {
     	$("#duplResults").text("True");
     	$("#duplBtn").show();
+    	var onClickCmd = "showApDetails("
+    	onClickCmd = cmd.concat(data.DuplURL, ")");
+    	$("#duplBtn").attr("onclick", onClickCmd);
     }
   }).fail(function(){
     $("#mossResults").text("").append("-1% : Error");
@@ -89,6 +98,7 @@ var loadUserApResults = function(index, element){
 }
 
 // Show the specific anti-plagiarism details in another window.
-function showApDetails() {
-	window.open("http://www.google.com/");
+function showApDetails(url) {
+	alert(url)
+	//window.open("http://www.google.com/");
 }
