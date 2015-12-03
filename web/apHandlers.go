@@ -268,13 +268,14 @@ func ApUserResultsHandler(w http.ResponseWriter, r *http.Request) {
 
 // ApShowDetailsHandler
 func ApShowDetailsHandler(w http.ResponseWriter, r *http.Request) {
+/*	fmt.Printf("ApShowDetailsHandler\n")
 	// Checks if the user is signed in and a teacher.
 	member, err := checkTeacherApproval(w, r, true)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	
+
 	fmt.Printf("%s\n", r.FormValue("url"))
 
 	template := StdTemplate{}
@@ -282,4 +283,6 @@ func ApShowDetailsHandler(w http.ResponseWriter, r *http.Request) {
 
 	page := r.FormValue("url")
 	execTemplate(page, w, template)
+*/
+	http.ServeFile(w, r, r.FormValue("url"))
 }
