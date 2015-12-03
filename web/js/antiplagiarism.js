@@ -19,13 +19,26 @@ function performTestPlagiarismClick(labs) {
 // loads anti-plagiarism results for a user's lab from server and updates html.
 var loadLabApResults = function(user, lab){
   $.getJSON("/course/aplabresults", {"Labname": lab, "Course": course, "Username": user}, function(data){
-    $("#mossResults").text(data.MossPct).append("%");
-    $("#jplagResults").text(data.JplagPct).append("%");
-    if (data.DuplPct == 0.0) {
-    		$("#duplResults").text("False");
+  	// Moss results and link
+  	if (data.MossPct == 0.0) {
+    	$("#mossResults").text("0%");
+  	}
+    else {
+    	$("#mossResults").text(data.MossPct).append("%");
+    }
+    // JPlag results and link
+    if (data.JplagPct == 0.0) {
+    	$("#jplagResults").text("0%");
     }
     else {
-    		$("#duplResults").text("True");
+    	$("#jplagResults").text(data.JplagPct).append("%");
+		}
+		// dupl results and link
+    if (data.DuplPct == 0.0) {
+    	$("#duplResults").text("False");
+    }
+    else {
+    	$("#duplResults").text("True");
     }
   }).fail(function(){
     $("#mossResults").text("").append("-1% : Error");
@@ -67,4 +80,9 @@ var loadUserApResults = function(index, element){
   }).fail(function(){
 
   });
+}
+
+// Show the specific anti-plagiarism details in another window.
+function showApDetails() {
+	window.open("http://www.google.com/");
 }

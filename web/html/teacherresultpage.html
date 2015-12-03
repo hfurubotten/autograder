@@ -108,29 +108,38 @@
             <div class="col-md-8">
               <h2>Anti-Plagiarism Results</h2>
               <div class="row">
-                <div class="col-md-4">
+                <div class="col-md-2">
                   Moss results:
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-2">
                   <p id="mossResults">0%</p>
                 </div>
+                <div class="col-md-2">
+                  <button onclick="showApDetails()" class="btn btn-primary">Show Moss Details</button>
+                </div>
               </div>
 
               <div class="row">
-                <div class="col-md-4">
+                <div class="col-md-2">
                   JPlag results:
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-2">
                   <p id="jplagResults">0%</p>
+                </div>
+                <div class="col-md-2">
+                  <button onclick="showApDetails()" class="btn btn-primary">Show JPlag Details</button>
                 </div>
               </div>
 
               <div class="row">
-                <div class="col-md-4">
+                <div class="col-md-2">
                   Dupl results:
                 </div>
-                <div class="col-md-4">
-                  <p id="duplResults">0%</p>
+                <div class="col-md-2">
+                  <p id="duplResults">False</p>
+                </div>
+                <div class="col-md-2">
+                  <button onclick="showApDetails()" class="btn btn-primary">Show dupl Details</button>
                 </div>
               </div>
             </div>
