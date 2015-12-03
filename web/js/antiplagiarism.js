@@ -29,6 +29,7 @@ var loadLabApResults = function(user, lab){
     	$("#mossBtn").show();
     	var tmp = "showApDetails("
     	var onClickCmd = tmp.concat(data.MossURL, ")");
+    	alert(onClickCmd);
     	$("#mossBtn").attr("onclick", onClickCmd);
     }
     // JPlag results and link
@@ -41,6 +42,7 @@ var loadLabApResults = function(user, lab){
     	$("#jplagBtn").show();
     	var tmp = "showApDetails("
     	var onClickCmd = tmp.concat(data.JplagURL, ")");
+    	alert(onClickCmd);
     	$("#jplagBtn").attr("onclick", onClickCmd);
 		}
 		// dupl results and link
@@ -53,6 +55,7 @@ var loadLabApResults = function(user, lab){
     	$("#duplBtn").show();
     	var tmp = "showApDetails("
     	var onClickCmd = tmp.concat(data.DuplURL, ")");
+    	alert(onClickCmd);
     	$("#duplBtn").attr("onclick", onClickCmd);
     }
   }).fail(function(){
@@ -99,6 +102,6 @@ var loadUserApResults = function(index, element){
 
 // Show the specific anti-plagiarism details in another window.
 function showApDetails(url) {
-	alert(url)
+	alert(url);
 	//window.open("http://www.google.com/");
 }
