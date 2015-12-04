@@ -106,7 +106,7 @@ var loadUserApResults = function(index, element){
 // Show the specific anti-plagiarism details in another window.
 function showApDetails(url) {
   //window.open("http://www.google.com/");
-  $.post("/event/apshowdetails", {"url": url});
+  //$.post("/event/apshowdetails", {"url": url});
   window.open(url);
   return true
 }

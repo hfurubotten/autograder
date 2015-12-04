@@ -48,6 +48,7 @@ func (ws Server) Start() {
 	http.Handle("/login", http.RedirectHandler(global.OAuthRedirectURL+"?client_id="+global.OAuthClientID, 307))
 	http.HandleFunc("/oauth", global.OAuthHandler)
 	http.HandleFunc(pages.SIGNOUT, auth.RemoveApprovalHandler)
+	http.Handle(resultsBaseDir, http.FileServer(http.Dir(resultsBaseDir)))
 
 	// Page handlers
 	http.HandleFunc(HomeURL, HomeHandler)
@@ -93,7 +94,7 @@ func (ws Server) Start() {
 	http.HandleFunc(ApManualTestURL, ApManualTestHandler)
 	http.HandleFunc(ApLabResultsURL, ApLabResultsHandler)
 	http.HandleFunc(ApUserResultsURL, ApUserResultsHandler)
-	http.HandleFunc(ApShowDetailsURL, ApShowDetailsHandler)
+	//http.HandleFunc(ApShowDetailsURL, ApShowDetailsHandler)
 
 	// static files
 	// http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("web/js/"))))
