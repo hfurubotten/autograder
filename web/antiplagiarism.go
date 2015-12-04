@@ -25,6 +25,7 @@ var resultsBaseDir = "/tmp/apresults/"
 // the request if for individual or group assignments.
 func callAntiplagiarism(request apProto.ApRequest, org *git.Organization, isGroup bool) {
 	// Currently just on localhost.
+	// TODO: Remove hard-coded value
 	endpoint := "localhost:11111"
 	var opts []grpc.DialOption
 	// TODO: Add transport security.
