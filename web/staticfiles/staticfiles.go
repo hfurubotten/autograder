@@ -60,10 +60,10 @@
 // img/intro3.png
 // img/intro4.png
 // img/overlapping-arrows.png
+// js/antiplagiarism.js
 // js/codereview.js
 // js/resultloader.js
 // js/teacher.page.js
-// js/teacher.panel.js
 // js/teacher.result.page.js
 // js/user.page.js
 // DO NOT EDIT!
@@ -1172,6 +1172,24 @@ func imgOverlappingArrowsPng() (*asset, error) {
 	return a, err
 }
 
+// jsAntiplagiarismJs reads file data from disk. It returns an error on failure.
+func jsAntiplagiarismJs() (*asset, error) {
+	path := "/home/ericfree/go/src/github.com/hfurubotten/autograder/web/js/antiplagiarism.js"
+	name := "js/antiplagiarism.js"
+	bytes, err := bindataRead(path, name)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := os.Stat(path)
+	if err != nil {
+		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
+	}
+
+	a := &asset{bytes: bytes, info: fi}
+	return a, err
+}
+
 // jsCodereviewJs reads file data from disk. It returns an error on failure.
 func jsCodereviewJs() (*asset, error) {
 	path := "/home/ericfree/go/src/github.com/hfurubotten/autograder/web/js/codereview.js"
@@ -1212,24 +1230,6 @@ func jsResultloaderJs() (*asset, error) {
 func jsTeacherPageJs() (*asset, error) {
 	path := "/home/ericfree/go/src/github.com/hfurubotten/autograder/web/js/teacher.page.js"
 	name := "js/teacher.page.js"
-	bytes, err := bindataRead(path, name)
-	if err != nil {
-		return nil, err
-	}
-
-	fi, err := os.Stat(path)
-	if err != nil {
-		err = fmt.Errorf("Error reading asset info %s at %s: %v", name, path, err)
-	}
-
-	a := &asset{bytes: bytes, info: fi}
-	return a, err
-}
-
-// jsTeacherPanelJs reads file data from disk. It returns an error on failure.
-func jsTeacherPanelJs() (*asset, error) {
-	path := "/home/ericfree/go/src/github.com/hfurubotten/autograder/web/js/teacher.panel.js"
-	name := "js/teacher.panel.js"
 	bytes, err := bindataRead(path, name)
 	if err != nil {
 		return nil, err
@@ -1392,10 +1392,10 @@ var _bindata = map[string]func() (*asset, error){
 	"img/intro3.png": imgIntro3Png,
 	"img/intro4.png": imgIntro4Png,
 	"img/overlapping-arrows.png": imgOverlappingArrowsPng,
+	"js/antiplagiarism.js": jsAntiplagiarismJs,
 	"js/codereview.js": jsCodereviewJs,
 	"js/resultloader.js": jsResultloaderJs,
 	"js/teacher.page.js": jsTeacherPageJs,
-	"js/teacher.panel.js": jsTeacherPanelJs,
 	"js/teacher.result.page.js": jsTeacherResultPageJs,
 	"js/user.page.js": jsUserPageJs,
 }
@@ -1579,13 +1579,13 @@ var _bintree = &bintree{nil, map[string]*bintree{
 		}},
 	}},
 	"js": &bintree{nil, map[string]*bintree{
+		"antiplagiarism.js": &bintree{jsAntiplagiarismJs, map[string]*bintree{
+		}},
 		"codereview.js": &bintree{jsCodereviewJs, map[string]*bintree{
 		}},
 		"resultloader.js": &bintree{jsResultloaderJs, map[string]*bintree{
 		}},
 		"teacher.page.js": &bintree{jsTeacherPageJs, map[string]*bintree{
-		}},
-		"teacher.panel.js": &bintree{jsTeacherPanelJs, map[string]*bintree{
 		}},
 		"teacher.result.page.js": &bintree{jsTeacherResultPageJs, map[string]*bintree{
 		}},
