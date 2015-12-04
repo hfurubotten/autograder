@@ -17,7 +17,7 @@ import (
 )
 
 // TODO: CHANGE THIS
-var resultsBaseDir = "/home/ericfree/results"
+var resultsBaseDir = "/tmp/apresults"
 
 // callAntiplagiarism sends a request to the anti-plagiarism software.
 // It takes as input request, an ApRequest (anti-plagiarism request),
