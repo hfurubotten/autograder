@@ -135,7 +135,7 @@ func saveNewResults(org *git.Organization, isGroup bool) {
 				// Get the tool's results for that lab
 				success := getFileResults(resultsFile, labIndex, tool, org, isGroup)
 				if success {
-					// TODO: Delete this file.
+
 				}
 			}
 		}
@@ -152,7 +152,7 @@ func saveNewResults(org *git.Organization, isGroup bool) {
 				// Get the tool's results for that lab
 				success := getFileResults(resultsFile, labIndex, tool, org, isGroup)
 				if success {
-					// TODO: Delete this file.
+
 				}
 			}
 		}
@@ -169,7 +169,6 @@ func getFileResults(resultsFile string, labIndex int, tool string, org *git.Orga
 
 	buf, err := ioutil.ReadFile(resultsFile)
 	if err != nil {
-		fmt.Printf("Error reading file. %s\n", err)
 		return false
 	}
 
