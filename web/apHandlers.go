@@ -21,9 +21,6 @@ var ApLabResultsURL = "/course/aplabresults"
 // ApUserResultsURL is the URL used to call ApUserResultsHandler
 var ApUserResultsURL = "/course/apuserresults"
 
-// ApShowDetailsURL is the URL used to call ApShowDetailsHandler
-var ApShowDetailsURL = "/event/apshowdetails"
-
 // ApManualTestHandler is a http handler for manually triggering
 // anti-plagiarism tests.
 func ApManualTestHandler(w http.ResponseWriter, r *http.Request) {
@@ -264,25 +261,4 @@ func ApUserResultsHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), 404)
 	}
-}
-
-// ApShowDetailsHandler
-func ApShowDetailsHandler(w http.ResponseWriter, r *http.Request) {
-/*	fmt.Printf("ApShowDetailsHandler\n")
-	// Checks if the user is signed in and a teacher.
-	member, err := checkTeacherApproval(w, r, true)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	fmt.Printf("%s\n", r.FormValue("url"))
-
-	template := StdTemplate{}
-	template.Member = member
-
-	page := r.FormValue("url")
-	execTemplate(page, w, template)
-*/
-	http.ServeFile(w, r, r.FormValue("url"))
 }

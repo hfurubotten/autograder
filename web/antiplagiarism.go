@@ -16,8 +16,8 @@ import (
 	"google.golang.org/grpc"
 )
 
-// TODO: CHANGE THIS
-var resultsBaseDir = "/tmp/apresults"
+// TODO: Remove hard-coded value
+var resultsBaseDir = "/tmp/apresults/"
 
 // callAntiplagiarism sends a request to the anti-plagiarism software.
 // It takes as input request, an ApRequest (anti-plagiarism request),
@@ -58,7 +58,6 @@ func callAntiplagiarism(request apProto.ApRequest, org *git.Organization, isGrou
 
 	clearPreviousResults(org, isGroup)
 	saveNewResults(org, isGroup)
-	showAllResults(org, isGroup)
 }
 
 // clearPreviousResults clears the previous anti-plagiarim results,
@@ -114,7 +113,6 @@ func clearPreviousResults(org *git.Organization, isGroup bool) {
 			student.Save()
 		}
 	}
-
 }
 
 // saveNewResults saves the results in the results directory to the database.
@@ -264,39 +262,4 @@ func getFileResults(resultsFile string, labIndex int, tool string, org *git.Orga
 	}
 
 	return true
-}
-
-// TODO: FOR DEBUGGING ONLY
-// showAllResults shows the database records after the results have been saves.
-func showAllResults(org *git.Organization, isGroup bool) {
-	if isGroup {
-		// For each group
-		for groupName := range org.Groups {
-			// Get the Group ID
-			groupID, err := strconv.Atoi(groupName[len(git.GroupRepoPrefix):])
-			if err != nil {
-				fmt.Printf("showAllResults: Could not get group number from %s. %s\n", groupName, err)
-				continue
-			}
-
-			// Get the database record
-			group, _ := git.NewGroup(org.Name, groupID, false)
-			// For each lab
-			for labIndex := 1; labIndex <= org.GroupAssignments; labIndex++ {
-				results := group.GetAntiPlagiarismResults(org.Name, labIndex)
-				fmt.Printf("%v\n", results)
-			}
-		}
-	} else {
-		// For each student
-		for username := range org.Members {
-			// Get the database record
-			student, _ := git.NewMemberFromUsername(username, false)
-			// For each lab
-			for labIndex := 1; labIndex <= org.IndividualAssignments; labIndex++ {
-				results := student.GetAntiPlagiarismResults(org.Name, labIndex)
-				fmt.Printf("%v\n", results)
-			}
-		}
-	}
 }

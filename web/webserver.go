@@ -48,10 +48,12 @@ func (ws Server) Start() {
 	http.Handle("/login", http.RedirectHandler(global.OAuthRedirectURL+"?client_id="+global.OAuthClientID, 307))
 	http.HandleFunc("/oauth", global.OAuthHandler)
 	http.HandleFunc(pages.SIGNOUT, auth.RemoveApprovalHandler)
-	http.Handle(resultsBaseDir + "/",
-		http.StripPrefix(resultsBaseDir,
-			http.FileServer(http.Dir(resultsBaseDir + "/"))))
-
+	
+	// Anti-plagiarism file server
+	http.Handle(resultsBaseDir,
+		http.StripPrefix(resultsBaseDir, http.FileServer(http.Dir(resultsBaseDir)))
+	)
+	
 	// Page handlers
 	http.HandleFunc(HomeURL, HomeHandler)
 	http.HandleFunc(ProfileURL, ProfileHandler)
