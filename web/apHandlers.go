@@ -38,8 +38,7 @@ func ApManualTestHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var labs []string
-	var languages []int32
+	var labs []*apProto.ApRequestLab
 	var repos []string
 	isGroup := false
 
@@ -47,12 +46,11 @@ func ApManualTestHandler(w http.ResponseWriter, r *http.Request) {
 		// Get the information for groups
 		isGroup = true
 
-		// Order of labs and languages matters. They must match.
 		length := len(org.GroupLabFolders)
 		for i := 1; i <= length; i++ {
 			if org.GroupLabFolders[i] != "" {
-				labs = append(labs, org.GroupLabFolders[i])
-				languages = append(languages, org.GroupLanguages[i])
+				labs = append(labs, &apProto.ApRequestLab{Name: org.GroupLabFolders[i],
+					Language: org.GroupLanguages[i]})
 			}
 		}
 
@@ -64,12 +62,11 @@ func ApManualTestHandler(w http.ResponseWriter, r *http.Request) {
 		// Get the information for individuals
 		isGroup = false
 
-		// Order of labs and languages matters. They must match.
 		length := len(org.IndividualLabFolders)
 		for i := 1; i <= length; i++ {
 			if org.IndividualLabFolders[i] != "" {
-				labs = append(labs, org.IndividualLabFolders[i])
-				languages = append(languages, org.IndividualLanguages[i])
+				labs = append(labs, &apProto.ApRequestLab{Name: org.IndividualLabFolders[i],
+					Language: org.IndividualLanguages[i]})
 			}
 		}
 
@@ -83,8 +80,7 @@ func ApManualTestHandler(w http.ResponseWriter, r *http.Request) {
 	request := apProto.ApRequest{GithubOrg: org.Name,
 		GithubToken:  org.AdminToken,
 		StudentRepos: repos,
-		LabNames:     labs,
-		LabLanguages: languages}
+		Labs:         labs}
 
 	go callAntiplagiarism(request, org, isGroup)
 
