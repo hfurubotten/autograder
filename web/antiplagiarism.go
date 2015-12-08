@@ -44,6 +44,7 @@ func callAntiplagiarism(request apProto.ApRequest, org *git.Organization, isGrou
 	client := apProto.NewApClient(conn)
 
 	// Send request and get response
+	fmt.Printf("Sending request to anti-plagiarism application.\n")
 	response, err := client.CheckPlagiarism(context.Background(), &request)
 
 	// Check response
@@ -66,6 +67,7 @@ func callAntiplagiarism(request apProto.ApRequest, org *git.Organization, isGrou
 // org, a database record for the class, and isGroup, whether or not
 // the request if for individual or group assignments.
 func clearPreviousResults(org *git.Organization, isGroup bool) {
+	fmt.Printf("Clearing old anti-plagiarism results.\n")
 	if isGroup {
 		// Clear old group results
 		// For each group
@@ -114,12 +116,14 @@ func clearPreviousResults(org *git.Organization, isGroup bool) {
 			student.Save()
 		}
 	}
+	fmt.Printf("Finished clearing old anti-plagiarism results.\n")
 }
 
 // saveNewResults saves the results in the results directory to the database.
 // It takes as input org, a database record for the class, and isGroup,
 // whether or not the request is for individual or group assignments.
 func saveNewResults(org *git.Organization, isGroup bool) {
+	fmt.Printf("Saving new anti-plagiarism results.\n")
 	// Make a slice of out tools
 	tools := []string{"dupl", "jplag", "moss"}
 
@@ -158,6 +162,7 @@ func saveNewResults(org *git.Organization, isGroup bool) {
 			}
 		}
 	}
+	fmt.Printf("Finished saving anti-plagiarism result.\n")
 }
 
 // getFileResults will read a results file and store the data in the database.
