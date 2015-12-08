@@ -231,7 +231,9 @@ func ApUserResultsHandler(w http.ResponseWriter, r *http.Request) {
 		for i, name := range org.GroupLabFolders {
 			// Get the results for the lab
 			temp := group.GetAntiPlagiarismResults(org.Name, i)
-			results[name] = *temp
+			if temp != nil {
+				results[name] = *temp
+			}
 		}
 	} else {
 		// Get user from the database
@@ -246,7 +248,9 @@ func ApUserResultsHandler(w http.ResponseWriter, r *http.Request) {
 		for i, name := range org.IndividualLabFolders {
 			// Get the results for the lab
 			temp := user.GetAntiPlagiarismResults(org.Name, i)
-			results[name] = *temp
+			if temp != nil {
+				results[name] = *temp
+			}
 		}
 	}
 
