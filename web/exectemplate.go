@@ -22,6 +22,16 @@ var funcMap = template.FuncMap{
 	"noescapetime": func(t time.Time) template.HTML {
 		return template.HTML(t.String())
 	},
+	// selectitem adds the "selected" attribute to an option in
+	// a drop down menu. It takes as input the current option value
+	// and the option value that is to be selected. It returns
+	// "selected" if they match, otherwise it returns and empty string.
+	"selectitem": func(current int32, selected int32) template.HTMLAttr {
+		if current == selected {
+			return template.HTMLAttr("selected")
+		}
+		return template.HTMLAttr("")
+	},
 }
 
 func execTemplate(page string, w http.ResponseWriter, view interface{}) {

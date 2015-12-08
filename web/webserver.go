@@ -49,6 +49,10 @@ func (ws Server) Start() {
 	http.HandleFunc("/oauth", global.OAuthHandler)
 	http.HandleFunc(pages.SIGNOUT, auth.RemoveApprovalHandler)
 
+	// Anti-plagiarism file server
+	http.Handle(resultsBaseDir,
+		http.StripPrefix(resultsBaseDir, http.FileServer(http.Dir(resultsBaseDir))))
+
 	// Page handlers
 	http.HandleFunc(HomeURL, HomeHandler)
 	http.HandleFunc(ProfileURL, ProfileHandler)
@@ -90,6 +94,9 @@ func (ws Server) Start() {
 	http.HandleFunc(CIResultListURL, CIResultListHandler)
 	http.HandleFunc(NotesURL, NotesHandler)
 	http.HandleFunc(SlipdaysURL, SlipdaysHandler)
+	http.HandleFunc(ApManualTestURL, ApManualTestHandler)
+	http.HandleFunc(ApLabResultsURL, ApLabResultsHandler)
+	http.HandleFunc(ApUserResultsURL, ApUserResultsHandler)
 
 	// static files
 	// http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("web/js/"))))

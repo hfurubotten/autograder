@@ -184,6 +184,8 @@
           <h1>Individual Results</h1>
           <p class="lead">Build and test results from the students. Click on a student to see complete build log.</p>
 
+            <button type="button" id="testplagiarism" class="btn btn-primary">Test Plagiarism</button>
+
           <div class="table-responsive">
             <table class="table table-striped" id="studentresults">
               <thead>
@@ -236,6 +238,7 @@
         <section id="groupresults">
           <h1>Group Results</h1>
           <p class="lead">Build and test results from the students. Click on a group to see complete build log.</p>
+            <button type="button" id="grouptestplagiarism" class="btn btn-primary">Test Plagiarism</button>
 
           <div class="table-responsive">
             <table class="table table-striped" id="groupresults">
@@ -495,6 +498,7 @@
                 <p>If you change the names of the folders containing the different individual assignments, this has to be marked for the automatic system to recognize this. It needs to know which folder to use. The standard folder name is "lab#", where the # is replaced by the number in the sequence of assignments it is. Example of this is "lab1" for the first assignment. Fill in the folder name below and hit the update button to submit the changes. </p>
 
                 {{$indvdeadlines := .IndividualDeadlines}}
+		{{$individuallanguages := .IndividualLanguages}}
                 {{range $i, $element := .IndividualLabFolders}}
                   <div class="form-group">
                     <label for="org" class="col-sm-3 control-label">Folder name lab {{$i}}</label>
@@ -512,6 +516,18 @@
                       </div>
                     </div>
                   </div>
+                  <div class="form-group">
+                    <label for="org" class="col-sm-3 control-label">Primary language lab {{$i}}</label>
+                    <div class="col-sm-9">
+                      <select id="org" name="individuallanguage">
+                        <option value=0 {{selectitem 0 (index $individuallanguages $i)}}>Java</option>
+                        <option value=1 {{selectitem 1 (index $individuallanguages $i)}}>Go</option>
+                        <option value=2 {{selectitem 2 (index $individuallanguages $i)}}>C++</option>
+                        <option value=3 {{selectitem 3 (index $individuallanguages $i)}}>C</option>
+                      </select>
+                    </div>
+                  </div>
+
                   <hr>
                 {{end}}
 
@@ -527,6 +543,7 @@
                 <p>If you change the names of the folders containing the different group assignments, this has to be marked for the automatic system to recognize this. It needs to know which folder to use. The standard folder name is "group#", where the # is replaced by the number in the sequence of assignments it is. Example of this is "group1" for the first assignment. Fill in the folder name below and hit the update button to submit the changes. </p>
 
                 {{$groupdeadlines := .GroupDeadlines}}
+		{{$grouplanguages := .GroupLanguages}}
                 {{range $i, $element := .GroupLabFolders}}
                   <div class="form-group">
                     <label for="org" class="col-sm-3 control-label">Folder name lab {{$i}}</label>
@@ -541,6 +558,17 @@
                         <input type="text" class="form-control" id="org" name="groupdeadline" placeholder="DD/MM/YYYY HH:mm" value="{{index $groupdeadlines $i |noescapetime}}">
                         <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
                       </div>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="org" class="col-sm-3 control-label">Primary language lab {{$i}}</label>
+                    <div class="col-sm-9">
+                      <select id="org" name="grouplanguage">
+                        <option value=0 {{selectitem 0 (index $grouplanguages $i)}}>Java</option>
+                        <option value=1 {{selectitem 1 (index $grouplanguages $i)}}>Go</option>
+                        <option value=2 {{selectitem 2 (index $grouplanguages $i)}}>C++</option>
+                        <option value=3 {{selectitem 3 (index $grouplanguages $i)}}>C</option>
+                      </select>
                     </div>
                   </div>
                   <hr>
@@ -566,4 +594,5 @@
   </script>
   <script src="/js/teacher.page.js" type="text/javascript" charset="utf-8"></script>
   <script src="/js/codereview.js" type="text/javascript" charset="utf-8"></script>
+  <script type="text/javascript" src="/js/antiplagiarism.js"></script>
 {{end}}

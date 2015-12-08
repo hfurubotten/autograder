@@ -103,6 +103,53 @@
               </form>
             </div>
           </div>
+          
+          <div class="row">
+            <div class="col-md-8">
+              <h2>Anti-Plagiarism Results</h2>
+              <div class="row">
+                <div class="col-md-3">
+                  Moss results:
+                </div>
+                <div class="col-md-2">
+                  <p id="mossResults">0%</p>
+                </div>
+                <div class="col-md-3">
+                  <button id="mossBtn" onclick="showApDetails()" class="btn btn-primary">
+                  	Show Moss Details
+                  </button>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-md-3">
+                  JPlag results:
+                </div>
+                <div class="col-md-2">
+                  <p id="jplagResults">0%</p>
+                </div>
+                <div class="col-md-3">
+                  <button id="jplagBtn" onclick="showApDetails()" class="btn btn-primary">
+                  	Show JPlag Details
+                  </button>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-md-3">
+                  Dupl results:
+                </div>
+                <div class="col-md-2">
+                  <p id="duplResults">False</p>
+                </div>
+                <div class="col-md-3">
+                  <button id="duplBtn" onclick="showApDetails()" class="btn btn-primary">
+                  	Show dupl Details
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
 
           <!-- Build logs -->
           <div class="row">
@@ -155,4 +202,5 @@
   </script>
   <script type="text/javascript" src="/js/resultloader.js"></script>
   <script type="text/javascript" src="/js/teacher.result.page.js"></script>
+  <script type="text/javascript" src="/js/antiplagiarism.js"></script>
 {{end}}

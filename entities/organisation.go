@@ -17,8 +17,8 @@ import (
 	"github.com/boltdb/bolt"
 	"github.com/google/go-github/github"
 	"github.com/hfurubotten/autograder/database"
-	"github.com/hfurubotten/autograder/global"
 	"github.com/hfurubotten/autograder/game/entities"
+	"github.com/hfurubotten/autograder/global"
 	"golang.org/x/oauth2"
 )
 
@@ -49,6 +49,8 @@ type Organization struct {
 	GroupLabFolders      map[int]string
 	IndividualDeadlines  map[int]time.Time
 	GroupDeadlines       map[int]time.Time
+	IndividualLanguages  map[int]int32
+	GroupLanguages       map[int]int32
 
 	StudentTeamID int
 	OwnerTeamID   int
@@ -107,6 +109,8 @@ func NewOrganization(name string, readonly bool) (org *Organization, err error) 
 		Teachers:             make(map[string]interface{}),
 		IndividualDeadlines:  make(map[int]time.Time),
 		GroupDeadlines:       make(map[int]time.Time),
+		IndividualLanguages:  make(map[int]int32),
+		GroupLanguages:       make(map[int]int32),
 		CodeReviewlist:       make([]int, 0),
 		CI: CIOptions{
 			Basepath: "/testground/src/github.com/" + name + "/",
@@ -528,6 +532,28 @@ func (o *Organization) SetGroupDeadline(lab int, t time.Time) {
 	}
 
 	o.GroupDeadlines[lab] = t
+}
+
+// SetIndividualLanguage will set the language of one lab assignment.
+//
+// This method needs locking
+func (o *Organization) SetIndividualLanguage(lab int, lang int32) {
+	if o.IndividualLanguages == nil {
+		o.IndividualLanguages = make(map[int]int32)
+	}
+
+	o.IndividualLanguages[lab] = lang
+}
+
+// SetGroupLanguage will set the language of one lab assignment.
+//
+// This method needs locking
+func (o *Organization) SetGroupLanguage(lab int, lang int32) {
+	if o.GroupLanguages == nil {
+		o.GroupLanguages = make(map[int]int32)
+	}
+
+	o.GroupLanguages[lab] = lang
 }
 
 // AddGroup will add a group to the list of groups in the
