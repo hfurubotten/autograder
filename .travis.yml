@@ -3,9 +3,6 @@ language: go
 go:
   - tip
 
-before_install:
-  - git clone --branch=master https://$GITHUB_GAME_TOKEN:x-oauth-basic@github.com/hfurubotten/github-gamification $GOPATH/src/github.com/hfurubotten/github-gamification
-
 install:
   - go get golang.org/x/tools/cmd/cover
   - go get github.com/mattn/goveralls
