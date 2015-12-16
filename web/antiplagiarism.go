@@ -195,9 +195,6 @@ func getFileResults(resultsFile string, labIndex int, tool string, org *git.Orga
 		if isGroup {
 			// Make sure that this is a group
 			if !strings.HasPrefix(fileResult.Repo, "group") {
-				fmt.Printf("JPlag might be returning matching individual labs from previous sessions.\n")
-				fmt.Printf("If that is the case, there is a group with code matching an individuals code\n")
-				fmt.Printf("from another lab.\n")
 				continue
 			}
 
@@ -233,9 +230,6 @@ func getFileResults(resultsFile string, labIndex int, tool string, org *git.Orga
 		} else {
 			// Make sure that this is a group
 			if strings.HasPrefix(fileResult.Repo, "group") {
-				fmt.Printf("JPlag might be returning matching group labs from previous sessions.\n")
-				fmt.Printf("If that is the case, there is a group with code matching an individuals code\n")
-				fmt.Printf("from another lab.\n")
 				continue
 			}
 
