@@ -77,13 +77,13 @@ var loadUserApResults = function(index, element){
       
       // Count the tools which found plagiarism
       var count = 0;
-      if (s.MossPct > 0.0) {
+      if (s.MossPct > 15.0) {
         count++;
       }
-      if (s.JplagPct > 0.0) {
+      if (s.JplagPct > 15.0) {
         count++;
       }
-      if (s.DuplPct > 0.0) {
+      if (s.DuplPct > 0.0) { // dupl is either 1 or 0
         count++;
       }
 
