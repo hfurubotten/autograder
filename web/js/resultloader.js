@@ -1,6 +1,7 @@
 // loads lab results from server and updates html.
 var loadLabResult = function(user, lab){
   $('span#lab-headline').text(lab);
+  // TODO Fix this typo: ciresutls -> ciresults 
   $.getJSON("/course/ciresutls", {"Labname": lab, "Course": course, "Username": user}, function(data){
     // updates text fields
     $("#status").text("Status: ").append(data.Status);

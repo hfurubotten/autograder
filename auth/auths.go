@@ -1,27 +1,38 @@
 package auth
 
 import (
+	"log"
 	"net/http"
 
+	"github.com/hfurubotten/autograder/entities"
 	"github.com/hfurubotten/autograder/web/pages"
 	"github.com/hfurubotten/autograder/web/sessions"
 )
 
 // IsApprovedUser checks if the user is logged in and approved.
-func IsApprovedUser(r *http.Request) (approved bool) {
-	val, err := sessions.GetSessions(r, sessions.AuthSession, sessions.ApprovedSessionKey)
+func IsApprovedUser(r *http.Request) bool {
+	// val, err := sessions.GetSessions(r, sessions.AuthSession, sessions.ApprovedSessionKey)
+	val, err := sessions.GetSessions(r, sessions.AuthSession, sessions.AccessTokenSessionKey)
 	if err != nil {
 		return false
 	}
-
+	log.Println("checking for approved user session: ", val)
 	switch val.(type) {
-	case bool:
-		approved = val.(bool)
+	case string:
+		token := val.(string)
+		return entities.HasToken(token)
 	default:
 		return false
 	}
 
-	return
+	// switch val.(type) {
+	// case bool:
+	// 	approved = val.(bool)
+	// default:
+	// 	return false
+	// }
+
+	// return
 }
 
 // RemoveApprovalHandler is a http handler which will revoke the login
