@@ -637,7 +637,12 @@ func (o *Organization) CreateRepo(opt RepositoryOptions) (err error) {
 
 	_, _, err = o.githubadmin.Repositories.Create(o.Name, repo)
 	if err != nil {
-		return
+		if !strings.Contains(err.Error(), "name already exists on this account") {
+			log.Println(err)
+			view.ErrorMsg = "Error communicating with Github. Couldn't create repository."
+			enc.Encode(view)
+			return
+		}
 	}
 
 	if opt.Hook != "" {
