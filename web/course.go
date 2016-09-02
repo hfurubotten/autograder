@@ -557,13 +557,10 @@ func ApproveCourseMembershipHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		err = org.CreateRepo(repo)
 		if err != nil {
-/*			if !strings.Contains(err.Error(), "name already exists on this account") {
-				log.Println(err)
-				view.ErrorMsg = "Error communicating with Github. Couldn't create repository."
-				enc.Encode(view)
-				return
-			}
-*/			log.Printf("Name already exists for %s (ignored)\n", repo.Name)
+			log.Println(err)
+			view.ErrorMsg = "Error communicating with Github. Couldn't create repository."
+			enc.Encode(view)
+			return			
 		}
 
 		if t, ok := teams[username]; !ok {
