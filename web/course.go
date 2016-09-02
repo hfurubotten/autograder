@@ -557,10 +557,13 @@ func ApproveCourseMembershipHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		err = org.CreateRepo(repo)
 		if err != nil {
-			log.Println(err)
-			view.ErrorMsg = "Error communicating with Github. Couldn't create repository."
-			enc.Encode(view)
-			return
+/*			if !strings.Contains(err.Error(), "name already exists on this account") {
+				log.Println(err)
+				view.ErrorMsg = "Error communicating with Github. Couldn't create repository."
+				enc.Encode(view)
+				return
+			}
+*/			log.Printf("Name already exists for %s (ignored)\n", repo.Name)
 		}
 
 		if t, ok := teams[username]; !ok {
@@ -572,18 +575,20 @@ func ApproveCourseMembershipHandler(w http.ResponseWriter, r *http.Request) {
 
 			teamID, err := org.CreateTeam(newteam)
 			if err != nil {
-				log.Println(err)
+/*				log.Println(err)
 				view.ErrorMsg = "Error communicating with Github. Can't create team."
 				enc.Encode(view)
 				return
+*/
+				log.Printf("Team already exists for %s (ignored)\n", newteam)
 			}
 
 			err = org.AddMemberToTeam(teamID, username)
 			if err != nil {
 				log.Println(err)
-				view.ErrorMsg = "Error communicating with Github. Can't add member to team."
-				enc.Encode(view)
-				return
+//				view.ErrorMsg = "Error communicating with Github. Can't add member to team."
+//				enc.Encode(view)
+//				return
 			}
 		} else {
 			err = org.LinkRepoToTeam(t.ID, username+"-"+git.StandardRepoName)
