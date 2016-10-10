@@ -43,7 +43,7 @@ type BuildResult struct {
 	Timestamp time.Time
 	PushTime  time.Time
 
-	TestScores []score.Score
+	TestScores []*score.Score
 	TotalScore int
 
 	HeadCommitID   string
@@ -66,7 +66,7 @@ func NewBuildResult() (*BuildResult, error) {
 	}
 	return &BuildResult{
 		ID:         nextid,
-		TestScores: make([]score.Score, 0),
+		TestScores: make([]*score.Score, 0),
 		Log:        make([]string, 0),
 	}, nil
 }

@@ -115,10 +115,19 @@ func StartTesterDaemon(opt DaemonOptions) {
 	// parsing the results
 	SimpleParsing(r)
 	if len(r.TestScores) > 0 {
-		r.TotalScore = CalculateTestScore(r.TestScores)
+		r.TotalScore = score.Total(r.TestScores)
 	} else {
+		// TODO move this computation to kit/score package
 		if r.NumPasses+r.NumFails != 0 {
 			r.TotalScore = int((float64(r.NumPasses) / float64(r.NumPasses+r.NumFails)) * 100.0)
+		}
+	}
+
+	// check for stack overflow in log
+	for _, l := range r.Log {
+		if strings.Contains(l, "fatal error: stack overflow") {
+			r.TotalScore = 0
+			break
 		}
 	}
 
@@ -191,30 +200,6 @@ func StartTesterDaemon(opt DaemonOptions) {
 	}
 }
 
-// CalculateTestScore uses a array of Score objects to calculate a total score between 0 and 100.
-func CalculateTestScore(s []score.Score) (total int) {
-	totalWeight := float32(0)
-	var weight []float32
-	var score []float32
-	var max []float32
-	for _, ts := range s {
-		totalWeight += float32(ts.Weight)
-		weight = append(weight, float32(ts.Weight))
-		score = append(score, float32(ts.Score))
-		max = append(max, float32(ts.MaxScore))
-	}
-
-	tmpTotal := float32(0)
-	for i := 0; i < len(s); i = i + 1 {
-		if score[i] > max[i] {
-			score[i] = max[i]
-		}
-		tmpTotal += ((score[i] / max[i]) * (weight[i] / totalWeight))
-	}
-
-	return int(tmpTotal * 100)
-}
-
 // SimpleParsing will do a simple parsing of the test results. It looks for the strings "--- PASS", "--- FAIL" and "build failed".
 func SimpleParsing(r *BuildResult) {
 	key := "--- PASS"
@@ -274,7 +259,7 @@ func logOutput(s string, l *BuildResult, opt DaemonOptions) {
 		if err == nil {
 			if testscore.Secret == opt.Secret {
 				testscore.Secret = "Sanitized"
-				l.TestScores = append(l.TestScores, testscore)
+				l.TestScores = append(l.TestScores, &testscore)
 			}
 			return
 		}
