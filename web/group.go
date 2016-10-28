@@ -281,9 +281,10 @@ func ApproveGroupHandler(w http.ResponseWriter, r *http.Request) {
 			err = org.CreateRepo(repo)
 			if err != nil {
 				log.Println(err)
-				view.ErrorMsg = "Error communicating with Github. Couldn't create repository."
-				enc.Encode(view)
-				return
+				//HACK: this seems to prevent creating group, when it didn't work the first time;
+				// view.ErrorMsg = "Error communicating with Github. Couldn't create repository."
+				// enc.Encode(view)
+				// return
 			}
 		}
 
