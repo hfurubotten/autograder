@@ -28,6 +28,7 @@ var TeachersPanelURL = "/course/teacher/"
 // This page shows a summary of all the students and groups.
 func TeachersPanelHandler(w http.ResponseWriter, r *http.Request) {
 	// Checks if the user is signed in and a teacher.
+	log.Println(r)
 	member, err := checkTeacherApproval(w, r, true)
 	if err != nil {
 		log.Println(err)

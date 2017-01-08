@@ -67,9 +67,13 @@ func NewGroupHandler(w http.ResponseWriter, r *http.Request) {
 	course := r.FormValue("course")
 
 	if _, ok := member.Courses[course]; !ok {
-		http.Redirect(w, r, pages.FRONTPAGE, 307)
-		log.Println("Unknown course.")
-		return
+//TODO: Hack to allow teacher/member to create group even though not student of course. (I think)
+//		http.Redirect(w, r, pages.FRONTPAGE, 307)
+		log.Printf("Unknown course: %s\n", course)
+		for k, v := range member.Courses {
+			log.Printf("Courses: %v, %v\n", k, v)
+		}
+//		return
 	}
 
 	org, err := git.NewOrganization(course, false)
@@ -281,9 +285,10 @@ func ApproveGroupHandler(w http.ResponseWriter, r *http.Request) {
 			err = org.CreateRepo(repo)
 			if err != nil {
 				log.Println(err)
-				view.ErrorMsg = "Error communicating with Github. Couldn't create repository."
-				enc.Encode(view)
-				return
+				//HACK: this seems to prevent creating group, when it didn't work the first time;
+				// view.ErrorMsg = "Error communicating with Github. Couldn't create repository."
+				// enc.Encode(view)
+				// return
 			}
 		}
 

@@ -573,17 +573,19 @@ func ApproveCourseMembershipHandler(w http.ResponseWriter, r *http.Request) {
 			teamID, err := org.CreateTeam(newteam)
 			if err != nil {
 				log.Println(err)
-				view.ErrorMsg = "Error communicating with Github. Can't create team."
-				enc.Encode(view)
-				return
+				log.Printf("Team already exists for %s (%d) (ignored)\n", newteam, teamID)
+				// view.ErrorMsg = "Error communicating with Github. Can't create team."
+				// enc.Encode(view)
+				// return
 			}
 
 			err = org.AddMemberToTeam(teamID, username)
 			if err != nil {
 				log.Println(err)
-				view.ErrorMsg = "Error communicating with Github. Can't add member to team."
-				enc.Encode(view)
-				return
+				log.Printf("Couldn't add %s to team %s (%d) (ignored)\n", username, newteam, teamID)
+				// view.ErrorMsg = "Error communicating with Github. Can't add member to team."
+				// enc.Encode(view)
+				// return
 			}
 		} else {
 			err = org.LinkRepoToTeam(t.ID, username+"-"+git.StandardRepoName)
