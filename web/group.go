@@ -67,9 +67,13 @@ func NewGroupHandler(w http.ResponseWriter, r *http.Request) {
 	course := r.FormValue("course")
 
 	if _, ok := member.Courses[course]; !ok {
-		http.Redirect(w, r, pages.FRONTPAGE, 307)
-		log.Println("Unknown course.")
-		return
+//TODO: Hack to allow teacher/member to create group even though not student of course. (I think)
+//		http.Redirect(w, r, pages.FRONTPAGE, 307)
+		log.Printf("Unknown course: %s\n", course)
+		for k, v := range member.Courses {
+			log.Printf("Courses: %v, %v\n", k, v)
+		}
+//		return
 	}
 
 	org, err := git.NewOrganization(course, false)
